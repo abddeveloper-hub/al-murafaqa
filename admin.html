@@ -1,520 +1,1172 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="light" lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Fest Command Center • Al Murafaqa 5th Edition</title>
-  
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="web_dashboard" name="shell-type"/>
+  <title>Festival Operations &amp; Control Hub • Al Murafaqa 5th Edition</title>
+
   <!-- Fonts & Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Design System -->
-  <link rel="stylesheet" href="admin.css">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: "#dc2626",
+              50: "#fef2f2",
+              100: "#fee2e2",
+              200: "#fecaca",
+              500: "#ef4444",
+              600: "#dc2626",
+              700: "#b91c1c"
+            }
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-lg": "2rem",
+            gutter: "1rem",
+            "space-xl": "2.25rem",
+            "gutter-sm": "0.75rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            margin: "1.25rem"
+          },
+          fontFamily: {
+            "headline-lg": ["Outfit", "sans-serif"],
+            "headline-md": ["Outfit", "sans-serif"],
+            "headline-sm": ["Outfit", "sans-serif"],
+            "display-lg": ["Outfit", "sans-serif"],
+            "display-lg-mobile": ["Outfit", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "label-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          fontSize: {
+            "headline-lg": ["28px", { lineHeight: "36px", fontWeight: "700" }],
+            "headline-md": ["22px", { lineHeight: "30px", fontWeight: "600" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "display-lg": ["40px", { lineHeight: "48px", fontWeight: "700" }],
+            "display-lg-mobile": ["32px", { lineHeight: "38px", fontWeight: "700" }],
+            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+            "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+            "label-lg": ["14px", { lineHeight: "20px", fontWeight: "600" }],
+            "label-md": ["12px", { lineHeight: "16px", fontWeight: "600" }],
+            "label-sm": ["11px", { lineHeight: "14px", fontWeight: "500" }]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-pane.hidden {
+      display: none !important;
+    }
+    .tab-pane.active {
+      display: block !important;
+    }
+  </style>
+
+  <link rel="stylesheet" href="admin.css"/>
 </head>
-<body>
+<body class="bg-white font-body-md text-slate-900 antialiased selection:bg-red-500 selection:text-white">
 
   <!-- ================= 1. ADMIN AUTH OVERLAY ================= -->
   <div id="auth-overlay" class="auth-overlay">
-    <div class="auth-card">
-      <div class="auth-logo-badge">
-        <i data-lucide="shield-alert" style="width: 32px; height: 32px;"></i>
+    <div class="auth-card max-w-md w-full bg-white p-8 rounded-2xl shadow-2xl border border-slate-200">
+      <div class="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+        <span class="material-symbols-outlined text-[32px]">shield_person</span>
       </div>
-      <h1>Fest Command Center</h1>
-      <p>Al Murafaqa • 5th Edition Administrator Access</p>
+      <h1 class="font-headline-md text-2xl font-bold text-center text-slate-900">Fest Command Center</h1>
+      <p class="font-body-md text-sm text-center text-slate-500 mt-1 mb-6">Al Murafaqa • 5th Edition Administrator Access</p>
 
-      <form id="auth-form" class="auth-form">
-        <div class="form-group">
-          <label for="login-email">Admin Email</label>
-          <input type="email" id="login-email" class="form-input" placeholder="admin@almurafaqa.com" value="admin@almurafaqa.com" required>
+      <form id="auth-form" class="space-y-4">
+        <div>
+          <label for="login-email" class="block font-label-md text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Admin Email</label>
+          <input type="email" id="login-email" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100" placeholder="admin@almurafaqa.com" value="admin@almurafaqa.com" required/>
         </div>
 
-        <div class="form-group">
-          <label for="login-password">Password</label>
-          <input type="password" id="login-password" class="form-input" placeholder="••••••••" value="admin123" required>
+        <div>
+          <label for="login-password" class="block font-label-md text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+          <input type="password" id="login-password" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100" placeholder="••••••••" value="admin123" required/>
         </div>
 
-        <button type="submit" id="btn-submit-login" class="btn-primary" style="width: 100%; margin-top: 8px;">
-          <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+        <button type="submit" id="btn-submit-login" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-label-lg font-bold rounded-xl shadow-md shadow-red-600/20 transition-all flex items-center justify-center gap-2 mt-2">
+          <span class="material-symbols-outlined text-[18px]">lock</span>
           <span>Authenticate Session</span>
         </button>
 
-        <button type="button" id="btn-quick-demo" class="btn-demo-quick">
+        <button type="button" id="btn-quick-demo" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-sm text-xs font-semibold rounded-xl transition-colors">
           ⚡ Auto-Fill Demo Credentials (admin@almurafaqa.com / admin123)
         </button>
       </form>
     </div>
   </div>
 
-  <!-- ================= 2. DASHBOARD SHELL ================= -->
-  <div class="app-container">
-
-    <!-- Sidebar Navigation -->
-    <aside id="sidebar" class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">
-          <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA" alt="Al Murafaqa Emblem" style="width: 100%; height: 100%; object-fit: contain;">
+  <!-- ================= 2. FIXED SIDEBAR NAVIGATION ================= -->
+  <aside id="sidebar" class="fixed left-0 top-0 h-full w-72 bg-slate-50 border-r border-slate-200 z-50 flex flex-col justify-between shadow-sm transition-transform duration-300">
+    <div class="flex flex-col flex-1 overflow-y-auto">
+      
+      <!-- Brand Header -->
+      <div class="h-20 px-space-lg flex items-center gap-space-sm border-b border-slate-200/80 bg-white">
+        <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white shadow-md shadow-red-500/20 flex-shrink-0">
+          <span class="material-symbols-outlined text-[22px]">auto_stories</span>
         </div>
-        <div class="sidebar-brand-text">
-          <h2>Al Murafaqa</h2>
-          <span>5TH EDITION • ADMIN</span>
+        <div class="flex flex-col min-w-0">
+          <span class="font-headline-sm text-headline-sm text-slate-900 tracking-tight font-bold truncate">Al Murafaqa</span>
+          <span class="font-label-sm text-label-sm text-red-600 font-semibold uppercase tracking-wider">Festival • 5th Edition</span>
         </div>
       </div>
 
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-tab="overview">
-          <i data-lucide="layout-dashboard"></i>
-          <span>Overview &amp; Switches</span>
+      <!-- Navigation Section -->
+      <div class="px-space-md py-space-sm">
+        <div class="px-space-sm py-space-xs font-label-sm text-label-sm text-slate-400 font-bold uppercase tracking-wider">
+          Festival Ops
+        </div>
+      </div>
+
+      <nav class="flex-1 px-space-md space-y-space-xs">
+        <button type="button" aria-current="page" class="nav-item flex items-center gap-space-md px-space-md py-space-sm transition-all duration-200 group bg-red-600 text-white font-label-lg font-bold rounded-xl shadow-md shadow-red-600/25 w-full text-left active" data-tab="overview">
+          <span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">space_dashboard</span>
+          <span class="font-label-lg text-label-lg">Overview</span>
         </button>
 
-        <button class="nav-item" data-tab="announcements">
-          <i data-lucide="megaphone"></i>
-          <span>Site &amp; Announcements</span>
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="events">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">calendar_month</span>
+          <span class="font-label-lg text-label-lg">Programmes &amp; Schedule</span>
         </button>
 
-        <button class="nav-item" data-tab="events">
-          <i data-lucide="calendar-days"></i>
-          <span>Events &amp; Schedule</span>
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="registrations">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">groups_3</span>
+          <span class="font-label-lg text-label-lg">Teams &amp; Participants</span>
+          <span id="badge-pending-count" class="ml-auto px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800" style="display:none">0</span>
         </button>
 
-        <button class="nav-item" data-tab="registrations">
-          <i data-lucide="users"></i>
-          <span>Registrations</span>
-          <span class="nav-badge" id="badge-pending-count">0</span>
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="announcements">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">podium</span>
+          <span class="font-label-lg text-label-lg">Live Broadcasts &amp; Stages</span>
         </button>
 
-        <button class="nav-item" data-tab="checkin">
-          <i data-lucide="scan-line"></i>
-          <span>Venue Check-In Desk</span>
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="checkin">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">badge</span>
+          <span class="font-label-lg text-label-lg">Passes &amp; Accreditation</span>
         </button>
 
-        <button class="nav-item" data-tab="winners">
-          <i data-lucide="trophy"></i>
-          <span>Results &amp; Winners</span>
+        <div class="pt-space-md pb-space-xs">
+          <div class="px-space-sm py-space-xs font-label-sm text-label-sm text-slate-400 font-bold uppercase tracking-wider">
+            System
+          </div>
+        </div>
+
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="winners">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">emoji_events</span>
+          <span class="font-label-lg text-label-lg">Results &amp; Podium</span>
+        </button>
+
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="settings">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">tune</span>
+          <span class="font-label-lg text-label-lg">Emergency &amp; Settings</span>
         </button>
       </nav>
+    </div>
 
-      <div class="sidebar-footer">
-        <div class="cloud-pill">
-          <span class="cloud-dot" id="cloud-indicator-dot"></span>
-          <span id="cloud-indicator-text">Connecting...</span>
+    <!-- Live Telemetry Status & Cloud Indicator -->
+    <div class="p-space-md m-space-md bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div class="flex items-center justify-between mb-space-xs">
+        <span class="font-label-sm text-label-sm text-slate-600 font-medium">Festival Live Status</span>
+        <span class="inline-flex items-center gap-1.5 px-space-sm py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-label-sm text-label-sm font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+          Live Phase
+        </span>
+      </div>
+      <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+        <div class="bg-red-600 h-full w-4/5 rounded-full"></div>
+      </div>
+      <div class="flex items-center justify-between mt-space-xs font-label-sm text-label-sm text-slate-500">
+        <span>Day 3 of 5</span>
+        <span class="font-semibold text-slate-700">80% Sync</span>
+      </div>
+      <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <span id="cloud-indicator-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="cloud-indicator-text" class="text-[11px] font-medium truncate ml-1.5 flex-1">Supabase Cloud</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= 3. TOP FIXED HEADER ================= -->
+  <div class="md:pl-72">
+    <header class="fixed top-0 left-0 md:left-72 right-0 h-20 bg-white/95 backdrop-blur-md z-40 border-b border-slate-200 shadow-sm">
+      <div class="h-20 w-full px-6 md:px-8 flex items-center justify-between gap-space-lg">
+        
+        <!-- Mobile Toggle & Search Input -->
+        <div class="flex items-center gap-3 flex-1 max-w-md">
+          <button id="mobile-menu-toggle" class="md:hidden w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
+            <span class="material-symbols-outlined text-[24px]">menu</span>
+          </button>
+          <div class="relative flex-1 flex items-center">
+            <span class="material-symbols-outlined absolute left-space-md text-slate-400 pointer-events-none text-[20px]">search</span>
+            <input id="global-search-input" class="w-full h-11 pl-11 pr-space-md bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 font-body-md text-body-md rounded-xl focus:outline-none focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all" placeholder="Search artists, panels, stages, passes..." type="text"/>
+          </div>
+        </div>
+
+        <!-- Header Actions & Profile -->
+        <div class="flex items-center gap-space-md">
+          <div class="flex items-center gap-space-xs">
+            <a href="index.html" target="_blank" class="h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-1.5 transition-colors text-xs font-semibold" title="View Public Front Page">
+              <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+              <span class="hidden sm:inline">Live Site</span>
+            </a>
+
+            <button aria-label="Festival Status Alerts" class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors relative" type="button" onclick="window.switchTab('announcements')">
+              <span class="material-symbols-outlined text-[20px]">notifications</span>
+              <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-600 ring-2 ring-white"></span>
+            </button>
+
+            <button aria-label="Broadcast Hub" class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors" type="button" onclick="window.switchTab('announcements')">
+              <span class="material-symbols-outlined text-[20px]">cast</span>
+            </button>
+          </div>
+
+          <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+
+          <!-- Festival Director Profile -->
+          <div class="flex items-center gap-space-sm pl-space-xs">
+            <div class="flex flex-col text-right hidden sm:flex">
+              <span class="font-label-lg text-label-lg text-slate-900 font-semibold leading-tight">Dr. Tariq Al-Sayed</span>
+              <span class="font-label-sm text-label-sm text-red-600 font-medium leading-tight">Chief Festival Director</span>
+            </div>
+            <div class="w-9 h-9 rounded-full bg-red-50 text-red-700 border-2 border-red-200 flex items-center justify-center font-bold text-xs shadow-sm flex-shrink-0">
+              <span class="material-symbols-outlined text-[18px]">account_circle</span>
+            </div>
+            <button id="btn-signout" class="w-8 h-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors" title="Sign Out">
+              <span class="material-symbols-outlined text-[18px]">logout</span>
+            </button>
+          </div>
         </div>
       </div>
-    </aside>
+    </header>
 
-    <!-- Main Content Area -->
-    <div class="main-wrapper">
-      
-      <!-- Top Status Header -->
-      <header class="top-bar">
-        <div class="top-bar-left">
-          <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Toggle Menu">
-            <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
-          </button>
-          <div class="page-title">
-            <h2 id="current-tab-heading">Dashboard Overview</h2>
-          </div>
-        </div>
+    <!-- ================= 4. MAIN CONTENT CONTAINER ================= -->
+    <main class="w-full pt-20 px-6 md:px-8 pb-12 bg-[#F8FAFC] min-h-screen">
 
-        <div class="top-bar-right">
-          <a href="index.html" target="_blank" class="btn-view-site">
-            <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
-            <span>View Live Site</span>
-          </a>
+      <!-- ================= TAB 1: OVERVIEW & LIVE CONTROL HUB ================= -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
 
-          <button id="btn-signout" class="btn-signout">
-            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- Content Area -->
-      <main class="content-area">
-
-        <!-- ================= TAB 1: OVERVIEW & MASTER SWITCHES ================= -->
-        <section id="tab-overview" class="tab-pane active">
-          
-          <!-- Emergency Switches Box -->
-          <div class="emergency-box">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="sliders" style="color: var(--fest-orange); width: 20px; height: 20px;"></i>
-                <h3 style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: var(--fest-dark);">
-                  Master Emergency Controls
-                </h3>
+          <!-- Top Banner / Header Greeting & Quick Actions -->
+          <div class="relative overflow-hidden rounded-xl bg-white border border-slate-200/90 p-space-lg shadow-sm">
+            <div class="absolute -right-16 -top-16 w-80 h-80 rounded-full bg-red-500/5 blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-12 -bottom-12 w-64 h-64 rounded-full bg-amber-500/5 blur-2xl pointer-events-none"></div>
+            
+            <div class="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-space-lg">
+              <div class="flex items-start md:items-center gap-space-lg">
+                <div class="relative flex-shrink-0 w-20 h-20 rounded-xl bg-red-50 border border-red-200 p-2 flex items-center justify-center overflow-hidden shadow-sm">
+                  <div class="w-full h-full rounded-lg bg-red-600/10 flex flex-col items-center justify-center text-red-700">
+                    <span class="material-symbols-outlined text-[28px]">museum</span>
+                    <span class="font-label-sm text-[9px] font-extrabold uppercase tracking-tight mt-0.5">AL MURAFAQA</span>
+                  </div>
+                </div>
+                <div class="flex flex-col">
+                  <div class="flex flex-wrap items-center gap-space-sm mb-1">
+                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-red-700 font-bold px-2.5 py-0.5 rounded-full bg-red-50 border border-red-200">
+                      Quinta Edición • 5th Edition
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-label-sm text-label-sm">
+                      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                      Day 3 of 5 In Progress
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-label-sm text-label-sm">
+                      <span class="material-symbols-outlined text-[14px]">cell_tower</span>
+                      Central Systems Operational
+                    </span>
+                  </div>
+                  <h1 class="font-headline-lg text-headline-lg text-slate-900 tracking-tight font-bold">
+                    Festival Operations &amp; Control Hub
+                  </h1>
+                  <p class="font-body-md text-body-md text-slate-600 mt-0.5">
+                    Real-time telemetry, stage streaming feeds, and delegate movement telemetry for Cordoba &amp; Granada venues.
+                  </p>
+                </div>
               </div>
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--fest-orange); text-transform: uppercase;">
-                Instant Broadcast
-              </span>
+
+              <!-- Quick Action Buttons -->
+              <div class="flex flex-wrap items-center gap-space-sm">
+                <button id="btn-quick-new-programme" class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-red-600 text-white font-label-lg text-label-lg shadow-sm hover:bg-red-700 active:scale-95 transition-all" type="button">
+                  <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                  <span>New Programme</span>
+                </button>
+                <button id="btn-quick-scan-pass" class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-label-lg text-label-lg hover:bg-slate-50 transition-colors shadow-sm" type="button">
+                  <span class="material-symbols-outlined text-[18px] text-slate-500">qr_code_scanner</span>
+                  <span>Scan Pass</span>
+                </button>
+                <button id="btn-quick-broadcast" class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-label-lg text-label-lg hover:bg-slate-50 transition-colors shadow-sm" type="button">
+                  <span class="material-symbols-outlined text-[18px] text-slate-500">campaign</span>
+                  <span>Broadcast Notice</span>
+                </button>
+                <button id="btn-quick-export" class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm" title="Export Daily Operational Ledger" type="button">
+                  <span class="material-symbols-outlined text-[20px]">download</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Executive Metrics KPI Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md">
+            <!-- Active Delegations -->
+            <div class="bg-white border border-slate-200/90 p-space-md rounded-xl shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 mb-space-sm">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Active Delegations</span>
+                <div class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">flag</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-baseline gap-space-xs">
+                  <span id="stat-total-regs" class="font-headline-lg text-headline-lg text-slate-900 font-bold">64</span>
+                  <span class="font-label-sm text-label-sm text-emerald-600 font-semibold">+12% vs Ed. 4</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-slate-500 mt-1">Total registered cohorts</p>
+              </div>
+              <div class="mt-space-sm w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                <div class="bg-red-600 h-full w-[94%] rounded-full"></div>
+              </div>
             </div>
 
-            <div class="emergency-grid">
-              <div class="switch-card">
-                <div class="switch-info">
-                  <h4>Registrations Master</h4>
-                  <p id="label-reg-status">Accepting registrations</p>
+            <!-- Total Participants -->
+            <div class="bg-white border border-slate-200/90 p-space-md rounded-xl shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 mb-space-sm">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Total Participants</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">groups</span>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="switch-registrations" checked>
-                  <span class="slider"></span>
+              </div>
+              <div>
+                <div class="flex items-baseline gap-space-xs">
+                  <span id="stat-total-participants" class="font-headline-lg text-headline-lg text-slate-900 font-bold">1,480</span>
+                  <span class="font-label-sm text-label-sm text-slate-500">Artists &amp; Crew</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-slate-500 mt-1">92% badged &amp; active</p>
+              </div>
+              <div class="mt-space-sm w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                <div class="bg-amber-500 h-full w-[92%] rounded-full"></div>
+              </div>
+            </div>
+
+            <!-- Scheduled Programmes -->
+            <div class="bg-white border border-slate-200/90 p-space-md rounded-xl shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 mb-space-sm">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Programme Tracks</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">theater_comedy</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-baseline gap-space-xs">
+                  <span id="stat-total-programmes" class="font-headline-lg text-headline-lg text-slate-900 font-bold">48</span>
+                  <span class="font-label-sm text-label-sm text-indigo-600 font-medium">5 Core Tracks</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-slate-500 mt-1">Curated festival events</p>
+              </div>
+              <div class="mt-space-sm w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                <div class="bg-indigo-500 h-full w-2/3 rounded-full"></div>
+              </div>
+            </div>
+
+            <!-- Global Broadcast & Revenue -->
+            <div class="bg-white border border-slate-200/90 p-space-md rounded-xl shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 mb-space-sm">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Verified Revenue</span>
+                <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">currency_rupee</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-baseline gap-space-xs">
+                  <span id="stat-total-revenue" class="font-headline-lg text-headline-lg text-red-600 font-bold">₹0</span>
+                  <span class="font-label-sm text-label-sm text-red-600 font-semibold">Approved</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-slate-500 mt-1"><span id="stat-pending-payments" class="font-bold text-amber-600">0</span> pending approvals</p>
+              </div>
+              <div class="mt-space-sm w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                <div class="bg-red-600 h-full w-[84%] rounded-full animate-pulse"></div>
+              </div>
+            </div>
+
+            <!-- Passes & Accreditation Breakdown -->
+            <div class="bg-white border border-slate-200/90 p-space-md rounded-xl shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-colors">
+              <div class="flex items-center justify-between text-slate-500 mb-space-sm">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Issued Passes</span>
+                <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">badge</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-baseline gap-space-xs">
+                  <span id="stat-checkedin-count" class="font-headline-lg text-headline-lg text-slate-900 font-bold">0</span>
+                  <span class="font-label-sm text-label-sm text-teal-700 font-medium">Checked-In</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-slate-500 mt-1">Grounds entrance admitted</p>
+              </div>
+              <div class="mt-space-sm w-full bg-slate-100 h-1 rounded-full overflow-hidden flex">
+                <div class="bg-amber-500 h-full w-[14%]" title="VIP"></div>
+                <div class="bg-teal-500 h-full w-[74%]" title="Standard"></div>
+                <div class="bg-red-500 h-full w-[12%]" title="Media"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Emergency Master Switches (Quick Accessible Bar) -->
+          <div class="bg-white border border-slate-200/90 rounded-xl p-space-md shadow-sm">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-red-600 text-[20px]">toggle_on</span>
+                <h3 class="font-headline-sm text-base font-bold text-slate-900">Master Emergency Operations Switches</h3>
+              </div>
+              <span class="text-xs uppercase font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">Instant Broadcast</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 class="font-label-lg font-semibold text-slate-900 text-sm">Registrations Master</h4>
+                  <p id="label-reg-status" class="text-xs text-emerald-600 font-medium">Accepting registrations</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="switch-registrations" class="sr-only peer" checked>
+                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
-              <div class="switch-card">
-                <div class="switch-info">
-                  <h4>Live Announcement Marquee</h4>
-                  <p id="label-ticker-status">Ticker active on front page</p>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 class="font-label-lg font-semibold text-slate-900 text-sm">Live Announcement Marquee</h4>
+                  <p id="label-ticker-status" class="text-xs text-slate-600 font-medium">Ticker active on front page</p>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="switch-ticker" checked>
-                  <span class="slider"></span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="switch-ticker" class="sr-only peer" checked>
+                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
 
-              <div class="switch-card">
-                <div class="switch-info">
-                  <h4>Maintenance Mode</h4>
-                  <p id="label-maint-status">Site operates normally</p>
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 class="font-label-lg font-semibold text-slate-900 text-sm">Maintenance Mode</h4>
+                  <p id="label-maint-status" class="text-xs text-slate-500 font-medium">Site operates normally</p>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="switch-maintenance">
-                  <span class="slider"></span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="switch-maintenance" class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                 </label>
               </div>
             </div>
           </div>
 
-          <!-- Live Stats Cards -->
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon red">
-                <i data-lucide="users"></i>
+          <!-- Live Stage & Hall Management Monitor -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+            
+            <!-- Active Stage Stream Focus (8 cols) -->
+            <div class="lg:col-span-8 flex flex-col bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-sm">
+              <div class="p-space-md bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-space-sm">
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                  <h2 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Live Transmission Deck</h2>
+                  <span class="px-2.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-label-sm text-label-sm font-semibold">
+                    Primary Feed 01
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-500 font-label-sm text-label-sm font-medium">
+                  <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> 1080p60 Stable</span>
+                  <span>•</span>
+                  <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[15px] text-slate-400">graphic_eq</span> -12dB Clean</span>
+                </div>
               </div>
-              <div class="stat-content">
-                <span class="stat-label">Total Registrations</span>
-                <span class="stat-value" id="stat-total-regs">0</span>
-                <span class="stat-desc">Across all competitions</span>
+
+              <!-- Feed Container: Vector/Telemetry-based visual representation -->
+              <div class="relative w-full aspect-video bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 overflow-hidden group flex flex-col justify-between p-space-lg text-white">
+                <div class="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]"></div>
+                
+                <!-- SVG Stage Telemetry / Audio Waveform Visualizer -->
+                <div class="absolute inset-x-0 top-1/3 -translate-y-1/2 flex items-center justify-center opacity-30 pointer-events-none">
+                  <div class="flex items-end gap-1.5 h-28 w-4/5 justify-between">
+                    <span class="w-1.5 bg-red-500 rounded-full h-8 animate-pulse"></span>
+                    <span class="w-1.5 bg-red-400 rounded-full h-16 animate-pulse" style="animation-delay: 150ms"></span>
+                    <span class="w-1.5 bg-amber-400 rounded-full h-24 animate-pulse" style="animation-delay: 300ms"></span>
+                    <span class="w-1.5 bg-amber-300 rounded-full h-14 animate-pulse" style="animation-delay: 75ms"></span>
+                    <span class="w-1.5 bg-red-400 rounded-full h-28 animate-pulse" style="animation-delay: 200ms"></span>
+                    <span class="w-1.5 bg-red-500 rounded-full h-20 animate-pulse" style="animation-delay: 400ms"></span>
+                    <span class="w-1.5 bg-amber-400 rounded-full h-12 animate-pulse" style="animation-delay: 100ms"></span>
+                    <span class="w-1.5 bg-red-400 rounded-full h-20 animate-pulse" style="animation-delay: 250ms"></span>
+                    <span class="w-1.5 bg-red-500 rounded-full h-24 animate-pulse" style="animation-delay: 350ms"></span>
+                    <span class="w-1.5 bg-amber-300 rounded-full h-10 animate-pulse" style="animation-delay: 180ms"></span>
+                    <span class="w-1.5 bg-red-400 rounded-full h-28 animate-pulse" style="animation-delay: 220ms"></span>
+                    <span class="w-1.5 bg-red-500 rounded-full h-16 animate-pulse" style="animation-delay: 320ms"></span>
+                    <span class="w-1.5 bg-amber-400 rounded-full h-24 animate-pulse" style="animation-delay: 120ms"></span>
+                    <span class="w-1.5 bg-red-400 rounded-full h-14 animate-pulse" style="animation-delay: 280ms"></span>
+                    <span class="w-1.5 bg-red-500 rounded-full h-8 animate-pulse" style="animation-delay: 60ms"></span>
+                  </div>
+                </div>
+
+                <!-- Central Stage Symbol Emblem -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="w-24 h-24 rounded-full border border-red-500/30 flex items-center justify-center bg-red-500/10 backdrop-blur-sm shadow-[0_0_30px_rgba(220,38,38,0.2)]">
+                    <span class="material-symbols-outlined text-[48px] text-red-400">podium</span>
+                  </div>
+                </div>
+
+                <div class="relative z-10 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-lg bg-red-600 text-white font-label-sm text-label-sm font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md">
+                      <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                      On Air • Stage 01
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700 backdrop-blur-md text-slate-200 font-label-sm text-label-sm">
+                      Gran Domo Andalusí
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 backdrop-blur-md text-slate-200 text-label-sm font-label-sm hover:bg-slate-700 flex items-center gap-1 transition-colors">
+                      <span class="material-symbols-outlined text-[16px] text-red-400">videocam</span> Cam 2 (Wide Crane)
+                    </button>
+                    <button class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700 backdrop-blur-md text-slate-200 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                      <span class="material-symbols-outlined text-[18px]">fullscreen</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-space-md bg-gradient-to-t from-slate-950 via-slate-900/90 to-transparent pt-8 pb-1 px-1 -mx-1">
+                  <div>
+                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-red-400 font-semibold">Poetry &amp; Classical Oud Ensemble</span>
+                    <h3 class="font-headline-md text-headline-md text-white drop-shadow-sm mt-0.5 font-bold">
+                      Recital de Poesía Mística &amp; Qurtuba: Ecos de Ziryab
+                    </h3>
+                    <p class="font-body-sm text-body-sm text-slate-300 flex items-center gap-2 mt-1">
+                      <span>Conductor: Maestro Tariq Al-Mansoor</span>
+                      <span>•</span>
+                      <span>Remaining: 42m 18s</span>
+                      <span>•</span>
+                      <span class="text-amber-400 font-medium">Live Audience: 420 / 450 Hall Capacity</span>
+                    </p>
+                  </div>
+                  <!-- Quick Broadcast Controls -->
+                  <div class="flex items-center gap-space-xs bg-slate-900/90 border border-slate-700/80 backdrop-blur-md p-1.5 rounded-xl shadow-lg">
+                    <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-label-sm font-label-sm flex items-center gap-1 transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">pause</span> Mute Deck
+                    </button>
+                    <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-label-sm font-label-sm flex items-center gap-1 transition-colors">
+                      <span class="material-symbols-outlined text-[16px]">swap_horiz</span> Next Cam
+                    </button>
+                    <button class="px-3 py-1.5 rounded-lg bg-red-600 text-white text-label-sm font-label-sm font-semibold flex items-center gap-1 shadow-sm hover:bg-red-700 transition-all" onclick="window.switchTab('announcements')">
+                      <span class="material-symbols-outlined text-[16px]">podium</span> Push Alert
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Secondary Venue Monitors -->
+              <div class="grid grid-cols-1 md:grid-cols-2 p-space-md gap-space-md bg-slate-50 border-t border-slate-200">
+                <!-- Stage 2 -->
+                <div class="flex items-center gap-space-md p-space-sm rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div class="relative w-28 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-amber-600">
+                    <span class="material-symbols-outlined text-[30px]">brush</span>
+                    <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/90 border border-slate-200 text-slate-700">STAGE 02</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mt-1">Sala Ámbar</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="font-label-sm text-label-sm text-amber-700 font-bold truncate">Sala Ámbar</span>
+                      <span class="font-label-sm text-label-sm text-slate-500 font-medium">35/40 seats</span>
+                    </div>
+                    <h4 class="font-headline-sm text-headline-sm text-slate-900 truncate text-sm mt-0.5 font-bold">Taller Maestro: Tinta Nogalina</h4>
+                    <p class="font-body-sm text-body-sm text-slate-500 truncate">Khaled Mouline • Starts 21:30</p>
+                    <div class="mt-1 flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                      <span class="font-label-sm text-label-sm text-slate-600 font-medium">Doors Open in 12m</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="flex items-center gap-space-md p-space-sm rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div class="relative w-28 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-200 flex flex-col items-center justify-center text-teal-600">
+                    <span class="material-symbols-outlined text-[30px]">history_edu</span>
+                    <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/90 border border-slate-200 text-slate-700">STAGE 03</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700 mt-1">Patio Mayor</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <span class="font-label-sm text-label-sm text-teal-700 font-bold truncate">Patio Mayor</span>
+                      <span class="font-label-sm text-label-sm text-slate-500 font-medium">Soundcheck Complete</span>
+                    </div>
+                    <h4 class="font-headline-sm text-headline-sm text-slate-900 truncate text-sm mt-0.5 font-bold">Coloquio Andalusí: Geometrías</h4>
+                    <p class="font-body-sm text-body-sm text-slate-500 truncate">Panel de Investigación • Starts 22:00</p>
+                    <div class="mt-1 flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span class="font-label-sm text-label-sm text-slate-600 font-medium">Tech Crew Ready</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="stat-card">
-              <div class="stat-icon gold">
-                <i data-lucide="indian-rupee"></i>
-              </div>
-              <div class="stat-content">
-                <span class="stat-label">Verified Revenue</span>
-                <span class="stat-value" id="stat-total-revenue">₹0</span>
-                <span class="stat-desc">Approved UPI entries</span>
-              </div>
-            </div>
+            <!-- Live Accreditation & Access Feed (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col bg-white border border-slate-200/90 rounded-xl p-space-md shadow-sm justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-space-md">
+                  <div class="flex items-center gap-space-xs">
+                    <div class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
+                    <h3 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Gate Telemetry</h3>
+                  </div>
+                  <span class="font-label-sm text-label-sm text-red-600 font-bold cursor-pointer hover:underline" onclick="window.switchTab('checkin')">Scan Log (Live)</span>
+                </div>
 
-            <div class="stat-card">
-              <div class="stat-icon orange">
-                <i data-lucide="clock"></i>
-              </div>
-              <div class="stat-content">
-                <span class="stat-label">Pending Approval</span>
-                <span class="stat-value" id="stat-pending-payments">0</span>
-                <span class="stat-desc">Awaiting verification</span>
-              </div>
-            </div>
+                <!-- Check-in Activity Stream -->
+                <div class="space-y-space-sm" id="overview-telemetry-stream">
+                  <!-- Item 1 -->
+                  <div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-space-sm min-w-0">
+                      <div class="w-9 h-9 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        SB
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-label-lg text-label-lg text-slate-900 truncate font-semibold">Sofia Benali</span>
+                        <span class="font-label-sm text-label-sm text-slate-500 truncate">ALM-5829 • Gran Domo Gate A</span>
+                      </div>
+                    </div>
+                    <div class="flex flex-col items-end flex-shrink-0">
+                      <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">VIP PASS</span>
+                      <span class="font-label-sm text-label-sm text-slate-400 mt-0.5">Just now</span>
+                    </div>
+                  </div>
 
-            <div class="stat-card">
-              <div class="stat-icon blue">
-                <i data-lucide="user-check"></i>
+                  <!-- Item 2 -->
+                  <div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-space-sm min-w-0">
+                      <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        RB
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-label-lg text-label-lg text-slate-900 truncate font-semibold">Dra. Rania Benjelloun</span>
+                        <span class="font-label-sm text-label-sm text-slate-500 truncate">ALM-1044 • Sala Ámbar North</span>
+                      </div>
+                    </div>
+                    <div class="flex flex-col items-end flex-shrink-0">
+                      <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">MASTER ARTIST</span>
+                      <span class="font-label-sm text-label-sm text-slate-400 mt-0.5">2m ago</span>
+                    </div>
+                  </div>
+
+                  <!-- Item 3 -->
+                  <div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-space-sm min-w-0">
+                      <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        EH
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-label-lg text-label-lg text-slate-900 truncate font-semibold">Emilio Heredia</span>
+                        <span class="font-label-sm text-label-sm text-slate-500 truncate">ALM-3419 • Press Media Wing</span>
+                      </div>
+                    </div>
+                    <div class="flex flex-col items-end flex-shrink-0">
+                      <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">MEDIA CREW</span>
+                      <span class="font-label-sm text-label-sm text-slate-400 mt-0.5">5m ago</span>
+                    </div>
+                  </div>
+
+                  <!-- Item 4 -->
+                  <div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center gap-space-sm min-w-0">
+                      <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        MK
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-label-lg text-label-lg text-slate-900 truncate font-semibold">Manar Al-Khatib</span>
+                        <span class="font-label-sm text-label-sm text-slate-500 truncate">ALM-8812 • Patio Mayor West</span>
+                      </div>
+                    </div>
+                    <div class="flex flex-col items-end flex-shrink-0">
+                      <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">STANDARD</span>
+                      <span class="font-label-sm text-label-sm text-slate-400 mt-0.5">8m ago</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Delegations Representation Summary -->
+                <div class="mt-space-md pt-space-md bg-slate-50 border border-slate-200 rounded-xl p-space-sm">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-slate-500 font-bold">Delegation Ingress</span>
+                    <span class="font-label-sm text-label-sm text-red-600 font-bold">60 / 64 Ready</span>
+                  </div>
+                  <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="text-slate-600 font-medium">Andalucía &amp; Levante</span>
+                      <span class="text-slate-900 font-bold">100% Present</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div class="bg-red-600 h-full w-full"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs mt-2">
+                      <span class="text-slate-600 font-medium">Fez &amp; Maghreb Guilds</span>
+                      <span class="text-slate-900 font-bold">96% Present</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div class="bg-red-500 h-full w-[96%]"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs mt-2">
+                      <span class="text-slate-600 font-medium">Kerala &amp; Indian Ocean Scribes</span>
+                      <span class="text-slate-900 font-bold">88% Present</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                      <div class="bg-amber-500 h-full w-[88%]"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="stat-content">
-                <span class="stat-label">Venue Checked-In</span>
-                <span class="stat-value" id="stat-checkedin-count">0</span>
-                <span class="stat-desc">Admitted at grounds</span>
+
+              <!-- Quick Action for Accreditation Desk -->
+              <div class="mt-space-md pt-space-sm flex items-center gap-space-sm">
+                <button class="flex-1 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-label-md text-label-md text-center font-semibold transition-colors" onclick="window.switchTab('checkin')">
+                  Security Incident Log (0)
+                </button>
+                <button class="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-all shadow-sm" onclick="window.switchTab('checkin')">
+                  <span class="material-symbols-outlined text-[20px]">badge</span>
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Event Capacity Gauges -->
-          <div class="capacity-card">
-            <div class="section-header" style="margin-bottom: 16px;">
-              <h3>Event Capacity &amp; Slot Saturation</h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time participant limits</span>
-            </div>
-            <div id="capacity-bars-container">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-        </section>
+          <!-- Real-Time Programme Schedule & Room Operations -->
+          <div class="bg-white border border-slate-200/90 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-space-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-md border-b border-slate-200">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="font-headline-md text-headline-md text-slate-900 font-bold">Programme Schedule Operations</h2>
+                  <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-label-sm text-label-sm font-semibold">
+                    Day 3 • Evening Segment
+                  </span>
+                </div>
+                <p class="font-body-md text-body-md text-slate-500 mt-0.5">
+                  Live stage synchronization, time tracking, and room occupancy rates across all festival venues.
+                </p>
+              </div>
 
-        <!-- ================= TAB 2: SITE & LIVE ANNOUNCEMENTS ================= -->
-        <section id="tab-announcements" class="tab-pane">
-          <div class="section-header">
-            <div>
-              <h3>Site Settings &amp; Global Broadcasts</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Manage payment coordinates, helpline, and live banner alerts</p>
+              <!-- Filtering Chips -->
+              <div class="flex flex-wrap items-center gap-1.5">
+                <button class="px-3 py-1.5 rounded-xl bg-red-600 text-white font-label-sm text-label-sm font-semibold shadow-sm" onclick="window.filterOverviewSchedule('all', this)">
+                  All Tracks
+                </button>
+                <button class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-label-sm text-label-sm transition-colors" onclick="window.filterOverviewSchedule('Calligraphy', this)">
+                  Calligraphy
+                </button>
+                <button class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-label-sm text-label-sm transition-colors" onclick="window.filterOverviewSchedule('Poetry', this)">
+                  Poetry &amp; Music
+                </button>
+                <button class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-label-sm text-label-sm transition-colors" onclick="window.filterOverviewSchedule('Masterclass', this)">
+                  Masterclasses
+                </button>
+                <button class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-label-sm text-label-sm transition-colors" onclick="window.filterOverviewSchedule('Architecture', this)">
+                  Architecture
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- Settings Form Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 32px;">
-            <!-- UPI & Support Card -->
-            <div class="table-card" style="padding: 24px;">
-              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
-                Festival Payment &amp; Support Coordinates
+            <!-- Operations Table -->
+            <div class="w-full overflow-x-auto">
+              <table class="w-full text-left font-body-md text-body-md">
+                <thead class="bg-slate-50 border-b border-slate-200 font-label-sm text-label-sm text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th class="py-3.5 px-space-lg">Time &amp; Track</th>
+                    <th class="py-3.5 px-space-md">Programme Title</th>
+                    <th class="py-3.5 px-space-md">Venue / Hall</th>
+                    <th class="py-3.5 px-space-md">Category / Masters</th>
+                    <th class="py-3.5 px-space-md">Status</th>
+                    <th class="py-3.5 px-space-md">Occupancy</th>
+                    <th class="py-3.5 px-space-lg text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-programmes-table-body" class="divide-y divide-slate-200">
+                  <!-- Dynamically populated from cachedEvents -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Capacity saturation container for full detailed breakdown -->
+            <div class="p-space-lg bg-slate-50 border-t border-slate-200">
+              <h4 class="font-label-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-red-600">bar_chart</span>
+                Event Slot Saturation Breakdown
               </h4>
-              <form id="settings-form" style="display: flex; flex-direction: column; gap: 16px;">
-                <div class="form-group">
-                  <label for="setting-upi">Festival Official UPI ID</label>
-                  <input type="text" id="setting-upi" class="form-input" placeholder="almurafaqa@upi" required>
+              <div id="capacity-bars-container" class="space-y-2">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Table Footer / Pagination -->
+            <div class="p-space-md bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+              <span id="overview-schedule-count" class="font-label-sm text-label-sm text-slate-500">
+                Showing all curated festival programmes across active hall spaces
+              </span>
+              <div class="flex items-center gap-2">
+                <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm">
+                  Day 1
+                </button>
+                <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm">
+                  Day 2
+                </button>
+                <span class="font-label-sm text-label-sm text-red-600 font-bold px-2">Day 3 (Active)</span>
+                <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm">
+                  Day 4
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Ancillary Controls: System Health & Stage Dispatch -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md pb-space-lg">
+            <!-- Broadcast Distribution Engine -->
+            <div class="p-space-md bg-white border border-slate-200/90 rounded-xl shadow-sm flex items-center justify-between">
+              <div class="flex items-center gap-space-sm">
+                <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[20px]">router</span>
                 </div>
-                <div class="form-group">
-                  <label for="setting-phone">Support Helpline Phone</label>
-                  <input type="text" id="setting-phone" class="form-input" placeholder="+91 98765 43210" required>
+                <div>
+                  <h4 class="font-label-lg text-label-lg text-slate-900 font-semibold">CDN &amp; Transcode Cluster</h4>
+                  <p class="font-body-sm text-body-sm text-slate-500">0.24s Latency • Paris / Madrid Edge</p>
                 </div>
-                <div class="form-group">
-                  <label for="setting-ticker">Live Marquee Ticker Announcement</label>
-                  <textarea id="setting-ticker" class="form-input" rows="3" placeholder="Scrolling text on front page..."></textarea>
+              </div>
+              <span class="w-2.5 h-2.5 rounded-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.5)]"></span>
+            </div>
+
+            <!-- Master Audio Level -->
+            <div class="p-space-md bg-white border border-slate-200/90 rounded-xl shadow-sm flex items-center justify-between">
+              <div class="flex items-center gap-space-sm">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[20px]">equalizer</span>
                 </div>
-                <button type="submit" class="btn-primary" style="align-self: flex-start;">
-                  <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                <div>
+                  <h4 class="font-label-lg text-label-lg text-slate-900 font-semibold">Stage Sound Matrix</h4>
+                  <p class="font-body-sm text-body-sm text-slate-500">Gran Domo: 86 dBA (Optimal)</p>
+                </div>
+              </div>
+              <span class="font-label-sm text-label-sm text-amber-700 font-bold px-2 py-0.5 rounded bg-amber-50 border border-amber-200">PEAK OK</span>
+            </div>
+
+            <!-- Emergency Protocol Dispatch -->
+            <div class="p-space-md bg-white border border-slate-200/90 rounded-xl shadow-sm flex items-center justify-between">
+              <div class="flex items-center gap-space-sm">
+                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[20px]">verified_user</span>
+                </div>
+                <div>
+                  <h4 class="font-label-lg text-label-lg text-slate-900 font-semibold">Safety &amp; Evac Protocol</h4>
+                  <p class="font-body-sm text-body-sm text-slate-500">All Exits Monitored &amp; Free</p>
+                </div>
+              </div>
+              <span class="font-label-sm text-label-sm text-teal-700 font-bold px-2 py-0.5 rounded bg-teal-50 border border-teal-200">ACTIVE</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: PROGRAMMES & SCHEDULE MANAGER ================= -->
+      <section id="tab-events" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div>
+              <h2 class="font-headline-md text-2xl font-bold text-slate-900">Cultural Tracks &amp; Competitions Manager</h2>
+              <p class="text-sm text-slate-500 mt-0.5">Configure schedules, maximum capacity, registration fees, and prize pools</p>
+            </div>
+            <button id="btn-open-add-event" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
+              <span class="material-symbols-outlined text-[20px]">add_circle</span>
+              <span>Add New Programme</span>
+            </button>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="relative w-full md:w-80">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">search</span>
+              <input type="text" id="events-search-input" class="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="Search programmes, categories, halls..."/>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+              <select id="events-status-filter" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-red-500">
+                <option value="all">All Statuses</option>
+                <option value="open">Open</option>
+                <option value="closing_soon">Closing Soon</option>
+                <option value="full">Full</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Events Table -->
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th class="py-3.5 px-6">Competition Title</th>
+                    <th class="py-3.5 px-4">Category</th>
+                    <th class="py-3.5 px-4">Schedule &amp; Venue</th>
+                    <th class="py-3.5 px-4">Fee &amp; Prize</th>
+                    <th class="py-3.5 px-4">Capacity Gauge</th>
+                    <th class="py-3.5 px-4 text-center">Featured</th>
+                    <th class="py-3.5 px-4">Status</th>
+                    <th class="py-3.5 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="events-table-body" class="divide-y divide-slate-200">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: TEAMS & PARTICIPANTS / REGISTRATIONS DESK ================= -->
+      <section id="tab-registrations" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div>
+              <h2 class="font-headline-md text-2xl font-bold text-slate-900">Teams &amp; Participants Desk</h2>
+              <p class="text-sm text-slate-500 mt-0.5">Verify UPI payment references, inspect full rosters, and register on-spot walk-ins</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button id="btn-open-onspot-modal" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                <span>+ On-Spot Walk-In</span>
+              </button>
+              <button id="btn-export-csv" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm transition-colors" type="button">
+                <span class="material-symbols-outlined text-[18px] text-slate-500">download</span>
+                <span>Download CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Registrations Filter Toolbar -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="relative w-full md:w-96">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">search</span>
+              <input type="text" id="reg-search-input" class="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="Search by Ticket Code, Name, Phone, College, UPI Ref..."/>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <select id="reg-status-filter" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-red-500">
+                <option value="all">All Payment Statuses</option>
+                <option value="pending">Pending Approval</option>
+                <option value="verified">Verified</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select id="reg-event-filter" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-red-500">
+                <option value="all">All Competitions</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Registrations Table -->
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th class="py-3.5 px-6">Ticket Code</th>
+                    <th class="py-3.5 px-4">Participant / Leader</th>
+                    <th class="py-3.5 px-4">Competition</th>
+                    <th class="py-3.5 px-4">Institution</th>
+                    <th class="py-3.5 px-4">Transaction / UPI Ref</th>
+                    <th class="py-3.5 px-4">Payment</th>
+                    <th class="py-3.5 px-4">Grounds Check-In</th>
+                    <th class="py-3.5 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="registrations-table-body" class="divide-y divide-slate-200">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 4: LIVE BROADCASTS & STAGES / ANNOUNCEMENTS ================= -->
+      <section id="tab-announcements" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="font-headline-md text-2xl font-bold text-slate-900">Live Broadcasts &amp; Site-Wide Announcements</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Push urgent alerts to attendee screens and configure global UPI payment coordinates</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+            <!-- Festival Payment & Support Coordinates -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <h3 class="font-headline-sm text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-red-600 text-[22px]">payments</span>
+                Official Payment &amp; Support Coordinates
+              </h3>
+              <form id="settings-form" class="space-y-4">
+                <div>
+                  <label for="setting-upi" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Festival UPI ID</label>
+                  <input type="text" id="setting-upi" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="almurafaqa@upi" required/>
+                </div>
+                <div>
+                  <label for="setting-phone" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Support Helpline Phone</label>
+                  <input type="text" id="setting-phone" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="+91 98765 43210" required/>
+                </div>
+                <div>
+                  <label for="setting-ticker" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Live Marquee Ticker Announcement</label>
+                  <textarea id="setting-ticker" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" rows="3" placeholder="Scrolling text on front page..."></textarea>
+                </div>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">save</span>
                   <span>Save Festival Coordinates</span>
                 </button>
               </form>
             </div>
 
-            <!-- New Urgent Announcement Form -->
-            <div class="table-card" style="padding: 24px;">
-              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
-                Broadcast New Alert
-              </h4>
-              <form id="announcement-form" style="display: flex; flex-direction: column; gap: 16px;">
-                <div class="form-group">
-                  <label for="anc-title">Announcement Title</label>
-                  <input type="text" id="anc-title" class="form-input" placeholder="e.g., Venue Change for Oud Showcase" required>
+            <!-- Broadcast New Alert Form -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <h3 class="font-headline-sm text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-600 text-[22px]">campaign</span>
+                Broadcast Live Stage Notice
+              </h3>
+              <form id="announcement-form" class="space-y-4">
+                <div>
+                  <label for="anc-title" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Notice Title</label>
+                  <input type="text" id="anc-title" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="e.g. Schedule Update for Sala Ámbar Masterclass" required/>
                 </div>
-                <div class="form-group">
-                  <label for="anc-message">Message Details</label>
-                  <textarea id="anc-message" class="form-input" rows="3" placeholder="Provide clear instructions for attendees..." required></textarea>
+                <div>
+                  <label for="anc-message" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Message Details</label>
+                  <textarea id="anc-message" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" rows="3" placeholder="Clear instructions for attendees and delegates..." required></textarea>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <input type="checkbox" id="anc-urgent" style="width: 18px; height: 18px; accent-color: var(--fest-red);">
-                  <label for="anc-urgent" style="font-size: 0.85rem; font-weight: 700; color: var(--fest-red); cursor: pointer;">
-                    Mark as Urgent Priority Alert
-                  </label>
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="anc-urgent" class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"/>
+                  <label for="anc-urgent" class="text-xs font-bold text-red-700 cursor-pointer">Mark as Urgent Priority Alert</label>
                 </div>
-                <button type="submit" class="btn-primary" style="align-self: flex-start; background: linear-gradient(135deg, var(--fest-orange), var(--fest-gold));">
-                  <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">send</span>
                   <span>Broadcast Announcement</span>
                 </button>
               </form>
             </div>
           </div>
 
-          <!-- Existing Announcements List -->
-          <div class="table-card">
-            <div class="table-toolbar">
-              <h4 style="font-family: var(--font-display); font-size: 1rem; font-weight: 700;">
-                Live Active Announcements
-              </h4>
+          <!-- Existing Active Announcements Table -->
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-900 text-sm">
+              Active Broadcast Logs
             </div>
-            <div class="table-responsive">
-              <table>
-                <thead>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <th>Title</th>
-                    <th>Message</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th style="text-align: right;">Action</th>
+                    <th class="py-3 px-6">Title</th>
+                    <th class="py-3 px-4">Message</th>
+                    <th class="py-3 px-4">Priority</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-6 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody id="announcements-table-body">
-                  <!-- Injected via JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ================= TAB 3: EVENTS & SCHEDULE MANAGER ================= -->
-        <section id="tab-events" class="tab-pane">
-          <div class="section-header">
-            <div>
-              <h3>Cultural Tracks &amp; Competitions</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Configure capacity, fees, schedule, and featured front-page highlights</p>
-            </div>
-            <button id="btn-open-add-event" class="btn-primary">
-              <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
-              <span>Add New Event</span>
-            </button>
-          </div>
-
-          <!-- Events Table / Card Grid -->
-          <div class="table-card">
-            <div class="table-toolbar">
-              <div class="search-box">
-                <i data-lucide="search" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
-                <input type="text" id="events-search-input" placeholder="Search competitions, categories, venues...">
-              </div>
-              <div class="filter-group">
-                <select id="events-status-filter" class="form-input" style="padding: 8px 12px; font-size: 0.85rem;">
-                  <option value="all">All Statuses</option>
-                  <option value="open">Open</option>
-                  <option value="closing_soon">Closing Soon</option>
-                  <option value="full">Full</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Competition Title</th>
-                    <th>Category</th>
-                    <th>Schedule &amp; Venue</th>
-                    <th>Fee &amp; Prize</th>
-                    <th>Capacity Gauge</th>
-                    <th>Front Page Featured</th>
-                    <th>Live Status</th>
-                    <th style="text-align: right;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="events-table-body">
+                <tbody id="announcements-table-body" class="divide-y divide-slate-200">
                   <!-- Dynamically populated -->
                 </tbody>
               </table>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- ================= TAB 4: REGISTRATIONS & PAYMENTS ================= -->
-        <section id="tab-registrations" class="tab-pane">
-          <div class="section-header">
-            <div>
-              <h3>Registrations &amp; Payment Desk</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Verify UPI transactions, inspect teams, and register on-spot walk-ins</p>
-            </div>
-            <div style="display: flex; gap: 10px;">
-              <button id="btn-open-onspot-modal" class="btn-primary" style="background: var(--fest-orange);">
-                <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
-                <span>+ On-Spot Walk-In</span>
-              </button>
-              <button id="btn-export-csv" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
-                <i data-lucide="download" style="width: 16px; height: 16px;"></i>
-                <span>Download CSV</span>
-              </button>
-            </div>
+      <!-- ================= TAB 5: PASSES & ACCREDITATION / VENUE GATE DESK ================= -->
+      <section id="tab-checkin" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="font-headline-md text-2xl font-bold text-slate-900">Passes &amp; Venue Gate Check-In Desk</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Instant attendee ticket verification, payment audit, and badge admission</p>
           </div>
 
-          <!-- Registrations Table -->
-          <div class="table-card">
-            <div class="table-toolbar">
-              <div class="search-box">
-                <i data-lucide="search" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
-                <input type="text" id="reg-search-input" placeholder="Search by Ticket Code, Name, Phone, College, or UPI Ref...">
-              </div>
-              <div class="filter-group">
-                <select id="reg-status-filter" class="form-input" style="padding: 8px 12px; font-size: 0.85rem;">
-                  <option value="all">All Payment Statuses</option>
-                  <option value="pending">Pending Approval</option>
-                  <option value="verified">Verified</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-                <select id="reg-event-filter" class="form-input" style="padding: 8px 12px; font-size: 0.85rem;">
-                  <option value="all">All Competitions</option>
-                </select>
-              </div>
+          <!-- Ticket Code Search Box -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm max-w-2xl mx-auto text-center w-full">
+            <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-4 border border-red-200 shadow-sm">
+              <span class="material-symbols-outlined text-[32px]">qr_code_scanner</span>
             </div>
+            <h3 class="font-headline-sm text-2xl font-bold text-slate-900">Gate Ticket Verification</h3>
+            <p class="text-sm text-slate-500 mt-1 mb-6">Enter attendee ticket code (e.g., <strong>ALM-1042</strong>)</p>
 
-            <div class="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Ticket Code</th>
-                    <th>Participant / Leader</th>
-                    <th>Competition</th>
-                    <th>Institution</th>
-                    <th>Transaction / UPI Ref</th>
-                    <th>Payment Status</th>
-                    <th>Venue Check-In</th>
-                    <th style="text-align: right;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="registrations-table-body">
-                  <!-- Injected via JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ================= TAB 5: VENUE CHECK-IN DESK ================= -->
-        <section id="tab-checkin" class="tab-pane">
-          <div class="section-header">
-            <div>
-              <h3>Venue Gate &amp; Registration Desk</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Scan or search attendee ticket code to grant official ground admission</p>
-            </div>
-          </div>
-
-          <!-- Mobile-Friendly Lookup Box -->
-          <div class="checkin-hero-card">
-            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(227, 90, 36, 0.12); color: var(--fest-orange); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-              <i data-lucide="ticket" style="width: 28px; height: 28px;"></i>
-            </div>
-            <h3 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--fest-dark);">
-              Gate Ticket Verification
-            </h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
-              Enter the 7-character ticket code (e.g. <strong>ALM-1042</strong>)
-            </p>
-
-            <form id="checkin-search-form" class="checkin-search-bar">
-              <input type="text" id="checkin-ticket-input" placeholder="ALM-XXXX" maxlength="10" required autofocus>
-              <button type="submit" class="btn-primary">
-                <i data-lucide="search" style="width: 18px; height: 18px;"></i>
-                <span>Verify Ticket</span>
+            <form id="checkin-search-form" class="flex gap-2 max-w-md mx-auto">
+              <input type="text" id="checkin-ticket-input" class="flex-1 h-12 px-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-center uppercase tracking-wider font-bold text-lg text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white" placeholder="ALM-XXXX" maxlength="10" required autofocus/>
+              <button type="submit" class="px-6 h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[20px]">search</span>
+                <span>Verify</span>
               </button>
             </form>
 
             <!-- Dynamic Attendee Result Card -->
-            <div id="attendee-result-card" class="attendee-card">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+            <div id="attendee-result-card" class="attendee-card hidden mt-6 text-left p-6 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="flex justify-between items-start mb-4">
                 <div>
-                  <span id="res-ticket-code" style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--fest-red);"></span>
-                  <h4 id="res-leader-name" style="font-size: 1.1rem; font-weight: 700; color: var(--fest-dark); margin-top: 2px;"></h4>
-                  <p id="res-college" style="font-size: 0.85rem; color: var(--text-muted);"></p>
+                  <span id="res-ticket-code" class="font-headline-md text-2xl font-extrabold text-red-600"></span>
+                  <h4 id="res-leader-name" class="text-lg font-bold text-slate-900 mt-0.5"></h4>
+                  <p id="res-college" class="text-xs text-slate-500"></p>
                 </div>
                 <div id="res-status-badge-container"></div>
               </div>
 
-              <div style="padding: 12px 16px; background: #fff; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
-                  <span style="color: var(--text-muted);">Registered Event:</span>
-                  <strong id="res-event-title" style="color: var(--fest-dark);"></strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 6px;">
-                  <span style="color: var(--text-muted);">Contact Phone:</span>
-                  <span id="res-phone"></span>
-                </div>
+              <div class="p-3 bg-white rounded-lg border border-slate-200 mb-4 text-xs space-y-1.5">
+                <div class="flex justify-between"><span class="text-slate-500">Registered Event:</span><strong id="res-event-title" class="text-slate-900"></strong></div>
+                <div class="flex justify-between"><span class="text-slate-500">Contact Phone:</span><span id="res-phone" class="text-slate-700 font-medium"></span></div>
               </div>
 
               <!-- Unverified Warning -->
-              <div id="checkin-warning-box" style="display: none; background: #FEF2F2; border: 1px solid #F87171; color: #991B1B; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem;">
-                <strong style="display: block; margin-bottom: 2px;">⚠️ Payment Not Verified</strong>
-                UPI Transaction reference is still marked pending or rejected. Ensure fee collection before admission.
+              <div id="checkin-warning-box" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs">
+                <strong class="block mb-1">⚠️ Payment Not Verified</strong>
+                Payment is still marked pending. Collect registration fee before gate admission.
               </div>
 
-              <!-- Check-In Action Button -->
-              <div style="display: flex; gap: 12px;">
-                <button type="button" id="btn-confirm-checkin" class="btn-primary" style="flex: 1; padding: 14px; font-size: 1rem; background: var(--status-verified);">
-                  <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+              <!-- Action Buttons -->
+              <div class="flex gap-3">
+                <button type="button" id="btn-confirm-checkin" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-[20px]">check_circle</span>
                   <span id="btn-checkin-label">Confirm Gate Check-In</span>
                 </button>
-                <button type="button" id="btn-collect-verify" class="btn-primary" style="display: none; background: var(--fest-orange);">
-                  <i data-lucide="badge-dollar-sign" style="width: 20px; height: 20px;"></i>
+                <button type="button" id="btn-collect-verify" class="hidden px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 text-xs">
                   <span>Collect &amp; Approve</span>
                 </button>
               </div>
@@ -522,118 +1174,140 @@
           </div>
 
           <!-- Recent Check-Ins Log -->
-          <div class="table-card">
-            <div class="table-toolbar">
-              <h4 style="font-family: var(--font-display); font-size: 1rem; font-weight: 700;">
-                Recent Ground Check-In Log
-              </h4>
+          <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-900 text-sm">
+              Today's Gate Ingress Stream
             </div>
-            <div class="table-responsive">
-              <table>
-                <thead>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <th>Ticket Code</th>
-                    <th>Leader &amp; Team</th>
-                    <th>Competition</th>
-                    <th>Institution</th>
-                    <th>Check-In Timestamp</th>
+                    <th class="py-3 px-6">Ticket Code</th>
+                    <th class="py-3 px-4">Leader &amp; Team</th>
+                    <th class="py-3 px-4">Competition</th>
+                    <th class="py-3 px-4">Institution</th>
+                    <th class="py-3 px-6 text-right">Admitted At</th>
                   </tr>
                 </thead>
-                <tbody id="checkin-stream-body">
-                  <!-- Injected via JS -->
+                <tbody id="checkin-stream-body" class="divide-y divide-slate-200">
+                  <!-- Dynamically populated -->
                 </tbody>
               </table>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- ================= TAB 6: RESULTS & WINNERS PUBLISHER ================= -->
-        <section id="tab-winners" class="tab-pane">
-          <div class="section-header">
-            <div>
-              <h3>Results &amp; Podium Publishing</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Record official 1st, 2nd, and 3rd place winners and push to public leaderboard</p>
-            </div>
+      <!-- ================= TAB 6: RESULTS & PODIUM PUBLISHER ================= -->
+      <section id="tab-winners" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="font-headline-md text-2xl font-bold text-slate-900">Competition Results &amp; Podium Publisher</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Record official 1st, 2nd, and 3rd place winners and push to public leaderboard</p>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 32px;">
-            <!-- Winners Entry Form -->
-            <div class="table-card" style="padding: 24px;">
-              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
-                Record Competition Results
-              </h4>
-              <form id="winners-form" style="display: flex; flex-direction: column; gap: 16px;">
-                <div class="form-group">
-                  <label for="winner-event-select">Select Competition</label>
-                  <select id="winner-event-select" class="form-input" required>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+            <!-- Record Winners Form -->
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <h3 class="font-headline-sm text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-500 text-[22px]">trophy</span>
+                Record Podium Laureates
+              </h3>
+              <form id="winners-form" class="space-y-4">
+                <div>
+                  <label for="winner-event-select" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Select Competition</label>
+                  <select id="winner-event-select" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500" required>
                     <!-- Populated dynamically -->
                   </select>
                 </div>
 
-                <!-- 1st Place (Gold) -->
-                <div style="padding: 14px; background: rgba(247, 168, 35, 0.1); border: 1.5px solid var(--fest-gold); border-radius: var(--radius-md);">
-                  <strong style="color: #92400E; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-bottom: 8px;">
+                <!-- 1st Place Gold -->
+                <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <strong class="text-amber-800 text-sm flex items-center gap-1.5 mb-2">
                     🥇 1st Place (Gold Laureate)
                   </strong>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <input type="text" id="win-1-name" class="form-input" placeholder="Winner / Team Name" required>
-                    <input type="text" id="win-1-college" class="form-input" placeholder="College / Dept" required>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="win-1-name" class="h-10 px-3 bg-white border border-amber-200 rounded-lg text-sm" placeholder="Winner / Team" required/>
+                    <input type="text" id="win-1-college" class="h-10 px-3 bg-white border border-amber-200 rounded-lg text-sm" placeholder="College / Dept" required/>
                   </div>
                 </div>
 
-                <!-- 2nd Place (Silver) -->
-                <div style="padding: 14px; background: #F1F5F9; border: 1.5px solid #CBD5E1; border-radius: var(--radius-md);">
-                  <strong style="color: #475569; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-bottom: 8px;">
+                <!-- 2nd Place Silver -->
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <strong class="text-slate-700 text-sm flex items-center gap-1.5 mb-2">
                     🥈 2nd Place (Silver Laureate)
                   </strong>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <input type="text" id="win-2-name" class="form-input" placeholder="Winner / Team Name" required>
-                    <input type="text" id="win-2-college" class="form-input" placeholder="College / Dept" required>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="win-2-name" class="h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="Winner / Team" required/>
+                    <input type="text" id="win-2-college" class="h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="College / Dept" required/>
                   </div>
                 </div>
 
-                <!-- 3rd Place (Bronze) -->
-                <div style="padding: 14px; background: rgba(227, 90, 36, 0.08); border: 1.5px solid rgba(227, 90, 36, 0.35); border-radius: var(--radius-md);">
-                  <strong style="color: #9A3412; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-bottom: 8px;">
+                <!-- 3rd Place Bronze -->
+                <div class="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                  <strong class="text-orange-800 text-sm flex items-center gap-1.5 mb-2">
                     🥉 3rd Place (Bronze Laureate)
                   </strong>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <input type="text" id="win-3-name" class="form-input" placeholder="Winner / Team Name" required>
-                    <input type="text" id="win-3-college" class="form-input" placeholder="College / Dept" required>
+                  <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="win-3-name" class="h-10 px-3 bg-white border border-orange-200 rounded-lg text-sm" placeholder="Winner / Team" required/>
+                    <input type="text" id="win-3-college" class="h-10 px-3 bg-white border border-orange-200 rounded-lg text-sm" placeholder="College / Dept" required/>
                   </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
-                  <input type="checkbox" id="winner-publish-toggle" checked style="width: 18px; height: 18px; accent-color: var(--fest-orange);">
-                  <label for="winner-publish-toggle" style="font-size: 0.85rem; font-weight: 700; color: var(--fest-dark); cursor: pointer;">
-                    Publish to Public Front Page Immediately
-                  </label>
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="winner-publish-toggle" class="w-4 h-4 text-red-600 rounded border-slate-300" checked/>
+                  <label for="winner-publish-toggle" class="text-xs font-bold text-slate-800 cursor-pointer">Publish to Public Front Page Immediately</label>
                 </div>
 
-                <button type="submit" class="btn-primary" style="align-self: flex-start; margin-top: 8px;">
-                  <i data-lucide="award" style="width: 18px; height: 18px;"></i>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">award_star</span>
                   <span>Publish Podium Results</span>
                 </button>
               </form>
             </div>
 
             <!-- Published Winners Feed -->
-            <div class="table-card" style="padding: 24px;">
-              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <h3 class="font-headline-sm text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-red-600 text-[22px]">stars</span>
                 Official Leaderboard State
-              </h4>
-              <div id="published-winners-container" style="display: flex; flex-direction: column; gap: 14px;">
+              </h3>
+              <div id="published-winners-container" class="space-y-3">
                 <!-- Dynamically injected -->
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-      </main>
-    </div>
+      <!-- ================= TAB 7: EMERGENCY & SETTINGS ================= -->
+      <section id="tab-settings" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="font-headline-md text-2xl font-bold text-slate-900">System Switches &amp; Global Configuration</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Master kill-switches, connectivity diagnostic, and emergency maintenance controls</p>
+          </div>
+
+          <div class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
+            <h3 class="font-headline-sm text-lg font-bold text-slate-900 mb-2">Live Cloud Architecture</h3>
+            <p class="text-sm text-slate-600 mb-4">
+              The command center communicates with Supabase with automated fallback to persistent offline cache.
+            </p>
+            <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+              <div>
+                <strong class="text-sm text-slate-900 block">Supabase Row-Level Security Enforced</strong>
+                <span class="text-xs text-slate-500">Public visitors can only view published events; authenticated admins hold complete operational control.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
   </div>
 
-  <!-- ================= 3. MODALS ================= -->
+  <!-- ================= 5. POPUP MODALS ================= -->
 
   <!-- Add/Edit Event Modal -->
   <div id="modal-event" class="modal-backdrop">
@@ -644,77 +1318,79 @@
       </div>
       <form id="form-event-editor">
         <input type="hidden" id="event-edit-id">
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-          <div class="form-group">
-            <label for="evt-title">Event Title</label>
+        <div class="modal-body space-y-3.5">
+          <div>
+            <label for="evt-title" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Event Title</label>
             <input type="text" id="evt-title" class="form-input" placeholder="e.g. Diwan Poetry Recital" required>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="evt-category">Category</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="evt-category" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
               <input type="text" id="evt-category" class="form-input" placeholder="e.g. Poetry, Music, Calligraphy" required>
             </div>
-            <div class="form-group">
-              <label for="evt-venue">Venue</label>
-              <input type="text" id="evt-venue" class="form-input" placeholder="e.g. Grand Dome" required>
+            <div>
+              <label for="evt-venue" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Venue</label>
+              <input type="text" id="evt-venue" class="form-input" placeholder="e.g. Gran Domo Andalusí" required>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="evt-fee">Registration Fee (₹)</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="evt-fee" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Fee (₹)</label>
               <input type="number" id="evt-fee" class="form-input" placeholder="150" min="0" required>
             </div>
-            <div class="form-group">
-              <label for="evt-prize">Prize Pool (₹)</label>
+            <div>
+              <label for="evt-prize" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Prize Pool (₹)</label>
               <input type="number" id="evt-prize" class="form-input" placeholder="15000" min="0" required>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="evt-capacity">Max Capacity</label>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="evt-capacity" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Max Capacity</label>
               <input type="number" id="evt-capacity" class="form-input" placeholder="30" min="1" required>
             </div>
-            <div class="form-group">
-              <label for="evt-team-min">Min Team</label>
+            <div>
+              <label for="evt-team-min" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Min Team</label>
               <input type="number" id="evt-team-min" class="form-input" value="1" min="1" required>
             </div>
-            <div class="form-group">
-              <label for="evt-team-max">Max Team</label>
+            <div>
+              <label for="evt-team-max" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Max Team</label>
               <input type="number" id="evt-team-max" class="form-input" value="1" min="1" required>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-            <div class="form-group">
-              <label for="evt-day">Festival Day</label>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="evt-day" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Day</label>
               <select id="evt-day" class="form-input">
                 <option value="1">Day 1</option>
                 <option value="2">Day 2</option>
                 <option value="3">Day 3</option>
+                <option value="4">Day 4</option>
+                <option value="5">Day 5</option>
               </select>
             </div>
-            <div class="form-group">
-              <label for="evt-time">Time Slot</label>
-              <input type="text" id="evt-time" class="form-input" placeholder="10:00 AM – 01:00 PM" required>
+            <div class="col-span-2">
+              <label for="evt-time" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Time Slot</label>
+              <input type="text" id="evt-time" class="form-input" placeholder="20:30 - 22:00" required>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="evt-rules">Rules &amp; Guidelines</label>
-            <textarea id="evt-rules" class="form-input" rows="3" placeholder="Specify competition criteria, materials allowed, and judging rules..."></textarea>
+          <div>
+            <label for="evt-rules" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Rules &amp; Guidelines</label>
+            <textarea id="evt-rules" class="form-input" rows="3" placeholder="Competition criteria and rules..."></textarea>
           </div>
 
-          <div style="display: flex; gap: 20px; align-items: center; margin-top: 4px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" id="evt-featured" style="width: 18px; height: 18px; accent-color: var(--fest-orange);">
-              <label for="evt-featured" style="font-size: 0.85rem; font-weight: 700; cursor: pointer;">Feature on Front Page</label>
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="evt-featured" class="w-4 h-4 text-red-600 rounded">
+              <label for="evt-featured" class="text-xs font-bold text-slate-700 cursor-pointer">Feature on Front Page</label>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <label for="evt-status" style="font-size: 0.85rem; font-weight: 700;">Status:</label>
-              <select id="evt-status" class="form-input" style="padding: 6px 10px; font-size: 0.85rem;">
+            <div class="flex items-center gap-2">
+              <label for="evt-status" class="text-xs font-bold text-slate-700">Status:</label>
+              <select id="evt-status" class="form-input" style="padding: 4px 8px; width: auto;">
                 <option value="open">Open</option>
                 <option value="closing_soon">Closing Soon</option>
                 <option value="full">Full</option>
@@ -740,56 +1416,56 @@
         <button type="button" class="btn-close-modal btn-icon">&times;</button>
       </div>
       <form id="form-onspot">
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-          <div class="form-group">
-            <label for="onspot-event">Select Competition</label>
+        <div class="modal-body space-y-3.5">
+          <div>
+            <label for="onspot-event" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Select Competition</label>
             <select id="onspot-event" class="form-input" required></select>
           </div>
 
-          <div class="form-group">
-            <label for="onspot-name">Participant / Leader Name</label>
+          <div>
+            <label for="onspot-name" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Leader / Participant Name</label>
             <input type="text" id="onspot-name" class="form-input" placeholder="Full Name" required>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="onspot-email">Email Address</label>
-              <input type="email" id="onspot-email" class="form-input" placeholder="participant@example.com" required>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="onspot-email" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Email</label>
+              <input type="email" id="onspot-email" class="form-input" placeholder="name@example.com" required>
             </div>
-            <div class="form-group">
-              <label for="onspot-phone">Phone Number</label>
+            <div>
+              <label for="onspot-phone" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Phone</label>
               <input type="tel" id="onspot-phone" class="form-input" placeholder="+91 98765 00000" required>
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="onspot-college">College / University</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="onspot-college" class="block text-xs font-semibold uppercase text-slate-600 mb-1">College / University</label>
               <input type="text" id="onspot-college" class="form-input" placeholder="Institute Name" required>
             </div>
-            <div class="form-group">
-              <label for="onspot-team">Team Name (Optional)</label>
+            <div>
+              <label for="onspot-team" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Team Name (Optional)</label>
               <input type="text" id="onspot-team" class="form-input" placeholder="e.g. Qalam Guild">
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label for="onspot-payment">Payment Method</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="onspot-payment" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Payment Method</label>
               <select id="onspot-payment" class="form-input">
                 <option value="verified">Cash Paid On-Spot (Verified)</option>
-                <option value="pending">UPI Transfer (Pending Approval)</option>
+                <option value="pending">UPI Transfer (Pending)</option>
               </select>
             </div>
-            <div class="form-group">
-              <label for="onspot-txn">Ref ID / Cash Receipt</label>
-              <input type="text" id="onspot-txn" class="form-input" placeholder="CASH-DESK-01" value="CASH-ON-SPOT">
+            <div>
+              <label for="onspot-txn" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Ref ID / Receipt</label>
+              <input type="text" id="onspot-txn" class="form-input" value="CASH-ON-SPOT">
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="onspot-checkin" checked style="width: 18px; height: 18px; accent-color: var(--fest-orange);">
-            <label for="onspot-checkin" style="font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+          <div class="flex items-center gap-2 pt-1">
+            <input type="checkbox" id="onspot-checkin" class="w-4 h-4 text-red-600 rounded" checked>
+            <label for="onspot-checkin" class="text-xs font-bold text-slate-800 cursor-pointer">
               Instantly Admit at Venue (Auto Check-In)
             </label>
           </div>
