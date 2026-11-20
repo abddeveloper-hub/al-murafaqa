@@ -112,24 +112,54 @@ function setupEventListeners() {
     });
   }
 
-  // Mobile Menu Toggle
+  // Mobile Sidebar Drawer Controls
   const menuToggle = document.getElementById('mobile-menu-toggle');
   const sidebar = document.getElementById('sidebar');
-  if (menuToggle && sidebar) {
-    menuToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-      sidebar.classList.toggle('-translate-x-full');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const closeSidebarBtn = document.getElementById('btn-close-sidebar');
+
+  function openSidebar() {
+    if (!sidebar) return;
+    sidebar.classList.remove('-translate-x-full');
+    sidebar.classList.add('translate-x-0');
+    if (backdrop) backdrop.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeSidebar() {
+    if (!sidebar) return;
+    sidebar.classList.add('-translate-x-full');
+    sidebar.classList.remove('translate-x-0');
+    if (backdrop) backdrop.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  if (menuToggle) {
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = sidebar.classList.contains('-translate-x-full');
+      if (isHidden) {
+        openSidebar();
+      } else {
+        closeSidebar();
+      }
     });
   }
 
-  // Tab Navigation
+  if (closeSidebarBtn) {
+    closeSidebarBtn.addEventListener('click', closeSidebar);
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', closeSidebar);
+  }
+
+  // Tab Navigation (clicking any tab closes sidebar on mobile)
   document.querySelectorAll('.nav-item').forEach((btn) => {
     btn.addEventListener('click', () => {
       const targetTab = btn.getAttribute('data-tab');
       switchTab(targetTab);
-      if (sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-      }
+      closeSidebar();
     });
   });
 
@@ -230,11 +260,9 @@ function switchTab(tabId) {
     const isTarget = btn.getAttribute('data-tab') === tabId;
     btn.classList.toggle('active', isTarget);
     if (isTarget) {
-      btn.classList.add('bg-red-600', 'text-white', 'font-bold', 'shadow-md', 'shadow-red-600/25');
-      btn.classList.remove('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900');
+      btn.className = 'nav-item flex items-center gap-space-md px-space-md py-space-sm transition-all duration-200 group bg-red-600 text-white font-label-lg font-bold rounded-xl shadow-md shadow-red-600/25 w-full text-left active';
     } else {
-      btn.classList.remove('bg-red-600', 'text-white', 'font-bold', 'shadow-md', 'shadow-red-600/25');
-      btn.classList.add('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900');
+      btn.className = 'nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left';
     }
   });
 
