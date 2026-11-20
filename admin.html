@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Fest Command Center • Al Murafaqa 5th Edition</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ================= 1. ADMIN AUTH OVERLAY ================= -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-logo-badge">
+        <i data-lucide="shield-alert" style="width: 32px; height: 32px;"></i>
+      </div>
+      <h1>Fest Command Center</h1>
+      <p>Al Murafaqa • 5th Edition Administrator Access</p>
+
+      <form id="auth-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">Admin Email</label>
+          <input type="email" id="login-email" class="form-input" placeholder="admin@almurafaqa.com" value="admin@almurafaqa.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" value="admin123" required>
+        </div>
+
+        <button type="submit" id="btn-submit-login" class="btn-primary" style="width: 100%; margin-top: 8px;">
+          <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+          <span>Authenticate Session</span>
+        </button>
+
+        <button type="button" id="btn-quick-demo" class="btn-demo-quick">
+          ⚡ Auto-Fill Demo Credentials (admin@almurafaqa.com / admin123)
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 2. DASHBOARD SHELL ================= -->
+  <div class="app-container">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">AM</div>
+        <div class="sidebar-brand-text">
+          <h2>Al Murafaqa</h2>
+          <span>5TH EDITION • ADMIN</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="overview">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Overview &amp; Switches</span>
+        </button>
+
+        <button class="nav-item" data-tab="announcements">
+          <i data-lucide="megaphone"></i>
+          <span>Site &amp; Announcements</span>
+        </button>
+
+        <button class="nav-item" data-tab="events">
+          <i data-lucide="calendar-days"></i>
+          <span>Events &amp; Schedule</span>
+        </button>
+
+        <button class="nav-item" data-tab="registrations">
+          <i data-lucide="users"></i>
+          <span>Registrations</span>
+          <span class="nav-badge" id="badge-pending-count">0</span>
+        </button>
+
+        <button class="nav-item" data-tab="checkin">
+          <i data-lucide="scan-line"></i>
+          <span>Venue Check-In Desk</span>
+        </button>
+
+        <button class="nav-item" data-tab="winners">
+          <i data-lucide="trophy"></i>
+          <span>Results &amp; Winners</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="cloud-pill">
+          <span class="cloud-dot" id="cloud-indicator-dot"></span>
+          <span id="cloud-indicator-text">Connecting...</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      
+      <!-- Top Status Header -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Toggle Menu">
+            <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+          </button>
+          <div class="page-title">
+            <h2 id="current-tab-heading">Dashboard Overview</h2>
+          </div>
+        </div>
+
+        <div class="top-bar-right">
+          <a href="index.html" target="_blank" class="btn-view-site">
+            <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+            <span>View Live Site</span>
+          </a>
+
+          <button id="btn-signout" class="btn-signout">
+            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main class="content-area">
+
+        <!-- ================= TAB 1: OVERVIEW & MASTER SWITCHES ================= -->
+        <section id="tab-overview" class="tab-pane active">
+          
+          <!-- Emergency Switches Box -->
+          <div class="emergency-box">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="sliders" style="color: var(--fest-orange); width: 20px; height: 20px;"></i>
+                <h3 style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 800; color: var(--fest-dark);">
+                  Master Emergency Controls
+                </h3>
+              </div>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--fest-orange); text-transform: uppercase;">
+                Instant Broadcast
+              </span>
+            </div>
+
+            <div class="emergency-grid">
+              <div class="switch-card">
+                <div class="switch-info">
+                  <h4>Registrations Master</h4>
+                  <p id="label-reg-status">Accepting registrations</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-registrations" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="switch-card">
+                <div class="switch-info">
+                  <h4>Live Announcement Marquee</h4>
+                  <p id="label-ticker-status">Ticker active on front page</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-ticker" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="switch-card">
+                <div class="switch-info">
+                  <h4>Maintenance Mode</h4>
+                  <p id="label-maint-status">Site operates normally</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-maintenance">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Stats Cards -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon red">
+                <i data-lucide="users"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Total Registrations</span>
+                <span class="stat-value" id="stat-total-regs">0</span>
+                <span class="stat-desc">Across all competitions</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon gold">
+                <i data-lucide="indian-rupee"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Verified Revenue</span>
+                <span class="stat-value" id="stat-total-revenue">₹0</span>
+                <span class="stat-desc">Approved UPI entries</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon orange">
+                <i data-lucide="clock"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Pending Approval</span>
+                <span class="stat-value" id="stat-pending-payments">0</span>
+                <span class="stat-desc">Awaiting verification</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon blue">
+                <i data-lucide="user-check"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Venue Checked-In</span>
+                <span class="stat-value" id="stat-checkedin-count">0</span>
+                <span class="stat-desc">Admitted at grounds</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Capacity Gauges -->
+          <div class="capacity-card">
+            <div class="section-header" style="margin-bottom: 16px;">
+              <h3>Event Capacity &amp; Slot Saturation</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time participant limits</span>
+            </div>
+            <div id="capacity-bars-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 2: SITE & LIVE ANNOUNCEMENTS ================= -->
+        <section id="tab-announcements" class="tab-pane">
+          <div class="section-header">
+            <div>
+              <h3>Site Settings &amp; Global Broadcasts</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Manage payment coordinates, helpline, and live banner alerts</p>
+            </div>
+          </div>
+
+          <!-- Settings Form Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <!-- UPI & Support Card -->
+            <div class="table-card" style="padding: 24px;">
+              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
+                Festival Payment &amp; Support Coordinates
+              </h4>
+              <form id="settings-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                  <label for="setting-upi">Festival Official UPI ID</label>
+                  <input type="text" id="setting-upi" class="form-input" placeholder="almurafaqa@upi" required>
+                </div>
+                <div class="form-group">
+                  <label for="setting-phone">Support Helpline Phone</label>
+                  <input type="text" id="setting-phone" class="form-input" placeholder="+91 98765 43210" required>
+                </div>
+                <div class="form-group">
+                  <label for="setting-ticker">Live Marquee Ticker Announcement</label>
+                  <textarea id="setting-ticker" class="form-input" rows="3" placeholder="Scrolling text on front page..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="align-self: flex-start;">
+                  <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                  <span>Save Festival Coordinates</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- New Urgent Announcement Form -->
+            <div class="table-card" style="padding: 24px;">
+              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
+                Broadcast New Alert
+              </h4>
+              <form id="announcement-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                  <label for="anc-title">Announcement Title</label>
+                  <input type="text" id="anc-title" class="form-input" placeholder="e.g., Venue Change for Oud Showcase" required>
+                </div>
+                <div class="form-group">
+                  <label for="anc-message">Message Details</label>
+                  <textarea id="anc-message" class="form-input" rows="3" placeholder="Provide clear instructions for attendees..." required></textarea>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <input type="checkbox" id="anc-urgent" style="width: 18px; height: 18px; accent-color: var(--fest-red);">
+                  <label for="anc-urgent" style="font-size: 0.85rem; font-weight: 700; color: var(--fest-red); cursor: pointer;">
+                    Mark as Urgent Priority Alert
+                  </label>
+                </div>
+                <button type="submit" class="btn-primary" style="align-self: flex-start; background: linear-gradient(135deg, var(--fest-orange), var(--fest-gold));">
+                  <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                  <span>Broadcast Announcement</span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Existing Announcements List -->
+          <div class="table-card">
+            <div class="table-toolbar">
+              <h4 style="font-family: var(--font-display); font-size: 1rem; font-weight: 700;">
+                Live Active Announcements
+              </h4>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Message</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="announcements-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 3: EVENTS & SCHEDULE MANAGER ================= -->
+        <section id="tab-events" class="tab-pane">
+          <div class="section-header">
+            <div>
+              <h3>Cultural Tracks &amp; Competitions</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Configure capacity, fees, schedule, and featured front-page highlights</p>
+            </div>
+            <button id="btn-open-add-event" class="btn-primary">
+              <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
+              <span>Add New Event</span>
+            </button>
+          </div>
+
+          <!-- Events Table / Card Grid -->
+          <div class="table-card">
+            <div class="table-toolbar">
+              <div class="search-box">
+                <i data-lucide="search" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
+                <input type="text" id="events-search-input" placeholder="Search competitions, categories, venues...">
+              </div>
+              <div class="filter-group">
+                <select id="events-status-filter" class="form-input" style="padding: 8px 12px; font-size: 0.85rem;">
+                  <option value="all">All Statuses</option>
+                  <option value="open">Open</option>
+                  <option value="closing_soon">Closing Soon</option>
+                  <option value="full">Full</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Competition Title</th>
+                    <th>Category</th>
+                    <th>Schedule &amp; Venue</th>
+                    <th>Fee &amp; Prize</th>
+                    <th>Capacity Gauge</th>
+                    <th>Front Page Featured</th>
+                    <th>Live Status</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="events-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 4: REGISTRATIONS & PAYMENTS ================= -->
+        <section id="tab-registrations" class="tab-pane">
+          <div class="section-header">
+            <div>
+              <h3>Registrations &amp; Payment Desk</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Verify UPI transactions, inspect teams, and register on-spot walk-ins</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-open-onspot-modal" class="btn-primary" style="background: var(--fest-orange);">
+                <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
+                <span>+ On-Spot Walk-In</span>
+              </button>
+              <button id="btn-export-csv" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                <span>Download CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Registrations Table -->
+          <div class="table-card">
+            <div class="table-toolbar">
+              <div class="search-box">
+                <i data-lucide="search" style="width: 18px; height: 18px; color: var(--text-muted);"></i>
+                <input type="text" id="reg-search-input" placeholder="Search by Ticket Code, Name, Phone, College, or UPI Ref...">
+              </div>
+              <div class="filter-group">
+                <select id="reg-status-filter" class="form-input" style="padding: 8px 12px; font-size: 0.85rem;">
+                  <option value="all">All Payment Statuses</option>
+                  <option value="pending">Pending Approval</option>
+                  <option value="verified">Verified</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <select id="reg-event-filter" class="form-input" style="padding: 8px 12px; font-size: 0.85rem;">
+                  <option value="all">All Competitions</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ticket Code</th>
+                    <th>Participant / Leader</th>
+                    <th>Competition</th>
+                    <th>Institution</th>
+                    <th>Transaction / UPI Ref</th>
+                    <th>Payment Status</th>
+                    <th>Venue Check-In</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="registrations-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 5: VENUE CHECK-IN DESK ================= -->
+        <section id="tab-checkin" class="tab-pane">
+          <div class="section-header">
+            <div>
+              <h3>Venue Gate &amp; Registration Desk</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Scan or search attendee ticket code to grant official ground admission</p>
+            </div>
+          </div>
+
+          <!-- Mobile-Friendly Lookup Box -->
+          <div class="checkin-hero-card">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(227, 90, 36, 0.12); color: var(--fest-orange); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+              <i data-lucide="ticket" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h3 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--fest-dark);">
+              Gate Ticket Verification
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
+              Enter the 7-character ticket code (e.g. <strong>ALM-1042</strong>)
+            </p>
+
+            <form id="checkin-search-form" class="checkin-search-bar">
+              <input type="text" id="checkin-ticket-input" placeholder="ALM-XXXX" maxlength="10" required autofocus>
+              <button type="submit" class="btn-primary">
+                <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                <span>Verify Ticket</span>
+              </button>
+            </form>
+
+            <!-- Dynamic Attendee Result Card -->
+            <div id="attendee-result-card" class="attendee-card">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div>
+                  <span id="res-ticket-code" style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--fest-red);"></span>
+                  <h4 id="res-leader-name" style="font-size: 1.1rem; font-weight: 700; color: var(--fest-dark); margin-top: 2px;"></h4>
+                  <p id="res-college" style="font-size: 0.85rem; color: var(--text-muted);"></p>
+                </div>
+                <div id="res-status-badge-container"></div>
+              </div>
+
+              <div style="padding: 12px 16px; background: #fff; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                  <span style="color: var(--text-muted);">Registered Event:</span>
+                  <strong id="res-event-title" style="color: var(--fest-dark);"></strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 6px;">
+                  <span style="color: var(--text-muted);">Contact Phone:</span>
+                  <span id="res-phone"></span>
+                </div>
+              </div>
+
+              <!-- Unverified Warning -->
+              <div id="checkin-warning-box" style="display: none; background: #FEF2F2; border: 1px solid #F87171; color: #991B1B; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem;">
+                <strong style="display: block; margin-bottom: 2px;">⚠️ Payment Not Verified</strong>
+                UPI Transaction reference is still marked pending or rejected. Ensure fee collection before admission.
+              </div>
+
+              <!-- Check-In Action Button -->
+              <div style="display: flex; gap: 12px;">
+                <button type="button" id="btn-confirm-checkin" class="btn-primary" style="flex: 1; padding: 14px; font-size: 1rem; background: var(--status-verified);">
+                  <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                  <span id="btn-checkin-label">Confirm Gate Check-In</span>
+                </button>
+                <button type="button" id="btn-collect-verify" class="btn-primary" style="display: none; background: var(--fest-orange);">
+                  <i data-lucide="badge-dollar-sign" style="width: 20px; height: 20px;"></i>
+                  <span>Collect &amp; Approve</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Check-Ins Log -->
+          <div class="table-card">
+            <div class="table-toolbar">
+              <h4 style="font-family: var(--font-display); font-size: 1rem; font-weight: 700;">
+                Recent Ground Check-In Log
+              </h4>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ticket Code</th>
+                    <th>Leader &amp; Team</th>
+                    <th>Competition</th>
+                    <th>Institution</th>
+                    <th>Check-In Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="checkin-stream-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB 6: RESULTS & WINNERS PUBLISHER ================= -->
+        <section id="tab-winners" class="tab-pane">
+          <div class="section-header">
+            <div>
+              <h3>Results &amp; Podium Publishing</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Record official 1st, 2nd, and 3rd place winners and push to public leaderboard</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 32px;">
+            <!-- Winners Entry Form -->
+            <div class="table-card" style="padding: 24px;">
+              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
+                Record Competition Results
+              </h4>
+              <form id="winners-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                  <label for="winner-event-select">Select Competition</label>
+                  <select id="winner-event-select" class="form-input" required>
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+
+                <!-- 1st Place (Gold) -->
+                <div style="padding: 14px; background: rgba(247, 168, 35, 0.1); border: 1.5px solid var(--fest-gold); border-radius: var(--radius-md);">
+                  <strong style="color: #92400E; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-bottom: 8px;">
+                    🥇 1st Place (Gold Laureate)
+                  </strong>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <input type="text" id="win-1-name" class="form-input" placeholder="Winner / Team Name" required>
+                    <input type="text" id="win-1-college" class="form-input" placeholder="College / Dept" required>
+                  </div>
+                </div>
+
+                <!-- 2nd Place (Silver) -->
+                <div style="padding: 14px; background: #F1F5F9; border: 1.5px solid #CBD5E1; border-radius: var(--radius-md);">
+                  <strong style="color: #475569; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-bottom: 8px;">
+                    🥈 2nd Place (Silver Laureate)
+                  </strong>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <input type="text" id="win-2-name" class="form-input" placeholder="Winner / Team Name" required>
+                    <input type="text" id="win-2-college" class="form-input" placeholder="College / Dept" required>
+                  </div>
+                </div>
+
+                <!-- 3rd Place (Bronze) -->
+                <div style="padding: 14px; background: rgba(227, 90, 36, 0.08); border: 1.5px solid rgba(227, 90, 36, 0.35); border-radius: var(--radius-md);">
+                  <strong style="color: #9A3412; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; margin-bottom: 8px;">
+                    🥉 3rd Place (Bronze Laureate)
+                  </strong>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <input type="text" id="win-3-name" class="form-input" placeholder="Winner / Team Name" required>
+                    <input type="text" id="win-3-college" class="form-input" placeholder="College / Dept" required>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                  <input type="checkbox" id="winner-publish-toggle" checked style="width: 18px; height: 18px; accent-color: var(--fest-orange);">
+                  <label for="winner-publish-toggle" style="font-size: 0.85rem; font-weight: 700; color: var(--fest-dark); cursor: pointer;">
+                    Publish to Public Front Page Immediately
+                  </label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="align-self: flex-start; margin-top: 8px;">
+                  <i data-lucide="award" style="width: 18px; height: 18px;"></i>
+                  <span>Publish Podium Results</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Published Winners Feed -->
+            <div class="table-card" style="padding: 24px;">
+              <h4 style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">
+                Official Leaderboard State
+              </h4>
+              <div id="published-winners-container" style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Dynamically injected -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ================= 3. MODALS ================= -->
+
+  <!-- Add/Edit Event Modal -->
+  <div id="modal-event" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-event-title">Add New Competition Event</h3>
+        <button type="button" class="btn-close-modal btn-icon">&times;</button>
+      </div>
+      <form id="form-event-editor">
+        <input type="hidden" id="event-edit-id">
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group">
+            <label for="evt-title">Event Title</label>
+            <input type="text" id="evt-title" class="form-input" placeholder="e.g. Diwan Poetry Recital" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="evt-category">Category</label>
+              <input type="text" id="evt-category" class="form-input" placeholder="e.g. Poetry, Music, Calligraphy" required>
+            </div>
+            <div class="form-group">
+              <label for="evt-venue">Venue</label>
+              <input type="text" id="evt-venue" class="form-input" placeholder="e.g. Grand Dome" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="evt-fee">Registration Fee (₹)</label>
+              <input type="number" id="evt-fee" class="form-input" placeholder="150" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="evt-prize">Prize Pool (₹)</label>
+              <input type="number" id="evt-prize" class="form-input" placeholder="15000" min="0" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="evt-capacity">Max Capacity</label>
+              <input type="number" id="evt-capacity" class="form-input" placeholder="30" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="evt-team-min">Min Team</label>
+              <input type="number" id="evt-team-min" class="form-input" value="1" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="evt-team-max">Max Team</label>
+              <input type="number" id="evt-team-max" class="form-input" value="1" min="1" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+            <div class="form-group">
+              <label for="evt-day">Festival Day</label>
+              <select id="evt-day" class="form-input">
+                <option value="1">Day 1</option>
+                <option value="2">Day 2</option>
+                <option value="3">Day 3</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="evt-time">Time Slot</label>
+              <input type="text" id="evt-time" class="form-input" placeholder="10:00 AM – 01:00 PM" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="evt-rules">Rules &amp; Guidelines</label>
+            <textarea id="evt-rules" class="form-input" rows="3" placeholder="Specify competition criteria, materials allowed, and judging rules..."></textarea>
+          </div>
+
+          <div style="display: flex; gap: 20px; align-items: center; margin-top: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="evt-featured" style="width: 18px; height: 18px; accent-color: var(--fest-orange);">
+              <label for="evt-featured" style="font-size: 0.85rem; font-weight: 700; cursor: pointer;">Feature on Front Page</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="evt-status" style="font-size: 0.85rem; font-weight: 700;">Status:</label>
+              <select id="evt-status" class="form-input" style="padding: 6px 10px; font-size: 0.85rem;">
+                <option value="open">Open</option>
+                <option value="closing_soon">Closing Soon</option>
+                <option value="full">Full</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- On-Spot Walk-In Registration Modal -->
+  <div id="modal-onspot" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>+ Add On-Spot Walk-In Registration</h3>
+        <button type="button" class="btn-close-modal btn-icon">&times;</button>
+      </div>
+      <form id="form-onspot">
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group">
+            <label for="onspot-event">Select Competition</label>
+            <select id="onspot-event" class="form-input" required></select>
+          </div>
+
+          <div class="form-group">
+            <label for="onspot-name">Participant / Leader Name</label>
+            <input type="text" id="onspot-name" class="form-input" placeholder="Full Name" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="onspot-email">Email Address</label>
+              <input type="email" id="onspot-email" class="form-input" placeholder="participant@example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="onspot-phone">Phone Number</label>
+              <input type="tel" id="onspot-phone" class="form-input" placeholder="+91 98765 00000" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="onspot-college">College / University</label>
+              <input type="text" id="onspot-college" class="form-input" placeholder="Institute Name" required>
+            </div>
+            <div class="form-group">
+              <label for="onspot-team">Team Name (Optional)</label>
+              <input type="text" id="onspot-team" class="form-input" placeholder="e.g. Qalam Guild">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label for="onspot-payment">Payment Method</label>
+              <select id="onspot-payment" class="form-input">
+                <option value="verified">Cash Paid On-Spot (Verified)</option>
+                <option value="pending">UPI Transfer (Pending Approval)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="onspot-txn">Ref ID / Cash Receipt</label>
+              <input type="text" id="onspot-txn" class="form-input" placeholder="CASH-DESK-01" value="CASH-ON-SPOT">
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="onspot-checkin" checked style="width: 18px; height: 18px; accent-color: var(--fest-orange);">
+            <label for="onspot-checkin" style="font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+              Instantly Admit at Venue (Auto Check-In)
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Generate Ticket &amp; Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Team Members Inspection Modal -->
+  <div id="modal-team" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-team-title">Team Roster Details</h3>
+        <button type="button" class="btn-close-modal btn-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-team-content">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-close-modal btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main JavaScript Controller -->
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

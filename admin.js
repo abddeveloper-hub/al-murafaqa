@@ -1,0 +1,1224 @@
+// ==============================================================================
+// AL MURAFAQA • FEST COMMAND CENTER JAVASCRIPT CONTROLLER (admin.js)
+// Vanilla ES Module with full reactive controls and dual cloud/offline state
+// ==============================================================================
+
+import { db, isConfigured } from './supabase-config.js';
+
+// Global State
+let currentTab = 'overview';
+let cachedSettings = null;
+let cachedEvents = [];
+let cachedRegistrations = [];
+let cachedAnnouncements = [];
+let cachedWinners = [];
+let currentAttendeeLookup = null;
+
+// ==============================================================================
+// 1. INITIALIZATION & AUTHENTICATION
+// ==============================================================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  initLucide();
+  setupEventListeners();
+  await checkAuthSession();
+});
+
+function initLucide() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+async function checkAuthSession() {
+  try {
+    const session = await db.getSession();
+    const authOverlay = document.getElementById('auth-overlay');
+
+    if (session && session.user) {
+      authOverlay.classList.add('hidden');
+      updateCloudIndicator();
+      await loadAllData();
+    } else {
+      authOverlay.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('Auth verification error:', err);
+    document.getElementById('auth-overlay').classList.remove('hidden');
+  }
+}
+
+function updateCloudIndicator() {
+  const dot = document.getElementById('cloud-indicator-dot');
+  const text = document.getElementById('cloud-indicator-text');
+  if (db.isLive()) {
+    dot.className = 'cloud-dot';
+    text.textContent = 'Supabase Cloud Connected';
+  } else {
+    dot.className = 'cloud-dot demo';
+    text.textContent = 'Local Demo Mode (Offline)';
+  }
+}
+
+// ==============================================================================
+// 2. EVENT LISTENERS SETUP
+// ==============================================================================
+
+function setupEventListeners() {
+  // Login Form
+  const authForm = document.getElementById('auth-form');
+  if (authForm) {
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const btn = document.getElementById('btn-submit-login');
+      btn.disabled = true;
+      btn.innerHTML = '<span>Verifying credentials...</span>';
+
+      try {
+        await db.signIn(email, password);
+        document.getElementById('auth-overlay').classList.add('hidden');
+        showToast('Authenticated successfully as Administrator', 'success');
+        updateCloudIndicator();
+        await loadAllData();
+      } catch (err) {
+        showToast(err.message || 'Login failed. Check credentials.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="lock" style="width: 18px; height: 18px;"></i><span>Authenticate Session</span>';
+        initLucide();
+      }
+    });
+  }
+
+  // Quick Demo Auto-Fill
+  const btnDemo = document.getElementById('btn-quick-demo');
+  if (btnDemo) {
+    btnDemo.addEventListener('click', () => {
+      document.getElementById('login-email').value = 'admin@almurafaqa.com';
+      document.getElementById('login-password').value = 'admin123';
+      showToast('Demo credentials filled. Click Authenticate.', 'info');
+    });
+  }
+
+  // Sign Out
+  const btnSignout = document.getElementById('btn-signout');
+  if (btnSignout) {
+    btnSignout.addEventListener('click', async () => {
+      await db.signOut();
+      document.getElementById('auth-overlay').classList.remove('hidden');
+      showToast('Signed out of command center', 'info');
+    });
+  }
+
+  // Mobile Menu Toggle
+  const menuToggle = document.getElementById('mobile-menu-toggle');
+  const sidebar = document.getElementById('sidebar');
+  if (menuToggle && sidebar) {
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  }
+
+  // Tab Navigation
+  document.querySelectorAll('.nav-item').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      switchTab(targetTab);
+      if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+      }
+    });
+  });
+
+  // Emergency Switches
+  setupEmergencySwitches();
+
+  // Settings Form
+  const settingsForm = document.getElementById('settings-form');
+  if (settingsForm) {
+    settingsForm.addEventListener('submit', handleSettingsSubmit);
+  }
+
+  // Announcement Form
+  const ancForm = document.getElementById('announcement-form');
+  if (ancForm) {
+    ancForm.addEventListener('submit', handleAnnouncementSubmit);
+  }
+
+  // Event Modals & Filters
+  setupEventControls();
+
+  // Registration Filters & Modals
+  setupRegistrationControls();
+
+  // Venue Check-In Lookup
+  setupCheckInControls();
+
+  // Winners Form
+  setupWinnersControls();
+
+  // Global Modal Close Buttons
+  document.querySelectorAll('.btn-close-modal').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.modal-backdrop').forEach((m) => m.classList.remove('show'));
+    });
+  });
+
+  // Close modals clicking outside
+  document.querySelectorAll('.modal-backdrop').forEach((backdrop) => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) backdrop.classList.remove('show');
+    });
+  });
+}
+
+// Switch Active Tab
+function switchTab(tabId) {
+  currentTab = tabId;
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.classList.toggle('active', item.getAttribute('data-tab') === tabId);
+  });
+
+  document.querySelectorAll('.tab-pane').forEach((pane) => {
+    pane.classList.toggle('active', pane.id === `tab-${tabId}`);
+  });
+
+  const headings = {
+    overview: 'Dashboard Overview & Emergency Controls',
+    announcements: 'Festival Coordinates & Live Broadcasts',
+    events: 'Cultural Tracks & Competitions Manager',
+    registrations: 'Participant Registrations & Payment Desk',
+    checkin: 'Venue Gate & Attendee Check-In Desk',
+    winners: 'Competition Results & Podium Publishing',
+  };
+  const titleEl = document.getElementById('current-tab-heading');
+  if (titleEl) titleEl.textContent = headings[tabId] || 'Dashboard';
+
+  initLucide();
+}
+
+// ==============================================================================
+// 3. MASTER DATA LOADER
+// ==============================================================================
+
+async function loadAllData() {
+  try {
+    const [settings, events, registrations, announcements, winners] = await Promise.all([
+      db.getSettings(),
+      db.getEvents(),
+      db.getRegistrations(),
+      db.getAnnouncements(),
+      db.getWinners(),
+    ]);
+
+    cachedSettings = settings;
+    cachedEvents = events;
+    cachedRegistrations = registrations;
+    cachedAnnouncements = announcements;
+    cachedWinners = winners;
+
+    renderOverview();
+    renderAnnouncementsTab();
+    renderEventsTab();
+    renderRegistrationsTab();
+    renderCheckInTab();
+    renderWinnersTab();
+
+    initLucide();
+  } catch (err) {
+    console.error('Failed to load dashboard data:', err);
+    showToast('Failed to load live data. Retrying with local cache.', 'error');
+  }
+}
+
+// ==============================================================================
+// 4. TAB 1: OVERVIEW & MASTER SWITCHES
+// ==============================================================================
+
+function renderOverview() {
+  if (!cachedSettings) return;
+
+  // Sync Emergency Switches
+  const swReg = document.getElementById('switch-registrations');
+  const swTicker = document.getElementById('switch-ticker');
+  const swMaint = document.getElementById('switch-maintenance');
+
+  if (swReg) swReg.checked = cachedSettings.registrations_open;
+  if (swTicker) swTicker.checked = cachedSettings.live_ticker_enabled;
+  if (swMaint) swMaint.checked = cachedSettings.maintenance_mode;
+
+  updateSwitchLabels();
+
+  // Calculate Metrics
+  const totalRegs = cachedRegistrations.length;
+  const verifiedList = cachedRegistrations.filter((r) => r.payment_status === 'verified');
+  const pendingCount = cachedRegistrations.filter((r) => r.payment_status === 'pending').length;
+  const checkedInCount = cachedRegistrations.filter((r) => r.checked_in).length;
+
+  // Calculate total verified revenue based on event fee
+  let totalRevenue = 0;
+  verifiedList.forEach((r) => {
+    const evt = cachedEvents.find((e) => e.id === r.event_id);
+    if (evt && evt.fee) totalRevenue += Number(evt.fee);
+  });
+
+  document.getElementById('stat-total-regs').textContent = totalRegs.toLocaleString();
+  document.getElementById('stat-total-revenue').textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+  document.getElementById('stat-pending-payments').textContent = pendingCount.toLocaleString();
+  document.getElementById('stat-checkedin-count').textContent = checkedInCount.toLocaleString();
+
+  // Pending Badge in Sidebar
+  const badge = document.getElementById('badge-pending-count');
+  if (badge) {
+    badge.textContent = pendingCount;
+    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+
+  // Render Capacity Bars
+  renderCapacityGauges();
+}
+
+function updateSwitchLabels() {
+  const swReg = document.getElementById('switch-registrations');
+  const swTicker = document.getElementById('switch-ticker');
+  const swMaint = document.getElementById('switch-maintenance');
+
+  const lblReg = document.getElementById('label-reg-status');
+  const lblTicker = document.getElementById('label-ticker-status');
+  const lblMaint = document.getElementById('label-maint-status');
+
+  if (lblReg && swReg) {
+    lblReg.textContent = swReg.checked ? 'Accepting registrations' : 'Registrations paused globally';
+    lblReg.style.color = swReg.checked ? 'var(--status-verified)' : 'var(--fest-red)';
+  }
+  if (lblTicker && swTicker) {
+    lblTicker.textContent = swTicker.checked ? 'Ticker active on front page' : 'Ticker hidden on front page';
+  }
+  if (lblMaint && swMaint) {
+    lblMaint.textContent = swMaint.checked ? '⚠️ Front page in Maintenance Mode' : 'Site operates normally';
+    lblMaint.style.color = swMaint.checked ? 'var(--fest-red)' : 'var(--text-muted)';
+  }
+}
+
+function setupEmergencySwitches() {
+  const swReg = document.getElementById('switch-registrations');
+  const swTicker = document.getElementById('switch-ticker');
+  const swMaint = document.getElementById('switch-maintenance');
+
+  if (swReg) {
+    swReg.addEventListener('change', async () => {
+      updateSwitchLabels();
+      await db.updateSettings({ registrations_open: swReg.checked });
+      showToast(swReg.checked ? 'Registrations OPENED globally' : 'Registrations PAUSED globally', 'info');
+    });
+  }
+
+  if (swTicker) {
+    swTicker.addEventListener('change', async () => {
+      updateSwitchLabels();
+      await db.updateSettings({ live_ticker_enabled: swTicker.checked });
+      showToast(swTicker.checked ? 'Announcement ticker activated' : 'Announcement ticker silenced', 'info');
+    });
+  }
+
+  if (swMaint) {
+    swMaint.addEventListener('change', async () => {
+      updateSwitchLabels();
+      await db.updateSettings({ maintenance_mode: swMaint.checked });
+      showToast(swMaint.checked ? 'Site set to MAINTENANCE mode' : 'Site returned to LIVE mode', swMaint.checked ? 'warning' : 'success');
+    });
+  }
+}
+
+function renderCapacityGauges() {
+  const container = document.getElementById('capacity-bars-container');
+  if (!container) return;
+
+  if (cachedEvents.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-muted);">No events created yet.</p>';
+    return;
+  }
+
+  container.innerHTML = cachedEvents
+    .map((evt) => {
+      const registeredCount = cachedRegistrations.filter((r) => r.event_id === evt.id).length;
+      const cap = evt.max_capacity || 50;
+      const pct = Math.min(100, Math.round((registeredCount / cap) * 100));
+
+      return `
+      <div class="capacity-item">
+        <div class="capacity-header">
+          <span>${evt.title} (${evt.category})</span>
+          <span><strong>${registeredCount}</strong> / ${cap} slots (${pct}%)</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+    `;
+    })
+    .join('');
+}
+
+// ==============================================================================
+// 5. TAB 2: SITE & ANNOUNCEMENTS
+// ==============================================================================
+
+function renderAnnouncementsTab() {
+  if (cachedSettings) {
+    const upiInput = document.getElementById('setting-upi');
+    const phoneInput = document.getElementById('setting-phone');
+    const tickerInput = document.getElementById('setting-ticker');
+
+    if (upiInput) upiInput.value = cachedSettings.upi_id || '';
+    if (phoneInput) phoneInput.value = cachedSettings.support_phone || '';
+    if (tickerInput) tickerInput.value = cachedSettings.live_ticker_text || '';
+  }
+
+  const tbody = document.getElementById('announcements-table-body');
+  if (!tbody) return;
+
+  if (cachedAnnouncements.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">No announcements posted yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = cachedAnnouncements
+    .map((anc) => {
+      return `
+      <tr>
+        <td><strong>${escapeHtml(anc.title)}</strong></td>
+        <td style="max-width: 380px;">${escapeHtml(anc.message)}</td>
+        <td>
+          <span class="badge" style="background: ${anc.is_urgent ? '#FEE2E2' : '#E0E7FF'}; color: ${anc.is_urgent ? '#B91C1C' : '#4338CA'};">
+            ${anc.is_urgent ? '🚨 Urgent' : 'General'}
+          </span>
+        </td>
+        <td>
+          <span class="badge ${anc.is_active ? 'verified' : 'rejected'}">
+            ${anc.is_active ? 'Active' : 'Inactive'}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <div class="action-btn-group" style="justify-content: flex-end;">
+            <button class="btn-icon" title="Toggle active status" onclick="window.toggleAnnouncementActive('${anc.id}')">
+              <i data-lucide="${anc.is_active ? 'eye-off' : 'eye'}" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button class="btn-icon reject" title="Delete announcement" onclick="window.deleteAnnouncement('${anc.id}')">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+    })
+    .join('');
+
+  initLucide();
+}
+
+async function handleSettingsSubmit(e) {
+  e.preventDefault();
+  const upi_id = document.getElementById('setting-upi').value.trim();
+  const support_phone = document.getElementById('setting-phone').value.trim();
+  const live_ticker_text = document.getElementById('setting-ticker').value.trim();
+
+  try {
+    cachedSettings = await db.updateSettings({ upi_id, support_phone, live_ticker_text });
+    showToast('Festival settings & live ticker updated successfully', 'success');
+  } catch (err) {
+    showToast('Failed to update settings: ' + err.message, 'error');
+  }
+}
+
+async function handleAnnouncementSubmit(e) {
+  e.preventDefault();
+  const title = document.getElementById('anc-title').value.trim();
+  const message = document.getElementById('anc-message').value.trim();
+  const is_urgent = document.getElementById('anc-urgent').checked;
+
+  try {
+    await db.saveAnnouncement({ title, message, is_urgent, is_active: true });
+    e.target.reset();
+    cachedAnnouncements = await db.getAnnouncements();
+    renderAnnouncementsTab();
+    showToast('New broadcast announcement published', 'success');
+  } catch (err) {
+    showToast('Failed to publish announcement: ' + err.message, 'error');
+  }
+}
+
+window.toggleAnnouncementActive = async function (id) {
+  const item = cachedAnnouncements.find((a) => a.id === id);
+  if (!item) return;
+  item.is_active = !item.is_active;
+  await db.saveAnnouncement(item);
+  renderAnnouncementsTab();
+  showToast(`Announcement ${item.is_active ? 'activated' : 'deactivated'}`, 'info');
+};
+
+window.deleteAnnouncement = async function (id) {
+  if (!confirm('Are you sure you want to remove this announcement?')) return;
+  await db.deleteAnnouncement(id);
+  cachedAnnouncements = await db.getAnnouncements();
+  renderAnnouncementsTab();
+  showToast('Announcement removed', 'info');
+};
+
+// ==============================================================================
+// 6. TAB 3: EVENTS & SCHEDULE MANAGER
+// ==============================================================================
+
+function renderEventsTab() {
+  const tbody = document.getElementById('events-table-body');
+  if (!tbody) return;
+
+  const searchVal = (document.getElementById('events-search-input')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('events-status-filter')?.value || 'all';
+
+  const filtered = cachedEvents.filter((evt) => {
+    const matchesSearch =
+      evt.title.toLowerCase().includes(searchVal) ||
+      evt.category.toLowerCase().includes(searchVal) ||
+      evt.venue.toLowerCase().includes(searchVal);
+    const matchesStatus = statusFilter === 'all' || evt.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">No competitions match criteria.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered
+    .map((evt) => {
+      const regCount = cachedRegistrations.filter((r) => r.event_id === evt.id).length;
+      return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(evt.title)}</strong>
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(evt.rules || 'No rules defined')}</span>
+        </td>
+        <td>
+          <span class="badge" style="background: rgba(227, 90, 36, 0.1); color: var(--fest-orange);">
+            ${escapeHtml(evt.category)}
+          </span>
+        </td>
+        <td>
+          <strong>Day ${evt.day_number}</strong> • ${escapeHtml(evt.time_slot)}
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(evt.venue)}</span>
+        </td>
+        <td>
+          <strong>₹${Number(evt.fee).toLocaleString()}</strong>
+          <span style="display: block; font-size: 0.75rem; color: #15803D;">Pool: ₹${Number(evt.prize_pool).toLocaleString()}</span>
+        </td>
+        <td>
+          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">${regCount} / ${evt.max_capacity}</div>
+          <div class="progress-track" style="width: 100px; height: 6px;">
+            <div class="progress-fill" style="width: ${Math.min(100, Math.round((regCount / evt.max_capacity) * 100))}%;"></div>
+          </div>
+        </td>
+        <td>
+          <input type="checkbox" ${evt.is_featured ? 'checked' : ''} onchange="window.toggleEventFeatured('${evt.id}', this.checked)" style="width: 18px; height: 18px; accent-color: var(--fest-orange); cursor: pointer;">
+        </td>
+        <td>
+          <select class="form-input" style="padding: 4px 8px; font-size: 0.8rem; width: auto;" onchange="window.updateEventStatus('${evt.id}', this.value)">
+            <option value="open" ${evt.status === 'open' ? 'selected' : ''}>Open</option>
+            <option value="closing_soon" ${evt.status === 'closing_soon' ? 'selected' : ''}>Closing Soon</option>
+            <option value="full" ${evt.status === 'full' ? 'selected' : ''}>Full</option>
+            <option value="closed" ${evt.status === 'closed' ? 'selected' : ''}>Closed</option>
+          </select>
+        </td>
+        <td style="text-align: right;">
+          <div class="action-btn-group" style="justify-content: flex-end;">
+            <button class="btn-icon" title="Edit event" onclick="window.openEditEventModal('${evt.id}')">
+              <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button class="btn-icon reject" title="Delete event" onclick="window.deleteEvent('${evt.id}')">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+    })
+    .join('');
+
+  initLucide();
+}
+
+function setupEventControls() {
+  const searchInput = document.getElementById('events-search-input');
+  const statusFilter = document.getElementById('events-status-filter');
+  if (searchInput) searchInput.addEventListener('input', renderEventsTab);
+  if (statusFilter) statusFilter.addEventListener('change', renderEventsTab);
+
+  // Add Event Button
+  const btnAdd = document.getElementById('btn-open-add-event');
+  if (btnAdd) {
+    btnAdd.addEventListener('click', () => {
+      document.getElementById('form-event-editor').reset();
+      document.getElementById('event-edit-id').value = '';
+      document.getElementById('modal-event-title').textContent = 'Add New Competition Event';
+      document.getElementById('modal-event').classList.add('show');
+    });
+  }
+
+  // Event Form Submit
+  const eventForm = document.getElementById('form-event-editor');
+  if (eventForm) {
+    eventForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('event-edit-id').value;
+      const eventData = {
+        title: document.getElementById('evt-title').value.trim(),
+        category: document.getElementById('evt-category').value.trim(),
+        venue: document.getElementById('evt-venue').value.trim(),
+        fee: Number(document.getElementById('evt-fee').value),
+        prize_pool: Number(document.getElementById('evt-prize').value),
+        max_capacity: Number(document.getElementById('evt-capacity').value),
+        team_size_min: Number(document.getElementById('evt-team-min').value),
+        team_size_max: Number(document.getElementById('evt-team-max').value),
+        day_number: Number(document.getElementById('evt-day').value),
+        time_slot: document.getElementById('evt-time').value.trim(),
+        rules: document.getElementById('evt-rules').value.trim(),
+        is_featured: document.getElementById('evt-featured').checked,
+        status: document.getElementById('evt-status').value,
+      };
+      if (id) eventData.id = id;
+
+      try {
+        await db.saveEvent(eventData);
+        document.getElementById('modal-event').classList.remove('show');
+        cachedEvents = await db.getEvents();
+        renderEventsTab();
+        renderOverview();
+        showToast(`Event ${id ? 'updated' : 'created'} successfully`, 'success');
+      } catch (err) {
+        showToast('Error saving event: ' + err.message, 'error');
+      }
+    });
+  }
+}
+
+window.openEditEventModal = function (id) {
+  const evt = cachedEvents.find((e) => e.id === id);
+  if (!evt) return;
+
+  document.getElementById('event-edit-id').value = evt.id;
+  document.getElementById('evt-title').value = evt.title;
+  document.getElementById('evt-category').value = evt.category;
+  document.getElementById('evt-venue').value = evt.venue;
+  document.getElementById('evt-fee').value = evt.fee;
+  document.getElementById('evt-prize').value = evt.prize_pool;
+  document.getElementById('evt-capacity').value = evt.max_capacity;
+  document.getElementById('evt-team-min').value = evt.team_size_min || 1;
+  document.getElementById('evt-team-max').value = evt.team_size_max || 1;
+  document.getElementById('evt-day').value = evt.day_number || 1;
+  document.getElementById('evt-time').value = evt.time_slot;
+  document.getElementById('evt-rules').value = evt.rules || '';
+  document.getElementById('evt-featured').checked = evt.is_featured;
+  document.getElementById('evt-status').value = evt.status;
+
+  document.getElementById('modal-event-title').textContent = 'Edit Competition Event';
+  document.getElementById('modal-event').classList.add('show');
+};
+
+window.updateEventStatus = async function (id, status) {
+  const evt = cachedEvents.find((e) => e.id === id);
+  if (!evt) return;
+  evt.status = status;
+  await db.saveEvent(evt);
+  renderEventsTab();
+  showToast(`Status updated to ${status.replace('_', ' ').toUpperCase()}`, 'info');
+};
+
+window.toggleEventFeatured = async function (id, is_featured) {
+  const evt = cachedEvents.find((e) => e.id === id);
+  if (!evt) return;
+  evt.is_featured = is_featured;
+  await db.saveEvent(evt);
+  showToast(`Event ${is_featured ? 'featured on front page' : 'unfeatured'}`, 'info');
+};
+
+window.deleteEvent = async function (id) {
+  if (!confirm('Are you sure you want to delete this event? This will also remove its associated registrations.')) return;
+  await db.deleteEvent(id);
+  cachedEvents = await db.getEvents();
+  renderEventsTab();
+  renderOverview();
+  showToast('Event removed', 'info');
+};
+
+// ==============================================================================
+// 7. TAB 4: REGISTRATIONS & PAYMENTS
+// ==============================================================================
+
+function renderRegistrationsTab() {
+  const tbody = document.getElementById('registrations-table-body');
+  const eventSelect = document.getElementById('reg-event-filter');
+  if (!tbody) return;
+
+  // Populate event dropdown filter if needed
+  if (eventSelect && eventSelect.options.length <= 1) {
+    cachedEvents.forEach((evt) => {
+      const opt = document.createElement('option');
+      opt.value = evt.id;
+      opt.textContent = evt.title;
+      eventSelect.appendChild(opt);
+    });
+  }
+
+  const searchVal = (document.getElementById('reg-search-input')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('reg-status-filter')?.value || 'all';
+  const eventFilter = eventSelect?.value || 'all';
+
+  const filtered = cachedRegistrations.filter((r) => {
+    const matchesSearch =
+      r.ticket_code.toLowerCase().includes(searchVal) ||
+      r.leader_name.toLowerCase().includes(searchVal) ||
+      r.leader_phone.toLowerCase().includes(searchVal) ||
+      r.college_name.toLowerCase().includes(searchVal) ||
+      (r.transaction_id && r.transaction_id.toLowerCase().includes(searchVal));
+    const matchesStatus = statusFilter === 'all' || r.payment_status === statusFilter;
+    const matchesEvent = eventFilter === 'all' || r.event_id === eventFilter;
+    return matchesSearch && matchesStatus && matchesEvent;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">No registrations match search or filter.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered
+    .map((r) => {
+      const evt = cachedEvents.find((e) => e.id === r.event_id);
+      const membersCount = Array.isArray(r.team_members) ? r.team_members.length : 1;
+
+      return `
+      <tr>
+        <td>
+          <span style="font-family: var(--font-display); font-weight: 800; color: var(--fest-red); letter-spacing: 0.5px;">
+            ${escapeHtml(r.ticket_code)}
+          </span>
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${new Date(r.created_at).toLocaleDateString()}</span>
+        </td>
+        <td>
+          <strong>${escapeHtml(r.leader_name)}</strong>
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(r.leader_phone)} • ${escapeHtml(r.leader_email)}</span>
+          ${r.team_name ? `<span style="font-size: 0.75rem; color: var(--fest-orange); font-weight: 600;">Team: ${escapeHtml(r.team_name)}</span>` : ''}
+        </td>
+        <td>
+          <strong>${evt ? escapeHtml(evt.title) : 'Unknown Event'}</strong>
+          <button class="btn-demo-quick" style="padding: 2px 6px; font-size: 0.7rem; margin-top: 2px;" onclick="window.viewTeamModal('${r.id}')">
+            View Roster (${membersCount})
+          </button>
+        </td>
+        <td>${escapeHtml(r.college_name)}</td>
+        <td>
+          <code>${escapeHtml(r.transaction_id || 'N/A')}</code>
+        </td>
+        <td>
+          <span class="badge ${r.payment_status}">
+            ${r.payment_status}
+          </span>
+        </td>
+        <td>
+          <span class="badge ${r.checked_in ? 'checked' : ''}" style="${!r.checked_in ? 'background: #F3F4F6; color: #6B7280;' : ''}">
+            ${r.checked_in ? '✓ Admitted' : 'Not Present'}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <div class="action-btn-group" style="justify-content: flex-end;">
+            ${
+              r.payment_status !== 'verified'
+                ? `<button class="btn-icon verify" title="Verify Payment" onclick="window.updatePaymentStatus('${r.id}', 'verified')">
+                     <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                   </button>`
+                : ''
+            }
+            ${
+              r.payment_status !== 'rejected'
+                ? `<button class="btn-icon reject" title="Reject Payment" onclick="window.updatePaymentStatus('${r.id}', 'rejected')">
+                     <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                   </button>`
+                : ''
+            }
+          </div>
+        </td>
+      </tr>
+    `;
+    })
+    .join('');
+
+  initLucide();
+}
+
+function setupRegistrationControls() {
+  const searchInput = document.getElementById('reg-search-input');
+  const statusFilter = document.getElementById('reg-status-filter');
+  const eventFilter = document.getElementById('reg-event-filter');
+
+  if (searchInput) searchInput.addEventListener('input', renderRegistrationsTab);
+  if (statusFilter) statusFilter.addEventListener('change', renderRegistrationsTab);
+  if (eventFilter) eventFilter.addEventListener('change', renderRegistrationsTab);
+
+  // Open On-Spot Walk-In Modal
+  const btnOnSpot = document.getElementById('btn-open-onspot-modal');
+  if (btnOnSpot) {
+    btnOnSpot.addEventListener('click', () => {
+      const select = document.getElementById('onspot-event');
+      select.innerHTML = '';
+      cachedEvents.forEach((evt) => {
+        const opt = document.createElement('option');
+        opt.value = evt.id;
+        opt.textContent = `${evt.title} (₹${evt.fee})`;
+        select.appendChild(opt);
+      });
+      document.getElementById('form-onspot').reset();
+      document.getElementById('modal-onspot').classList.add('show');
+    });
+  }
+
+  // On-Spot Form Submit
+  const formOnSpot = document.getElementById('form-onspot');
+  if (formOnSpot) {
+    formOnSpot.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const event_id = document.getElementById('onspot-event').value;
+      const leader_name = document.getElementById('onspot-name').value.trim();
+      const leader_email = document.getElementById('onspot-email').value.trim();
+      const leader_phone = document.getElementById('onspot-phone').value.trim();
+      const college_name = document.getElementById('onspot-college').value.trim();
+      const team_name = document.getElementById('onspot-team').value.trim();
+      const payment_status = document.getElementById('onspot-payment').value;
+      const transaction_id = document.getElementById('onspot-txn').value.trim();
+      const autoCheckIn = document.getElementById('onspot-checkin').checked;
+
+      const regData = {
+        event_id,
+        leader_name,
+        leader_email,
+        leader_phone,
+        college_name,
+        team_name: team_name || null,
+        payment_status,
+        transaction_id,
+        checked_in: autoCheckIn,
+        checked_in_at: autoCheckIn ? new Date().toISOString() : null,
+      };
+
+      try {
+        const created = await db.addRegistration(regData);
+        document.getElementById('modal-onspot').classList.remove('show');
+        cachedRegistrations = await db.getRegistrations();
+        renderRegistrationsTab();
+        renderOverview();
+        showToast(`Registered successfully! Ticket Code: ${created.ticket_code}`, 'success');
+      } catch (err) {
+        showToast('Registration failed: ' + err.message, 'error');
+      }
+    });
+  }
+
+  // Export CSV
+  const btnCsv = document.getElementById('btn-export-csv');
+  if (btnCsv) {
+    btnCsv.addEventListener('click', exportRegistrationsCSV);
+  }
+}
+
+window.updatePaymentStatus = async function (id, status) {
+  await db.updatePayment(id, status);
+  cachedRegistrations = await db.getRegistrations();
+  renderRegistrationsTab();
+  renderOverview();
+  showToast(`Payment status updated to ${status.toUpperCase()}`, status === 'verified' ? 'success' : 'warning');
+};
+
+window.viewTeamModal = function (id) {
+  const reg = cachedRegistrations.find((r) => r.id === id);
+  if (!reg) return;
+
+  const titleEl = document.getElementById('modal-team-title');
+  const contentEl = document.getElementById('modal-team-content');
+
+  titleEl.textContent = `${reg.team_name || reg.leader_name} • Roster (${reg.ticket_code})`;
+
+  let members = [];
+  try {
+    members = typeof reg.team_members === 'string' ? JSON.parse(reg.team_members) : reg.team_members;
+  } catch (e) {
+    members = [];
+  }
+  if (!Array.isArray(members) || members.length === 0) {
+    members = [{ name: reg.leader_name, role: 'Lead Contestant' }];
+  }
+
+  contentEl.innerHTML = `
+    <div style="margin-bottom: 16px;">
+      <p style="font-size: 0.85rem; color: var(--text-muted);">College / Affiliation: <strong>${escapeHtml(reg.college_name)}</strong></p>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Contact: <strong>${escapeHtml(reg.leader_phone)}</strong> (${escapeHtml(reg.leader_email)})</p>
+    </div>
+    <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;">
+      <table style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Member Name</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members
+            .map(
+              (m, idx) => `
+            <tr>
+              <td><strong>${escapeHtml(m.name || 'Member ' + (idx + 1))}</strong></td>
+              <td><span class="badge" style="background: rgba(227, 90, 36, 0.1); color: var(--fest-orange);">${escapeHtml(m.role || 'Member')}</span></td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('modal-team').classList.add('show');
+};
+
+function exportRegistrationsCSV() {
+  if (cachedRegistrations.length === 0) {
+    showToast('No registrations to export', 'info');
+    return;
+  }
+
+  const headers = ['Ticket Code', 'Event Title', 'Leader Name', 'Email', 'Phone', 'College', 'Fee (INR)', 'Payment Status', 'Transaction Ref', 'Checked In'];
+  const rows = cachedRegistrations.map((r) => {
+    const evt = cachedEvents.find((e) => e.id === r.event_id);
+    return [
+      r.ticket_code,
+      evt ? `"${evt.title.replace(/"/g, '""')}"` : 'Unknown',
+      `"${r.leader_name.replace(/"/g, '""')}"`,
+      r.leader_email,
+      r.leader_phone,
+      `"${r.college_name.replace(/"/g, '""')}"`,
+      evt ? evt.fee : 0,
+      r.payment_status,
+      r.transaction_id || '',
+      r.checked_in ? 'YES' : 'NO',
+    ];
+  });
+
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `al_murafaqa_registrations_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('CSV downloaded successfully', 'success');
+}
+
+// ==============================================================================
+// 8. TAB 5: VENUE CHECK-IN DESK
+// ==============================================================================
+
+function renderCheckInTab() {
+  const streamBody = document.getElementById('checkin-stream-body');
+  if (!streamBody) return;
+
+  const checkedInList = cachedRegistrations
+    .filter((r) => r.checked_in)
+    .sort((a, b) => new Date(b.checked_in_at || 0) - new Date(a.checked_in_at || 0));
+
+  if (checkedInList.length === 0) {
+    streamBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">No attendees checked in yet today.</td></tr>';
+    return;
+  }
+
+  streamBody.innerHTML = checkedInList
+    .slice(0, 15)
+    .map((r) => {
+      const evt = cachedEvents.find((e) => e.id === r.event_id);
+      return `
+      <tr>
+        <td><strong style="color: var(--fest-red);">${escapeHtml(r.ticket_code)}</strong></td>
+        <td>${escapeHtml(r.leader_name)} ${r.team_name ? `(${escapeHtml(r.team_name)})` : ''}</td>
+        <td>${evt ? escapeHtml(evt.title) : 'Event'}</td>
+        <td>${escapeHtml(r.college_name)}</td>
+        <td>${r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString() : 'Checked In'}</td>
+      </tr>
+    `;
+    })
+    .join('');
+
+  initLucide();
+}
+
+function setupCheckInControls() {
+  const form = document.getElementById('checkin-search-form');
+  const ticketInput = document.getElementById('checkin-ticket-input');
+  const resultCard = document.getElementById('attendee-result-card');
+  const btnConfirm = document.getElementById('btn-confirm-checkin');
+  const btnCollect = document.getElementById('btn-collect-verify');
+
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = ticketInput.value.trim().toUpperCase();
+      if (!query) return;
+
+      const found = cachedRegistrations.find((r) => r.ticket_code.toUpperCase() === query);
+      if (!found) {
+        resultCard.classList.remove('active');
+        showToast(`Ticket ${query} not found in system`, 'error');
+        return;
+      }
+
+      currentAttendeeLookup = found;
+      displayAttendeeCheckInCard(found);
+    });
+  }
+
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', async () => {
+      if (!currentAttendeeLookup) return;
+      await db.checkIn(currentAttendeeLookup.id, true);
+      cachedRegistrations = await db.getRegistrations();
+      currentAttendeeLookup = cachedRegistrations.find((r) => r.id === currentAttendeeLookup.id);
+      displayAttendeeCheckInCard(currentAttendeeLookup);
+      renderCheckInTab();
+      renderOverview();
+      showToast(`Admitted ${currentAttendeeLookup.leader_name} (${currentAttendeeLookup.ticket_code})`, 'success');
+    });
+  }
+
+  if (btnCollect) {
+    btnCollect.addEventListener('click', async () => {
+      if (!currentAttendeeLookup) return;
+      await db.updatePayment(currentAttendeeLookup.id, 'verified');
+      await db.checkIn(currentAttendeeLookup.id, true);
+      cachedRegistrations = await db.getRegistrations();
+      currentAttendeeLookup = cachedRegistrations.find((r) => r.id === currentAttendeeLookup.id);
+      displayAttendeeCheckInCard(currentAttendeeLookup);
+      renderCheckInTab();
+      renderOverview();
+      showToast(`Payment collected & admitted ${currentAttendeeLookup.leader_name}!`, 'success');
+    });
+  }
+}
+
+function displayAttendeeCheckInCard(reg) {
+  const resultCard = document.getElementById('attendee-result-card');
+  const evt = cachedEvents.find((e) => e.id === reg.event_id);
+
+  document.getElementById('res-ticket-code').textContent = reg.ticket_code;
+  document.getElementById('res-leader-name').textContent = reg.leader_name;
+  document.getElementById('res-college').textContent = reg.college_name;
+  document.getElementById('res-event-title').textContent = evt ? evt.title : 'Event';
+  document.getElementById('res-phone').textContent = reg.leader_phone;
+
+  // Badge Container
+  const badgeContainer = document.getElementById('res-status-badge-container');
+  badgeContainer.innerHTML = `
+    <span class="badge ${reg.payment_status}" style="font-size: 0.85rem; padding: 6px 12px;">
+      Payment: ${reg.payment_status.toUpperCase()}
+    </span>
+  `;
+
+  // Warning Box
+  const warningBox = document.getElementById('checkin-warning-box');
+  const btnCollect = document.getElementById('btn-collect-verify');
+  const btnConfirm = document.getElementById('btn-confirm-checkin');
+  const labelConfirm = document.getElementById('btn-checkin-label');
+
+  if (reg.payment_status !== 'verified') {
+    warningBox.style.display = 'block';
+    btnCollect.style.display = 'inline-flex';
+  } else {
+    warningBox.style.display = 'none';
+    btnCollect.style.display = 'none';
+  }
+
+  if (reg.checked_in) {
+    btnConfirm.style.background = '#6B7280';
+    labelConfirm.textContent = `Already Admitted (${new Date(reg.checked_in_at).toLocaleTimeString()})`;
+    btnConfirm.disabled = true;
+  } else {
+    btnConfirm.style.background = 'var(--status-verified)';
+    labelConfirm.textContent = 'Confirm Gate Check-In';
+    btnConfirm.disabled = false;
+  }
+
+  resultCard.classList.add('active');
+  initLucide();
+}
+
+// ==============================================================================
+// 9. TAB 6: RESULTS & WINNERS PUBLISHER
+// ==============================================================================
+
+function renderWinnersTab() {
+  const select = document.getElementById('winner-event-select');
+  if (select && select.options.length === 0) {
+    cachedEvents.forEach((evt) => {
+      const opt = document.createElement('option');
+      opt.value = evt.id;
+      opt.textContent = `${evt.title} (${evt.category})`;
+      select.appendChild(opt);
+    });
+  }
+
+  // Right column: Published Winners Feed
+  const container = document.getElementById('published-winners-container');
+  if (!container) return;
+
+  if (cachedWinners.length === 0) {
+    container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">No winners published yet.</p>';
+    return;
+  }
+
+  // Group winners by event
+  const byEvent = {};
+  cachedWinners.forEach((w) => {
+    if (!byEvent[w.event_id]) byEvent[w.event_id] = [];
+    byEvent[w.event_id].push(w);
+  });
+
+  container.innerHTML = Object.keys(byEvent)
+    .map((evtId) => {
+      const evt = cachedEvents.find((e) => e.id === evtId);
+      const list = byEvent[evtId].sort((a, b) => a.position - b.position);
+      const medals = { 1: '🥇 1st', 2: '🥈 2nd', 3: '🥉 3rd' };
+
+      return `
+      <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: #FFFBF9;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <strong style="color: var(--fest-dark); font-size: 0.95rem;">${evt ? escapeHtml(evt.title) : 'Event'}</strong>
+          <span class="badge ${list[0]?.published ? 'verified' : 'pending'}">${list[0]?.published ? 'Published' : 'Draft'}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem;">
+          ${list
+            .map(
+              (w) => `
+            <div style="display: flex; justify-content: space-between;">
+              <span><strong>${medals[w.position] || w.position}:</strong> ${escapeHtml(w.winner_name)}</span>
+              <span style="color: var(--text-muted);">${escapeHtml(w.college_name)}</span>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    `;
+    })
+    .join('');
+}
+
+function setupWinnersControls() {
+  const form = document.getElementById('winners-form');
+  const select = document.getElementById('winner-event-select');
+
+  if (select) {
+    select.addEventListener('change', () => {
+      const eventId = select.value;
+      const existing = cachedWinners.filter((w) => w.event_id === eventId);
+      const w1 = existing.find((w) => w.position === 1);
+      const w2 = existing.find((w) => w.position === 2);
+      const w3 = existing.find((w) => w.position === 3);
+
+      document.getElementById('win-1-name').value = w1 ? w1.winner_name : '';
+      document.getElementById('win-1-college').value = w1 ? w1.college_name : '';
+      document.getElementById('win-2-name').value = w2 ? w2.winner_name : '';
+      document.getElementById('win-2-college').value = w2 ? w2.college_name : '';
+      document.getElementById('win-3-name').value = w3 ? w3.winner_name : '';
+      document.getElementById('win-3-college').value = w3 ? w3.college_name : '';
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const eventId = select.value;
+      const isPublished = document.getElementById('winner-publish-toggle').checked;
+
+      const winnersArray = [
+        {
+          position: 1,
+          winner_name: document.getElementById('win-1-name').value.trim(),
+          college_name: document.getElementById('win-1-college').value.trim(),
+        },
+        {
+          position: 2,
+          winner_name: document.getElementById('win-2-name').value.trim(),
+          college_name: document.getElementById('win-2-college').value.trim(),
+        },
+        {
+          position: 3,
+          winner_name: document.getElementById('win-3-name').value.trim(),
+          college_name: document.getElementById('win-3-college').value.trim(),
+        },
+      ];
+
+      try {
+        await db.saveWinners(eventId, winnersArray, isPublished);
+        cachedWinners = await db.getWinners();
+        renderWinnersTab();
+        showToast('Podium results recorded and saved successfully', 'success');
+      } catch (err) {
+        showToast('Failed to save winners: ' + err.message, 'error');
+      }
+    });
+  }
+}
+
+// ==============================================================================
+// 10. UTILITIES & TOAST NOTIFICATIONS
+// ==============================================================================
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+
+  const icons = {
+    success: 'check-circle',
+    error: 'alert-circle',
+    warning: 'alert-triangle',
+    info: 'info',
+  };
+
+  const borders = {
+    success: 'var(--status-verified)',
+    error: 'var(--status-rejected)',
+    warning: 'var(--status-pending)',
+    info: 'var(--fest-gold)',
+  };
+
+  toast.style.borderLeftColor = borders[type] || 'var(--fest-gold)';
+  toast.innerHTML = `
+    <i data-lucide="${icons[type] || 'info'}" style="width: 18px; height: 18px;"></i>
+    <span>${escapeHtml(message)}</span>
+  `;
+
+  container.appendChild(toast);
+  initLucide();
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[&<>'"]/g, (tag) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
