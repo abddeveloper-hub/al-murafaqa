@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Team | abdsite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo">
+                <ion-icon name="people"></ion-icon>
+            </div>
+            <h2>abdsite Hub</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="team-leader.html" class="nav-item"><ion-icon name="grid-outline"></ion-icon><span>Dashboard</span></a>
+            <a href="tl-team.html" class="nav-item active"><ion-icon name="people-outline"></ion-icon><span>My Team</span></a>
+            <a href="tl-participants.html" class="nav-item"><ion-icon name="person-add-outline"></ion-icon><span>Participants</span></a>
+            <a href="tl-competitions.html" class="nav-item"><ion-icon name="trophy-outline"></ion-icon><span>Competitions</span></a>
+            <a href="tl-results.html" class="nav-item"><ion-icon name="podium-outline"></ion-icon><span>Results</span></a>
+            <a href="tl-profile.html" class="nav-item"><ion-icon name="person-outline"></ion-icon><span>My Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div style="padding:12px 20px;margin-bottom:8px;background:rgba(139,92,246,0.1);border-radius:10px;border:1px solid rgba(139,92,246,0.2);">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Signed in as</p>
+                <p style="font-size:0.85rem;font-weight:600;color:var(--accent-purple);">Team Leader</p>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='../login.html'">
+                <ion-icon name="log-out-outline"></ion-icon><span>Log Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="search-bar">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" id="member-search" placeholder="Search team members..." oninput="filterMembers(this.value)">
+            </div>
+            <div class="header-actions">
+                <button class="notification-btn"><ion-icon name="notifications-outline"></ion-icon><span class="badge">2</span></button>
+                <div class="admin-profile">
+                    <img src="https://ui-avatars.com/api/?name=Team+Leader&background=8b5cf6&color=fff" class="avatar" alt="TL">
+                    <div class="profile-info"><span class="name">Ahmed Hassan</span><span class="role">Team Leader</span></div>
+                    <ion-icon name="chevron-down-outline"></ion-icon>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="header-title">
+                <h1>My Team</h1>
+                <p>Manage your team members and their competition status.</p>
+            </div>
+
+            <!-- Team Stats Row -->
+            <div class="summary-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+                <div class="card glass-card">
+                    <div class="card-icon purple"><ion-icon name="people"></ion-icon></div>
+                    <div class="card-info"><h3>Total Members</h3><div class="value">8</div></div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-icon green"><ion-icon name="checkmark-circle"></ion-icon></div>
+                    <div class="card-info"><h3>Active</h3><div class="value">6</div></div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-icon orange"><ion-icon name="time"></ion-icon></div>
+                    <div class="card-info"><h3>Away</h3><div class="value">2</div></div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-icon blue"><ion-icon name="star"></ion-icon></div>
+                    <div class="card-info"><h3>Top Scorer</h3><div class="value">John D.</div></div>
+                </div>
+            </div>
+
+            <!-- Members Table -->
+            <div class="glass-card">
+                <div class="card-header" style="padding:24px 24px 0;">
+                    <h2>Team Members</h2>
+                    <button class="btn-primary" data-modal-target="addMemberModal">+ Add Member</button>
+                </div>
+                <div class="table-responsive" style="padding:24px;">
+                    <table class="activity-table" id="members-table">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Role</th>
+                                <th>Email</th>
+                                <th>Competitions</th>
+                                <th>Avg Score</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="members-body">
+                            <tr>
+                                <td><div class="user-cell"><div class="user-avatar bg-purple">JD</div><span>John Doe</span></div></td>
+                                <td style="color:var(--text-secondary);">Developer</td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">john.d@team.com</td>
+                                <td>2</td>
+                                <td><span style="color:#10b981;font-weight:700;">94</span></td>
+                                <td><span class="status-badge success">Active</span></td>
+                                <td><button class="btn-danger remove-member-btn" style="padding:4px 12px;font-size:0.8rem;">Remove</button></td>
+                            </tr>
+                            <tr>
+                                <td><div class="user-cell"><div class="user-avatar bg-blue">AS</div><span>Alice Smith</span></div></td>
+                                <td style="color:var(--text-secondary);">Designer</td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">alice.s@team.com</td>
+                                <td>3</td>
+                                <td><span style="color:#10b981;font-weight:700;">88</span></td>
+                                <td><span class="status-badge success">Active</span></td>
+                                <td><button class="btn-danger remove-member-btn" style="padding:4px 12px;font-size:0.8rem;">Remove</button></td>
+                            </tr>
+                            <tr>
+                                <td><div class="user-cell"><div class="user-avatar bg-orange">MA</div><span>Mohamed Ali</span></div></td>
+                                <td style="color:var(--text-secondary);">Researcher</td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">m.ali@team.com</td>
+                                <td>1</td>
+                                <td><span style="color:#10b981;font-weight:700;">91</span></td>
+                                <td><span class="status-badge success">Active</span></td>
+                                <td><button class="btn-danger remove-member-btn" style="padding:4px 12px;font-size:0.8rem;">Remove</button></td>
+                            </tr>
+                            <tr>
+                                <td><div class="user-cell"><div class="user-avatar">SA</div><span>Sara Ahmed</span></div></td>
+                                <td style="color:var(--text-secondary);">Presenter</td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">sara.a@team.com</td>
+                                <td>2</td>
+                                <td><span style="color:#f59e0b;font-weight:700;">76</span></td>
+                                <td><span class="status-badge pending">Away</span></td>
+                                <td><button class="btn-danger remove-member-btn" style="padding:4px 12px;font-size:0.8rem;">Remove</button></td>
+                            </tr>
+                            <tr>
+                                <td><div class="user-cell"><div class="user-avatar bg-blue">LJ</div><span>Liam Johnson</span></div></td>
+                                <td style="color:var(--text-secondary);">Analyst</td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">liam.j@team.com</td>
+                                <td>1</td>
+                                <td><span style="color:#10b981;font-weight:700;">85</span></td>
+                                <td><span class="status-badge success">Active</span></td>
+                                <td><button class="btn-danger remove-member-btn" style="padding:4px 12px;font-size:0.8rem;">Remove</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Member Modal -->
+        <div class="modal-overlay" id="addMemberModal">
+            <div class="glass-card modal">
+                <div class="modal-header">
+                    <h2>Add Team Member</h2>
+                    <button class="btn-close">&times;</button>
+                </div>
+                <form id="add-member-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" class="form-control" placeholder="e.g. Ahmed Hassan" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" class="form-control" placeholder="member@team.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Role in Team</label>
+                            <select class="form-control">
+                                <option>Developer</option>
+                                <option>Designer</option>
+                                <option>Researcher</option>
+                                <option>Presenter</option>
+                                <option>Analyst</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary btn-close" style="color:var(--text-primary);font-size:0.85rem;">Cancel</button>
+                        <button type="submit" class="btn-primary">Add Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/main.js"></script>
+<script>
+    function showToast(msg, type='success') {
+        let c = document.querySelector('.toast-container');
+        if (!c) { c = document.createElement('div'); c.className='toast-container'; document.body.appendChild(c); }
+        const t = document.createElement('div');
+        t.className=`toast ${type}`;
+        t.innerHTML=`<ion-icon name="${type==='success'?'checkmark-circle-outline':'close-circle-outline'}"></ion-icon><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(()=>t.classList.add('show'),10);
+        setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);
+    }
+
+    function filterMembers(val) {
+        document.querySelectorAll('#members-body tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+        });
+    }
+
+    document.getElementById('members-body').addEventListener('click', e => {
+        if (e.target.classList.contains('remove-member-btn')) {
+            const row = e.target.closest('tr');
+            showToast('Member removed from team.', 'error');
+            row.style.transition='opacity 0.4s'; row.style.opacity='0';
+            setTimeout(()=>row.remove(),400);
+        }
+    });
+
+    document.getElementById('add-member-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const name = e.target.querySelector('input[type="text"]').value;
+        const email = e.target.querySelector('input[type="email"]').value;
+        const role = e.target.querySelector('select').value;
+        const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+        const colors = ['bg-purple','bg-blue','bg-orange',''];
+        const color = colors[Math.floor(Math.random()*colors.length)];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><div class="user-cell"><div class="user-avatar ${color}">${initials}</div><span>${name}</span></div></td>
+            <td style="color:var(--text-secondary);">${role}</td>
+            <td style="color:var(--text-muted);font-size:0.85rem;">${email}</td>
+            <td>0</td>
+            <td><span style="color:var(--text-muted);font-weight:700;">—</span></td>
+            <td><span class="status-badge success">Active</span></td>
+            <td><button class="btn-danger remove-member-btn" style="padding:4px 12px;font-size:0.8rem;">Remove</button></td>
+        `;
+        row.style.opacity='0'; row.style.transition='opacity 0.4s';
+        document.getElementById('members-body').appendChild(row);
+        setTimeout(()=>row.style.opacity='1',10);
+        document.getElementById('addMemberModal').classList.remove('active');
+        showToast(`${name} added to team!`);
+        e.target.reset();
+    });
+
+    document.querySelectorAll('[data-modal-target]').forEach(btn=>btn.addEventListener('click',()=>document.getElementById(btn.dataset.modalTarget).classList.add('active')));
+    document.querySelectorAll('.btn-close').forEach(btn=>btn.addEventListener('click',e=>e.target.closest('.modal-overlay').classList.remove('active')));
+</script>
+</body>
+</html>

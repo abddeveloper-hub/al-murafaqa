@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Competitions | Super Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/super-styles.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo">
+                    <ion-icon name="globe"></ion-icon>
+                </div>
+                <h2>abdsite Hub</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="super-admin.html" class="nav-item">
+                    <ion-icon name="globe-outline"></ion-icon>
+                    <span>System Overview</span>
+                </a>
+                <a href="super-competitions.html" class="nav-item active">
+                    <ion-icon name="trophy-outline"></ion-icon>
+                    <span>Global Competitions</span>
+                </a>
+                <a href="../admin/user-management.html" class="nav-item">
+                    <ion-icon name="shield-checkmark-outline"></ion-icon>
+                    <span>Manage Managers</span>
+                </a>
+                <a href="system-logs.html" class="nav-item">
+                    <ion-icon name="list-outline"></ion-icon>
+                    <span>System Logs</span>
+                </a>
+                <a href="global-settings.html" class="nav-item">
+                    <ion-icon name="cog-outline"></ion-icon>
+                    <span>Global Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="window.location.href='../login.html'">
+                    <ion-icon name="log-out-outline"></ion-icon>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <!-- Search & Filters in Header -->
+                <div class="search-bar">
+                    <ion-icon name="search-outline"></ion-icon>
+                    <input type="text" id="comp-search" placeholder="Search across all fests..." onkeyup="filterCompetitions()">
+                </div>
+
+                <div class="header-actions">
+                    <button class="notification-btn" aria-label="Notifications">
+                        <ion-icon name="notifications-outline"></ion-icon>
+                        <span class="badge">1</span>
+                    </button>
+                    
+                    <div class="admin-profile">
+                        <img src="https://ui-avatars.com/api/?name=Director&background=random&color=fff" alt="Super Admin Profile" class="avatar">
+                        <div class="profile-info">
+                            <span class="name">System Director</span>
+                            <span class="role">Super Admin</span>
+                        </div>
+                        <ion-icon name="chevron-down-outline"></ion-icon>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="header-title" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; flex-wrap: wrap; gap: 20px;">
+                    <div>
+                        <h1>Global Fests Monitor</h1>
+                        <p>View live progress, enrollment statistics, and status of all system-wide competitions.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openAddCompModal()">+ Create Competition</button>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="summary-cards" style="margin-bottom: 40px;">
+                    <div class="glass-card card">
+                        <div class="card-icon blue"><ion-icon name="calendar-outline"></ion-icon></div>
+                        <div class="card-info">
+                            <h3>Total Competitions</h3>
+                            <div class="value" id="stat-total">3</div>
+                            <span class="trend positive"><ion-icon name="arrow-up-outline"></ion-icon> Active System-wide</span>
+                        </div>
+                    </div>
+                    <div class="glass-card card">
+                        <div class="card-icon purple"><ion-icon name="people-outline"></ion-icon></div>
+                        <div class="card-info">
+                            <h3>Occupied Slots</h3>
+                            <div class="value" id="stat-slots">550</div>
+                            <span class="trend neutral">Across all events</span>
+                        </div>
+                    </div>
+                    <div class="glass-card card">
+                        <div class="card-icon green"><ion-icon name="checkmark-circle-outline"></ion-icon></div>
+                        <div class="card-info">
+                            <h3>Average Fill Rate</h3>
+                            <div class="value">78%</div>
+                            <span class="trend positive">High Demand</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 16px;">
+                    <div class="tabs-wrapper" style="margin: 0;">
+                        <button class="tab-btn active" id="filter-all" onclick="setCategoryFilter('all')">All Events</button>
+                        <button class="tab-btn" id="filter-tech" onclick="setCategoryFilter('tech')">Technology</button>
+                        <button class="tab-btn" id="filter-sports" onclick="setCategoryFilter('sports')">Sports</button>
+                        <button class="tab-btn" id="filter-arts" onclick="setCategoryFilter('arts')">Arts & Culture</button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Status:</span>
+                        <select class="form-control" id="status-filter" onchange="filterCompetitions()" style="padding: 8px 16px; border-radius: 8px; width: 140px; font-size: 0.85rem;">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Competitions Grid -->
+                <div class="grid-cards" id="competitions-grid">
+                    
+                    <!-- Competition 1 -->
+                    <div class="glass-card comp-card" data-category="tech" data-status="active">
+                        <!-- Card Banner Indicator -->
+                        <div style="height: 100px; border-radius: 16px; background: linear-gradient(135deg, #7c3aed, #a855f7); margin: -12px -12px 16px -12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem;">
+                            <ion-icon name="code-slash-outline" style="opacity: 0.15; font-size: 5rem; position: absolute; right: -10px; bottom: -10px;"></ion-icon>
+                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; background: rgba(0,0,0,0.2); padding: 6px 14px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);">Coding & Development</span>
+                        </div>
+                        <div class="comp-header" style="margin-bottom: 8px;">
+                            <h3 class="comp-title">Annual Hackathon 2026</h3>
+                            <span class="status-chip open" style="margin: 0;"><span class="status-dot"></span> Active</span>
+                        </div>
+                        
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="calendar-outline"></ion-icon> Oct 15 - Oct 17, 2026</span>
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="location-outline"></ion-icon> Main Campus Auditorium</span>
+                        </div>
+
+                        <!-- Progress Bar (Slots occupancy indicator) -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                                <span>Roster Capacity</span>
+                                <span class="slots-text">150 / 200 Slots</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 100px; overflow: hidden;">
+                                <div style="width: 75%; height: 100%; background: var(--gradient-primary); border-radius: 100px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="comp-footer" style="margin-top: auto; padding-top: 16px;">
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Managed by: MIT Organizers</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Competition 2 -->
+                    <div class="glass-card comp-card" data-category="sports" data-status="upcoming">
+                        <!-- Card Banner Indicator -->
+                        <div style="height: 100px; border-radius: 16px; background: linear-gradient(135deg, #f59e0b, #ef4444); margin: -12px -12px 16px -12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem;">
+                            <ion-icon name="basketball-outline" style="opacity: 0.15; font-size: 5rem; position: absolute; right: -10px; bottom: -10px;"></ion-icon>
+                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; background: rgba(0,0,0,0.2); padding: 6px 14px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);">Sports Leagues</span>
+                        </div>
+                        <div class="comp-header" style="margin-bottom: 8px;">
+                            <h3 class="comp-title">Campus Sports Meet</h3>
+                            <span class="status-chip upcoming" style="margin: 0;"><span class="status-dot"></span> Upcoming</span>
+                        </div>
+                        
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="calendar-outline"></ion-icon> Nov 05 - Nov 08, 2026</span>
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="location-outline"></ion-icon> Arena Field & Complex</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                                <span>Roster Capacity</span>
+                                <span class="slots-text">320 / 400 Slots</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 100px; overflow: hidden;">
+                                <div style="width: 80%; height: 100%; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 100px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="comp-footer" style="margin-top: auto; padding-top: 16px;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Managed by: Sports Dept</span>
+                        </div>
+                    </div>
+
+                    <!-- Competition 3 -->
+                    <div class="glass-card comp-card" data-category="arts" data-status="upcoming">
+                        <!-- Card Banner Indicator -->
+                        <div style="height: 100px; border-radius: 16px; background: linear-gradient(135deg, #10b981, #059669); margin: -12px -12px 16px -12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem;">
+                            <ion-icon name="color-palette-outline" style="opacity: 0.15; font-size: 5rem; position: absolute; right: -10px; bottom: -10px;"></ion-icon>
+                            <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; background: rgba(0,0,0,0.2); padding: 6px 14px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);">Exhibitions & Arts</span>
+                        </div>
+                        <div class="comp-header" style="margin-bottom: 8px;">
+                            <h3 class="comp-title">Fine Arts Showcase</h3>
+                            <span class="status-chip upcoming" style="margin: 0;"><span class="status-dot"></span> Upcoming</span>
+                        </div>
+                        
+                        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="calendar-outline"></ion-icon> Dec 12, 2026</span>
+                            <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="location-outline"></ion-icon> Creative Exhibition Gallery</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                                <span>Roster Capacity</span>
+                                <span class="slots-text">80 / 150 Slots</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 100px; overflow: hidden;">
+                                <div style="width: 53%; height: 100%; background: linear-gradient(135deg, #10b981, #059669); border-radius: 100px;"></div>
+                            </div>
+                        </div>
+
+                        <div class="comp-footer" style="margin-top: auto; padding-top: 16px;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Managed by: Art Association</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Super Admin to create a competition -->
+    <div class="modal-overlay" id="addCompModal">
+        <div class="glass-card modal">
+            <div class="modal-header">
+                <h2>Create Global Competition</h2>
+                <button class="btn-close" onclick="closeAddCompModal()">&times;</button>
+            </div>
+            <form onsubmit="handleSuperCreateComp(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Competition Title</label>
+                        <input type="text" id="sc-name" class="form-control" placeholder="e.g. Robotics Championship" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="sc-cat" class="form-control" required>
+                                <option value="tech">Technology</option>
+                                <option value="sports">Sports</option>
+                                <option value="arts">Arts & Culture</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="sc-status" class="form-control" required>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="live">Active / Live</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Date Schedule</label>
+                            <input type="text" id="sc-date" class="form-control" placeholder="e.g. Dec 10, 2026" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Venue / Location</label>
+                            <input type="text" id="sc-loc" class="form-control" placeholder="e.g. Tech Arena Hall A" required>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Max Slots</label>
+                            <input type="number" id="sc-max" class="form-control" value="100" min="10" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Organizing Body</label>
+                            <input type="text" id="sc-organizer" class="form-control" placeholder="e.g. Central Board" value="Central Board">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeAddCompModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Competition</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="../js/super-main.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        let currentFilter = 'all';
+        let competitionsData = [];
+
+        function initSuperCompetitions() {
+            const saved = localStorage.getItem('compete_competitions');
+            if (saved) {
+                competitionsData = JSON.parse(saved);
+            } else {
+                competitionsData = [
+                    { name: "Annual Hackathon 2026", category: "tech", status: "live", date: "Oct 15 - Oct 17, 2026", location: "Main Campus Auditorium", slots: 150, maxSlots: 200, organizer: "MIT Organizers" },
+                    { name: "Campus Sports Meet", category: "sports", status: "upcoming", date: "Nov 05 - Nov 08, 2026", location: "Arena Field & Complex", slots: 320, maxSlots: 400, organizer: "Sports Dept" },
+                    { name: "Fine Arts Showcase", category: "arts", status: "upcoming", date: "Dec 12, 2026", location: "Creative Exhibition Gallery", slots: 80, maxSlots: 150, organizer: "Art Association" }
+                ];
+                localStorage.setItem('compete_competitions', JSON.stringify(competitionsData));
+            }
+            renderCompetitionsGrid();
+        }
+
+        function renderCompetitionsGrid() {
+            const grid = document.getElementById('competitions-grid');
+            grid.innerHTML = '';
+
+            const participants = JSON.parse(localStorage.getItem('compete_participants') || localStorage.getItem('compete_candidates') || '[]');
+
+            let totalOccupied = 0;
+
+            competitionsData.forEach(comp => {
+                const actualCount = participants.filter(p => p.comp && p.comp.toLowerCase() === comp.name.toLowerCase()).length;
+                const occupied = actualCount > 0 ? actualCount : (comp.slots || 25);
+                const max = comp.maxSlots || 100;
+                totalOccupied += occupied;
+
+                const percent = Math.min(100, Math.round((occupied / max) * 100));
+
+                let icon = 'code-slash-outline';
+                let tag = 'Coding & Development';
+                let bgGradient = 'linear-gradient(135deg, #7c3aed, #a855f7)';
+
+                if (comp.category === 'sports') {
+                    icon = 'basketball-outline';
+                    tag = 'Sports Leagues';
+                    bgGradient = 'linear-gradient(135deg, #f59e0b, #ef4444)';
+                } else if (comp.category === 'arts') {
+                    icon = 'color-palette-outline';
+                    tag = 'Exhibitions & Arts';
+                    bgGradient = 'linear-gradient(135deg, #10b981, #059669)';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'glass-card comp-card';
+                card.dataset.category = comp.category || 'tech';
+                card.dataset.status = (comp.status || 'upcoming').toLowerCase();
+
+                card.innerHTML = `
+                    <div style="height: 100px; border-radius: 16px; background: ${bgGradient}; margin: -12px -12px 16px -12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem;">
+                        <ion-icon name="${icon}" style="opacity: 0.15; font-size: 5rem; position: absolute; right: -10px; bottom: -10px;"></ion-icon>
+                        <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; background: rgba(0,0,0,0.2); padding: 6px 14px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);">${tag}</span>
+                    </div>
+                    <div class="comp-header" style="margin-bottom: 8px;">
+                        <h3 class="comp-title">${comp.name}</h3>
+                        <span class="status-chip ${comp.status === 'live' || comp.status === 'active' ? 'open' : 'upcoming'}" style="margin: 0;"><span class="status-dot"></span> ${comp.status || 'Active'}</span>
+                    </div>
+                    
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="calendar-outline"></ion-icon> ${comp.date || 'TBD'}</span>
+                        <span style="display: inline-flex; align-items: center; gap: 8px;"><ion-icon name="location-outline"></ion-icon> ${comp.location || 'Campus Hall'}</span>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">
+                            <span>Roster Capacity</span>
+                            <span class="slots-text">${occupied} / ${max} Slots</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 100px; overflow: hidden;">
+                            <div style="width: ${percent}%; height: 100%; background: ${bgGradient}; border-radius: 100px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="comp-footer" style="margin-top: auto; padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Org: ${comp.organizer || 'Central Board'}</span>
+                        <button class="btn-text" style="color: var(--accent-red);" onclick="deleteSuperComp('${comp.name}')" title="Delete Competition"><ion-icon name="trash-outline"></ion-icon></button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('stat-total').textContent = competitionsData.length;
+            document.getElementById('stat-slots').textContent = totalOccupied.toLocaleString();
+
+            filterCompetitions();
+        }
+
+        function setCategoryFilter(category) {
+            currentFilter = category;
+            const categoryBtnMap = {
+                'all': 'filter-all',
+                'tech': 'filter-tech',
+                'sports': 'filter-sports',
+                'arts': 'filter-arts'
+            };
+
+            Object.keys(categoryBtnMap).forEach(key => {
+                const btn = document.getElementById(categoryBtnMap[key]);
+                if (btn) btn.classList.toggle('active', key === category);
+            });
+
+            filterCompetitions();
+        }
+
+        function filterCompetitions() {
+            const searchVal = (document.getElementById('comp-search').value || '').toLowerCase();
+            const statusVal = document.getElementById('status-filter').value;
+            const cards = document.querySelectorAll('.comp-card');
+
+            cards.forEach(card => {
+                const title = card.querySelector('.comp-title').textContent.toLowerCase();
+                const cat = card.dataset.category;
+                const status = card.dataset.status;
+
+                const matchesSearch = title.includes(searchVal);
+                const matchesCategory = currentFilter === 'all' || cat === currentFilter;
+                const matchesStatus = statusVal === 'all' || status === statusVal || (statusVal === 'active' && status === 'live');
+
+                if (matchesSearch && matchesCategory && matchesStatus) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function openAddCompModal() {
+            document.getElementById('addCompModal').classList.add('active');
+        }
+
+        function closeAddCompModal() {
+            document.getElementById('addCompModal').classList.remove('active');
+        }
+
+        function handleSuperCreateComp(e) {
+            e.preventDefault();
+            const newComp = {
+                name: document.getElementById('sc-name').value.trim(),
+                category: document.getElementById('sc-cat').value,
+                status: document.getElementById('sc-status').value,
+                date: document.getElementById('sc-date').value.trim(),
+                location: document.getElementById('sc-loc').value.trim(),
+                maxSlots: parseInt(document.getElementById('sc-max').value) || 100,
+                slots: 0,
+                organizer: document.getElementById('sc-organizer').value.trim() || 'Central Board'
+            };
+
+            competitionsData.push(newComp);
+            if (window.syncCompetitions) {
+                window.syncCompetitions(competitionsData);
+            } else {
+                localStorage.setItem('compete_competitions', JSON.stringify(competitionsData));
+            }
+
+            if (window.logSystemActivity) {
+                window.logSystemActivity(`Super Admin created Global Competition: ${newComp.name} (${newComp.category})`);
+            }
+
+            closeAddCompModal();
+            e.target.reset();
+            renderCompetitionsGrid();
+            window.showToast('Global competition created successfully!');
+        }
+
+        function deleteSuperComp(name) {
+            if (confirm(`Permanently remove competition "${name}"?`)) {
+                competitionsData = competitionsData.filter(c => c.name !== name);
+                if (window.syncCompetitions) {
+                    window.syncCompetitions(competitionsData);
+                } else {
+                    localStorage.setItem('compete_competitions', JSON.stringify(competitionsData));
+                }
+                if (window.logSystemActivity) {
+                    window.logSystemActivity(`Super Admin removed competition: ${name}`);
+                }
+                renderCompetitionsGrid();
+                window.showToast('Competition removed.', 'info');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initSuperCompetitions);
+    </script>
+</body>
+</html>

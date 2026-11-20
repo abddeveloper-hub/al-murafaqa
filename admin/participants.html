@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participants Directory | Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <style>
+        .section-badge {
+            background: var(--accent-purple-glow);
+            color: var(--accent-purple);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid rgba(124, 58, 237, 0.1);
+        }
+
+        .points-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .points-badge.positive {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .points-badge.negative {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .points-badge.neutral {
+            background: rgba(100, 116, 139, 0.1);
+            color: #64748b;
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo">
+                    <ion-icon name="trophy"></ion-icon>
+                </div>
+                <h2>abdsite Hub</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <ion-icon name="grid-outline"></ion-icon>
+                    <span>Overview</span>
+                </a>
+                <a href="competitions.html" class="nav-item">
+                    <ion-icon name="trophy-outline"></ion-icon>
+                    <span>Competitions</span>
+                </a>
+                <a href="teams.html" class="nav-item">
+                    <ion-icon name="people-circle-outline"></ion-icon>
+                    <span>House Teams</span>
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <ion-icon name="person-add-outline"></ion-icon>
+                    <span>Manage Managers</span>
+                </a>
+                <a href="judge-management.html" class="nav-item">
+                    <ion-icon name="medal-outline"></ion-icon>
+                    <span>Manage Judges</span>
+                </a>
+                <a href="participants.html" class="nav-item active">
+                    <ion-icon name="people-outline"></ion-icon>
+                    <span>Participants</span>
+                </a>
+                <a href="results.html" class="nav-item">
+                    <ion-icon name="podium-outline"></ion-icon>
+                    <span>Scoring Desk</span>
+                </a>
+                <div style="margin: 20px 20px 10px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">System</div>
+                <a href="data-management.html" class="nav-item">
+                    <ion-icon name="server-outline"></ion-icon>
+                    <span>Data & Backup</span>
+                </a>
+                <a href="../super-admin/system-logs.html" class="nav-item">
+                    <ion-icon name="list-outline"></ion-icon>
+                    <span>Audit Logs</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <ion-icon name="settings-outline"></ion-icon>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="window.location.href='../login.html'">
+                    <ion-icon name="log-out-outline"></ion-icon>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-bar">
+                    <ion-icon name="search-outline"></ion-icon>
+                    <input type="text" id="search-input" placeholder="Search name, email, or section..." onkeyup="filterParticipants()">
+                </div>
+
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <ion-icon name="notifications-outline"></ion-icon>
+                        <span class="badge">3</span>
+                    </button>
+                    
+                    <div class="admin-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=7c3aed&color=fff" alt="Admin Profile" class="avatar">
+                        <div class="profile-info">
+                            <span class="name">Admin User</span>
+                            <span class="role">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="header-title" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 30px; flex-wrap:wrap; gap:20px;">
+                    <div>
+                        <h1>Participants Directory</h1>
+                        <p>Detailed view of all registered candidates across house teams. Management is performed by Team Managers.</p>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-secondary" onclick="exportToCSV()" title="Export CSV">
+                            <ion-icon name="download-outline"></ion-icon> Export CSV
+                        </button>
+                        <button class="btn-primary" onclick="openModal('addParticipantModal')">
+                            <ion-icon name="person-add-outline"></ion-icon> + Add Participant
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats summary -->
+                <div class="summary-cards" style="margin-bottom: 40px;">
+                    <div class="card glass-card">
+                        <div class="card-icon purple"><ion-icon name="people-outline"></ion-icon></div>
+                        <div class="card-info">
+                            <h3>Total Registrants</h3>
+                            <div class="value" id="stat-total">0</div>
+                        </div>
+                    </div>
+                    <div class="card glass-card">
+                        <div class="card-icon blue"><ion-icon name="school-outline"></ion-icon></div>
+                        <div class="card-info">
+                            <h3>Active Sections</h3>
+                            <div class="value" id="stat-sections">0</div>
+                        </div>
+                    </div>
+                    <div class="card glass-card">
+                        <div class="card-icon orange"><ion-icon name="stats-chart-outline"></ion-icon></div>
+                        <div class="card-info">
+                            <h3>Average Score</h3>
+                            <div class="value" id="stat-avg-points">0.0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-header" style="padding: 24px 24px 0;">
+                        <h2>Active Roster</h2>
+                    </div>
+
+                    <div class="table-responsive" style="padding: 24px;">
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Section</th>
+                                    <th>Competition</th>
+                                    <th>Points</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participants-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Participant Modal -->
+    <div class="modal-overlay" id="addParticipantModal">
+        <div class="glass-card modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2>Register New Participant</h2>
+                <button class="btn-close" onclick="closeModal('addParticipantModal')">&times;</button>
+            </div>
+            <form id="add-participant-form" onsubmit="handleParticipantSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="part-name" class="form-control" placeholder="e.g. Zaid Haris" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="part-email" class="form-control" placeholder="zaid@institution.edu" required>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="form-group">
+                            <label>Section</label>
+                            <select id="part-section" class="form-control" required>
+                                <option value="Madaneeyam">Madaneeyam</option>
+                                <option value="Mubbashara">Mubbashara</option>
+                                <option value="Musharrafa">Musharrafa</option>
+                                <option value="Old Students">Old Students</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>House Team</label>
+                            <select id="part-team" class="form-control" required>
+                                <option value="Red Team">Red Team</option>
+                                <option value="Blue Team">Blue Team</option>
+                                <option value="Green Team">Green Team</option>
+                                <option value="Yellow Team">Yellow Team</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Competition Assignment</label>
+                        <select id="part-comp" class="form-control" required>
+                            <!-- Dynamically loaded -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('addParticipantModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Register Delegate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let participantsList = [];
+
+        function initializeData() {
+            participantsList = JSON.parse(localStorage.getItem('compete_participants') || '[]');
+
+            // Populate competition dropdown
+            const compSelect = document.getElementById('part-comp');
+            if (compSelect) {
+                const comps = JSON.parse(localStorage.getItem('compete_competitions') || '[]');
+                compSelect.innerHTML = comps.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            }
+
+            renderParticipants();
+        }
+
+        function renderParticipants() {
+            const tbody = document.getElementById('participants-body');
+            tbody.innerHTML = '';
+
+            const search = document.getElementById('search-input').value.toLowerCase();
+
+            const filtered = participantsList.filter(p =>
+                p.name.toLowerCase().includes(search) || 
+                p.email.toLowerCase().includes(search) ||
+                (p.section && p.section.toLowerCase().includes(search))
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No participants found.</td></tr>';
+                updateStats();
+                return;
+            }
+
+            filtered.forEach(p => {
+                const originalIdx = participantsList.indexOf(p);
+                const statusClass = p.status === 'Approved' ? 'success' : 'pending';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar bg-purple" style="width:36px; height:36px; font-size:0.85rem; font-weight:700;">${p.name[0]}</div>
+                                <strong>${p.name}</strong>
+                            </div>
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 0.85rem;">${p.email}</td>
+                        <td><span class="section-badge">${p.section || 'General'}</span></td>
+                        <td>${p.comp || 'General Event'}</td>
+                        <td><span class="points-badge neutral">${p.points || 0} pts</span></td>
+                        <td><span class="status-badge ${statusClass}">${p.status || 'Approved'}</span></td>
+                        <td style="text-align: right;">
+                            <button class="btn-text" style="color:var(--accent-red);" onclick="deleteParticipant(${originalIdx})" title="Delete"><ion-icon name="trash-outline" style="font-size:1.1rem;"></ion-icon></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = participantsList.length;
+            const sections = new Set(participantsList.map(p => p.section).filter(Boolean)).size;
+            document.getElementById('stat-sections').textContent = sections;
+            const scored = participantsList.filter(p => (p.points || 0) > 0);
+            const avg = scored.length > 0 ? (scored.reduce((sum, p) => sum + p.points, 0) / scored.length).toFixed(1) : "0.0";
+            document.getElementById('stat-avg-points').textContent = avg;
+        }
+
+        function filterParticipants() {
+            renderParticipants();
+        }
+
+        function openModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('active');
+        }
+
+        function closeModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.remove('active');
+        }
+
+        function handleParticipantSubmit(e) {
+            e.preventDefault();
+            const newPart = {
+                name: document.getElementById('part-name').value.trim(),
+                email: document.getElementById('part-email').value.trim(),
+                section: document.getElementById('part-section').value,
+                team: document.getElementById('part-team').value,
+                comp: document.getElementById('part-comp').value,
+                points: 0,
+                status: "Approved"
+            };
+            participantsList.push(newPart);
+            window.syncParticipants(participantsList);
+            closeModal('addParticipantModal');
+            e.target.reset();
+            renderParticipants();
+            window.showToast(`${newPart.name} registered successfully!`, 'success');
+            window.logSystemActivity(`👤 New participant registered: ${newPart.name}`, 'info');
+        }
+
+        function deleteParticipant(idx) {
+            const p = participantsList[idx];
+            if (!p) return;
+            if (confirm(`Remove participant "${p.name}"?`)) {
+                participantsList.splice(idx, 1);
+                window.syncParticipants(participantsList);
+                renderParticipants();
+                window.showToast(`${p.name} removed.`, 'info');
+                window.logSystemActivity(`🗑️ Participant removed: ${p.name}`, 'warning');
+            }
+        }
+
+        function exportToCSV() {
+            if (participantsList.length === 0) {
+                window.showToast('No participants to export.', 'warning');
+                return;
+            }
+            const headers = ['Name', 'Email', 'Section', 'Team', 'Competition', 'Points', 'Status'];
+            const rows = participantsList.map(p => [
+                `"${p.name || ''}"`,
+                `"${p.email || ''}"`,
+                `"${p.section || ''}"`,
+                `"${p.team || ''}"`,
+                `"${p.comp || ''}"`,
+                p.points || 0,
+                `"${p.status || 'Approved'}"`
+            ]);
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `participants_export_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.showToast('Participants exported to CSV!', 'success');
+            window.logSystemActivity('📊 Participant directory exported as CSV.', 'info');
+        }
+
+        window.addEventListener('DOMContentLoaded', initializeData);
+    </script>
+</body>
+</html>

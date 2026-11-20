@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submitted Scores | Judge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="../js/main.js"></script>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo">
+                <ion-icon name="medal"></ion-icon>
+            </div>
+            <h2>abdsite Hub</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="judge.html" class="nav-item"><ion-icon name="grid-outline"></ion-icon><span>Dashboard</span></a>
+            <a href="judge-assignments.html" class="nav-item"><ion-icon name="clipboard-outline"></ion-icon><span>My Assignments</span></a>
+            <a href="judge-scoring.html" class="nav-item"><ion-icon name="create-outline"></ion-icon><span>Score Entry</span></a>
+            <a href="judge-results.html" class="nav-item active"><ion-icon name="bar-chart-outline"></ion-icon><span>Submitted Scores</span></a>
+            <a href="judge-profile.html" class="nav-item"><ion-icon name="person-outline"></ion-icon><span>My Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div style="padding:12px 20px;margin-bottom:8px;background:rgba(245,158,11,0.1);border-radius:10px;border:1px solid rgba(245,158,11,0.2);">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Signed in as</p>
+                <p style="font-size:0.85rem;font-weight:600;color:#f59e0b;">Judge</p>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='../login.html'"><ion-icon name="log-out-outline"></ion-icon><span>Log Out</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="search-bar"><ion-icon name="search-outline"></ion-icon><input type="text" id="search-scores" placeholder="Search scores..." oninput="filterScores(this.value)"></div>
+            <div class="header-actions">
+                <button class="notification-btn"><ion-icon name="notifications-outline"></ion-icon><span class="badge">2</span></button>
+                <div class="admin-profile">
+                    <img id="judge-avatar-img" src="https://ui-avatars.com/api/?name=Dr+Khalid&background=f59e0b&color=fff" class="avatar" alt="Judge">
+                    <div class="profile-info"><span class="name" id="judge-header-name">Dr. Khalid Omar</span><span class="role">Judge</span></div>
+                    <ion-icon name="chevron-down-outline"></ion-icon>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="header-title"><h1>Submitted Scores</h1><p>All scores you have submitted across competitions.</p></div>
+
+            <!-- Summary -->
+            <div class="summary-cards" style="margin-bottom:24px;">
+                <div class="card glass-card">
+                    <div class="card-icon green"><ion-icon name="checkmark-circle"></ion-icon></div>
+                    <div class="card-info"><h3>Total Submitted</h3><div class="value" id="card-total-submitted">0</div></div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-icon orange"><ion-icon name="time"></ion-icon></div>
+                    <div class="card-info"><h3>Remaining</h3><div class="value" id="card-remaining">0</div></div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-icon blue"><ion-icon name="star"></ion-icon></div>
+                    <div class="card-info"><h3>Avg Score</h3><div class="value" id="card-avg-score">0.0</div></div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-icon purple"><ion-icon name="trophy"></ion-icon></div>
+                    <div class="card-info"><h3>Highest Given</h3><div class="value" id="card-highest-score">0</div></div>
+                </div>
+            </div>
+
+            <!-- Filter -->
+            <div class="glass-card" style="padding:16px 20px;margin-bottom:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+                <select id="comp-filter" class="form-control" style="max-width:280px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;color:var(--text-primary);font-family:inherit;outline:none;" onchange="renderScoresTable()">
+                    <option value="all">All Competitions</option>
+                </select>
+                <span style="font-size:0.85rem;color:var(--text-muted);margin-left:auto;" id="score-count">0 scores shown</span>
+            </div>
+
+            <!-- Scores Table -->
+            <div class="glass-card" style="padding:0;overflow:hidden;">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Participant</th>
+                            <th>House Team</th>
+                            <th>Innovation</th>
+                            <th>Execution</th>
+                            <th>Presentation</th>
+                            <th>Impact</th>
+                            <th>Total</th>
+                            <th>Competition</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scores-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+let allScoresList = [];
+
+function initJudgeResults() {
+    const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+    if (user.name) {
+        const nameEl = document.getElementById('judge-header-name');
+        if (nameEl) nameEl.textContent = user.name;
+        const avatarEl = document.getElementById('judge-avatar-img');
+        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=f59e0b&color=fff`;
+    }
+
+    // Populate competitions dropdown
+    const competitions = JSON.parse(localStorage.getItem('compete_competitions') || '[]');
+    const compFilter = document.getElementById('comp-filter');
+    compFilter.innerHTML = '<option value="all">All Competitions</option>';
+    competitions.forEach(c => {
+        compFilter.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    });
+
+    // Load results
+    const results = JSON.parse(localStorage.getItem('compete_results') || '[]');
+    const judgeScores = JSON.parse(localStorage.getItem('compete_judge_scores') || '[]');
+
+    if (results.length === 0 && judgeScores.length === 0) {
+        allScoresList = [
+            { name: 'John Doe', team: 'Red Team', prog: 'Annual Hackathon 2026', score: 93, grade: 'A+', innovation: 38, execution: 28, presentation: 18, impact: 9 },
+            { name: 'Alice Smith', team: 'Blue Team', prog: 'Annual Hackathon 2026', score: 86, grade: 'A', innovation: 32, execution: 28, presentation: 18, impact: 8 },
+            { name: 'Sara Ahmed', team: 'Green Team', prog: 'Campus Sports Meet', score: 78, grade: 'B+', innovation: 30, execution: 25, presentation: 16, impact: 7 }
+        ];
+    } else {
+        // Merge results and detailed judge scores
+        allScoresList = results.map(r => {
+            const detail = judgeScores.find(js => js.name === r.name && js.prog === r.prog);
+            const inn = detail ? detail.innovation : Math.min(40, Math.round(r.score * 0.4));
+            const exe = detail ? detail.execution : Math.min(30, Math.round(r.score * 0.3));
+            const pre = detail ? detail.presentation : Math.min(20, Math.round(r.score * 0.2));
+            const imp = detail ? detail.impact : Math.min(10, Math.max(0, r.score - inn - exe - pre));
+
+            return {
+                name: r.name,
+                team: r.team || (detail ? detail.team : 'General'),
+                prog: r.prog || 'General Competition',
+                score: r.score,
+                grade: r.grade || 'A',
+                innovation: inn,
+                execution: exe,
+                presentation: pre,
+                impact: imp
+            };
+        });
+    }
+
+    // Sort by score descending
+    allScoresList.sort((a, b) => b.score - a.score);
+
+    // Calculate Summary Metrics
+    const totalSubmitted = allScoresList.length;
+    const participants = JSON.parse(localStorage.getItem('compete_participants') || localStorage.getItem('compete_candidates') || '[]');
+    const totalParticipants = participants.length > 0 ? participants.length : totalSubmitted + 4;
+    const remaining = Math.max(0, totalParticipants - totalSubmitted);
+    const avgScore = totalSubmitted > 0 ? (allScoresList.reduce((acc, s) => acc + s.score, 0) / totalSubmitted).toFixed(1) : '0.0';
+    const highestScore = totalSubmitted > 0 ? Math.max(...allScoresList.map(s => s.score)) : 0;
+
+    document.getElementById('card-total-submitted').textContent = totalSubmitted;
+    document.getElementById('card-remaining').textContent = remaining;
+    document.getElementById('card-avg-score').textContent = avgScore;
+    document.getElementById('card-highest-score').textContent = highestScore;
+
+    renderScoresTable();
+}
+
+function renderScoresTable() {
+    const tbody = document.getElementById('scores-body');
+    tbody.innerHTML = '';
+
+    const filterVal = document.getElementById('comp-filter').value;
+    const searchVal = (document.getElementById('search-scores').value || '').toLowerCase();
+
+    const filtered = allScoresList.filter(s => {
+        const matchesComp = filterVal === 'all' || s.prog.toLowerCase() === filterVal.toLowerCase();
+        const matchesSearch = !searchVal ||
+            s.name.toLowerCase().includes(searchVal) ||
+            s.prog.toLowerCase().includes(searchVal) ||
+            s.team.toLowerCase().includes(searchVal);
+        return matchesComp && matchesSearch;
+    });
+
+    document.getElementById('score-count').textContent = `${filtered.length} score${filtered.length !== 1 ? 's' : ''} shown`;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 28px; color: var(--text-muted);">No submitted scores found for the selected criteria.</td></tr>';
+        return;
+    }
+
+    filtered.forEach((s, idx) => {
+        let rankBadge = `<span style="font-weight:700; color:var(--text-muted);">${idx + 1}</span>`;
+        if (idx === 0) rankBadge = `<span style="color:#f59e0b;font-weight:800;">🥇 1</span>`;
+        if (idx === 1) rankBadge = `<span style="color:#9ca3af;font-weight:800;">🥈 2</span>`;
+        if (idx === 2) rankBadge = `<span style="color:#cd7f32;font-weight:800;">🥉 3</span>`;
+
+        const initials = s.name ? s.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'P';
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${rankBadge}</td>
+                <td><div class="user-cell"><div class="user-avatar bg-purple" style="font-size:0.8rem; width:34px; height:34px;">${initials}</div><strong>${s.name}</strong></div></td>
+                <td><span class="status-badge" style="background:rgba(0,0,0,0.05); color:var(--text-primary); border:1px solid var(--border-color);">${s.team}</span></td>
+                <td>${s.innovation}/40</td>
+                <td>${s.execution}/30</td>
+                <td>${s.presentation}/20</td>
+                <td>${s.impact}/10</td>
+                <td><span style="color:var(--accent-purple);font-weight:800;font-size:1.05rem;">${s.score}</span><span style="color:var(--text-muted);font-size:0.75rem;">/100</span></td>
+                <td><span class="status-badge success">${s.prog}</span></td>
+            </tr>
+        `;
+    });
+}
+
+function filterScores(val) {
+    renderScoresTable();
+}
+
+window.addEventListener('DOMContentLoaded', initJudgeResults);
+</script>
+</body>
+</html>

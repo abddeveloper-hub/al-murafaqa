@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center | abdsite Hub</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-hero {
+            padding: 80px 40px;
+            background: var(--role-gradient);
+            border-radius: 40px;
+            margin-bottom: -60px;
+            position: relative;
+            z-index: 1;
+            color: white;
+            box-shadow: var(--shadow-premium);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            position: relative;
+            z-index: 10;
+            margin-top: 0;
+            padding: 0 20px;
+        }
+
+        .metric-card {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 10px 0;
+            background: var(--role-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .dashboard-main-grid {
+            display: grid;
+            grid-template-columns: 1.8fr 1.2fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 1100px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-main-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo"></div>
+                <h2>abdsite</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item active">
+                    <ion-icon name="grid-outline"></ion-icon>
+                    <span>Overview</span>
+                </a>
+                <a href="competitions.html" class="nav-item">
+                    <ion-icon name="trophy-outline"></ion-icon>
+                    <span>Competitions</span>
+                </a>
+                <a href="teams.html" class="nav-item">
+                    <ion-icon name="people-circle-outline"></ion-icon>
+                    <span>House Teams</span>
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <ion-icon name="person-add-outline"></ion-icon>
+                    <span>Managers</span>
+                </a>
+                <a href="judge-management.html" class="nav-item">
+                    <ion-icon name="medal-outline"></ion-icon>
+                    <span>Judges</span>
+                </a>
+                <a href="participants.html" class="nav-item">
+                    <ion-icon name="people-outline"></ion-icon>
+                    <span>Participants</span>
+                </a>
+                <a href="results.html" class="nav-item">
+                    <ion-icon name="podium-outline"></ion-icon>
+                    <span>Scoring</span>
+                </a>
+                <div style="margin: 20px 20px 10px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">System</div>
+                <a href="data-management.html" class="nav-item">
+                    <ion-icon name="server-outline"></ion-icon>
+                    <span>Data</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <ion-icon name="settings-outline"></ion-icon>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn">
+                    <ion-icon name="log-out-outline"></ion-icon>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-bar">
+                    <ion-icon name="search-outline"></ion-icon>
+                    <input type="text" placeholder="Search anything...">
+                </div>
+
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <ion-icon name="notifications-outline"></ion-icon>
+                        <span class="badge">3</span>
+                    </button>
+                    
+                    <div class="admin-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=8b5cf6&color=fff" alt="Admin" class="avatar">
+                        <div class="profile-info">
+                            <span class="name">Administrator</span>
+                            <span class="role">Platform Owner</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="admin-hero animate-in">
+                    <div class="hero-badge">
+                        <ion-icon name="sparkles"></ion-icon> V2.0 Global
+                    </div>
+                    <h1 style="font-size: 3.5rem; line-height: 1.1; margin-bottom: 15px;">Championship <br>Command Center</h1>
+                    <p style="opacity: 0.9; max-width: 500px;">Experience the next generation of tournament management. Unified, powerful, and elegantly crafted for performance.</p>
+                </div>
+
+                <div class="metrics-grid" style="margin-top: 20px;">
+                    <div class="glass-card metric-card animate-in" style="animation-delay: 0.1s;">
+                        <span class="metric-label">House Teams</span>
+                        <h2 class="metric-value" id="dash-teams">0</h2>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green);">+2 Active</span>
+                    </div>
+                    <div class="glass-card metric-card animate-in" style="animation-delay: 0.2s;">
+                        <span class="metric-label">Managers</span>
+                        <h2 class="metric-value" id="dash-managers">0</h2>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--role-accent);">Verified</span>
+                    </div>
+                    <div class="glass-card metric-card animate-in" style="animation-delay: 0.3s;">
+                        <span class="metric-label">Live Fests</span>
+                        <h2 class="metric-value" id="dash-comps">0</h2>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-blue);">In Season</span>
+                    </div>
+                    <div class="glass-card metric-card animate-in" style="animation-delay: 0.4s;">
+                        <span class="metric-label">Roster</span>
+                        <h2 class="metric-value" id="dash-roster">0</h2>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Delegated</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-main-grid">
+                    <div style="display: flex; flex-direction: column; gap: 30px;">
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h2>Platform Engagement</h2>
+                                <button class="btn-secondary" style="padding: 8px 16px; font-size: 0.8rem;">Weekly</button>
+                            </div>
+                            <div style="height: 350px;">
+                                <canvas id="mainDashboardChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h2>Live Traffic & Load</h2>
+                                <span class="status-pill success">Optimal</span>
+                            </div>
+                            <div style="display: flex; align-items: flex-end; gap: 8px; height: 100px; padding: 20px 0;">
+                                <div class="traffic-bar" style="flex:1; background:var(--role-gradient); border-radius:4px; height:60%; transition: height 1s;"></div>
+                                <div class="traffic-bar" style="flex:1; background:var(--accent-blue); border-radius:4px; height:85%; transition: height 1s;"></div>
+                                <div class="traffic-bar" style="flex:1; background:var(--role-gradient); border-radius:4px; height:45%; transition: height 1s;"></div>
+                                <div class="traffic-bar" style="flex:1; background:var(--accent-blue); border-radius:4px; height:100%; transition: height 1s;"></div>
+                                <div class="traffic-bar" style="flex:1; background:var(--role-gradient); border-radius:4px; height:70%; transition: height 1s;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 30px;">
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <h2>Global Broadcast</h2>
+                                <span class="status-pill info">New Alert</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <textarea id="admin-broadcast-msg" class="form-control" placeholder="Type announcement here..." style="min-height: 100px; resize: none; font-size: 0.85rem;"></textarea>
+                            </div>
+                            <button class="btn-primary" onclick="pushAnnouncement()" style="width: 100%; border-radius: 12px; padding: 12px;">Push Broadcast</button>
+                        </div>
+
+                        <div class="glass-card">
+                            <div class="card-header"><h2>Live Activity Feed</h2></div>
+                            <div id="live-activity-feed" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: hidden;">
+                                <!-- Activity nodes -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container" style="margin-top: 40px;">
+                    <div style="padding: 25px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-family: var(--font-heading); font-weight: 800;">Top Performing Teams</h2>
+                        <button class="btn-primary" style="padding: 10px 20px;" onclick="window.location.href='results.html'">Scoring Desk</button>
+                    </div>
+                    <table class="fest-table">
+                        <thead>
+                            <tr>
+                                <th>Team Name</th>
+                                <th>Leader</th>
+                                <th>Delegates</th>
+                                <th>Points</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-teams-table">
+                            <!-- Rows injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initStats();
+            initChart();
+            initTeams();
+        });
+
+        function initStats() {
+            const teams = JSON.parse(localStorage.getItem('compete_teams') || '[]');
+            const managers = JSON.parse(localStorage.getItem('compete_managers') || '[]');
+            const comps = JSON.parse(localStorage.getItem('compete_competitions') || '[]');
+            const roster = JSON.parse(localStorage.getItem('compete_participants') || '[]');
+
+            document.getElementById('dash-teams').textContent = teams.length;
+            document.getElementById('dash-managers').textContent = managers.length;
+            document.getElementById('dash-comps').textContent = comps.length;
+            document.getElementById('dash-roster').textContent = roster.length;
+        }
+
+        function initChart() {
+            // Chart initialization is handled dynamically by main.js for #mainDashboardChart
+        }
+
+        function initTeams() {
+            const container = document.getElementById('dashboard-teams-table');
+            if (!container) return;
+            const teams = JSON.parse(localStorage.getItem('compete_teams') || '[]');
+            const results = JSON.parse(localStorage.getItem('compete_results') || '[]');
+
+            if (teams.length === 0) {
+                container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">No teams registered.</td></tr>';
+                return;
+            }
+
+            container.innerHTML = teams.map(t => {
+                const teamResults = results.filter(r => r.team === t.name);
+                const score = teamResults.length > 0 
+                    ? teamResults.reduce((sum, r) => sum + (r.score || 0), 0)
+                    : (t.name.includes('Red') ? 189 : t.name.includes('Blue') ? 170 : t.name.includes('Green') ? 128 : 95);
+                return `
+                    <tr>
+                        <td><strong>${t.name}</strong></td>
+                        <td style="color:var(--text-muted); font-size:0.85rem;">${t.leader || 'Staff Assigned'}</td>
+                        <td>${t.members || 35}</td>
+                        <td><span style="color: var(--accent-green); font-weight: 800; font-size:1.05rem;">${score} pts</span></td>
+                        <td><span class="status-pill success">Active</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function pushAnnouncement() {
+            const input = document.getElementById('admin-broadcast-msg');
+            const msg = input.value.trim();
+            if (!msg) {
+                window.showToast('Please enter an announcement message.', 'warning');
+                return;
+            }
+
+            window.publishAnnouncement(msg, 'high');
+            input.value = '';
+            window.showToast('Announcement pushed live to public portal & dashboards!', 'success');
+        }
+    </script>
+</body>
+</html>

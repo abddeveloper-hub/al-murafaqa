@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Assignments | Judge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="../js/main.js"></script>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo">
+                <ion-icon name="medal"></ion-icon>
+            </div>
+            <h2>abdsite Hub</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="judge.html" class="nav-item"><ion-icon name="grid-outline"></ion-icon><span>Dashboard</span></a>
+            <a href="judge-assignments.html" class="nav-item active"><ion-icon name="clipboard-outline"></ion-icon><span>My Assignments</span></a>
+            <a href="judge-scoring.html" class="nav-item"><ion-icon name="create-outline"></ion-icon><span>Score Entry</span></a>
+            <a href="judge-results.html" class="nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>Submitted Scores</span></a>
+            <a href="judge-profile.html" class="nav-item"><ion-icon name="person-outline"></ion-icon><span>My Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div style="padding:12px 20px;margin-bottom:8px;background:rgba(245,158,11,0.1);border-radius:10px;border:1px solid rgba(245,158,11,0.2);">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Signed in as</p>
+                <p style="font-size:0.85rem;font-weight:600;color:#f59e0b;">Judge</p>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='../login.html'"><ion-icon name="log-out-outline"></ion-icon><span>Log Out</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="search-bar"><ion-icon name="search-outline"></ion-icon><input type="text" placeholder="Search assignments..."></div>
+            <div class="header-actions">
+                <button class="notification-btn"><ion-icon name="notifications-outline"></ion-icon><span class="badge">2</span></button>
+                <div class="admin-profile">
+                    <img src="https://ui-avatars.com/api/?name=Dr+Khalid&background=f59e0b&color=fff" class="avatar" alt="Judge">
+                    <div class="profile-info"><span class="name">Dr. Khalid Omar</span><span class="role">Judge</span></div>
+                    <ion-icon name="chevron-down-outline"></ion-icon>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="header-title"><h1>My Assignments</h1><p>Competitions you have been assigned to judge.</p></div>
+
+            <div id="no-assignments" style="display:none; padding:40px; text-align:center; background:var(--bg-tertiary); border-radius:16px; border:1px solid var(--border-color); margin-bottom:32px;">
+                <ion-icon name="clipboard-outline" style="font-size:3rem; color:var(--text-muted); margin-bottom:15px;"></ion-icon>
+                <h2 style="color:var(--text-secondary);">No Assignments Yet</h2>
+                <p style="color:var(--text-muted);">You haven't been assigned to any competitions. Please contact the administrator.</p>
+            </div>
+
+            <div id="assignments-grid" class="grid-cards" style="margin-bottom:32px;">
+                <!-- Cards injected dynamically -->
+            </div>
+
+            <!-- Completed Assignments -->
+            <div class="card-header" style="margin-bottom:20px;"><h2>Completed Assignments</h2></div>
+            <div class="glass-card" style="padding:0;overflow:hidden;">
+                <table class="activity-table">
+                    <thead><tr><th>Competition</th><th>Date</th><th>Participants Judged</th><th>Avg Score Given</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight:600;">Regional Science Fair 2025</td>
+                            <td style="color:var(--text-muted);">Mar 20, 2025</td>
+                            <td>12</td>
+                            <td><span style="color:#10b981;font-weight:700;">79.4</span></td>
+                            <td><span class="status-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);">Completed</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">Debate Championship 2025</td>
+                            <td style="color:var(--text-muted);">Jan 10, 2025</td>
+                            <td>8</td>
+                            <td><span style="color:#10b981;font-weight:700;">85.1</span></td>
+                            <td><span class="status-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);">Completed</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+            if (user.name) {
+                const nameEl = document.querySelector('.admin-profile .name');
+                if (nameEl) nameEl.textContent = user.name;
+                const avatarEl = document.querySelector('.admin-profile .avatar');
+                if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=f59e0b&color=fff`;
+            }
+
+            const judges = JSON.parse(localStorage.getItem('compete_judges') || '[]');
+            const currentJudge = judges.find(j => j.email === user.email || (user.name && j.name.toLowerCase() === user.name.toLowerCase()));
+            const competitions = JSON.parse(localStorage.getItem('compete_competitions') || '[]');
+
+            const grid = document.getElementById('assignments-grid');
+            const emptyState = document.getElementById('no-assignments');
+
+            let assignedList = [];
+            if (currentJudge && currentJudge.assignments && currentJudge.assignments.length > 0) {
+                assignedList = currentJudge.assignments;
+            } else if (competitions.length > 0) {
+                // If judge has no explicit assignment, default to active competitions
+                assignedList = competitions.map(c => c.name);
+            }
+
+            if (assignedList.length === 0) {
+                grid.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            grid.innerHTML = '';
+            assignedList.forEach(assignmentName => {
+                const comp = competitions.find(c => c.name === assignmentName) || {
+                    name: assignmentName,
+                    date: "Active Today",
+                    location: "Main Auditorium",
+                    category: "tech",
+                    status: "live"
+                };
+
+                let color = "#f59e0b";
+                let icon = "trophy-outline";
+                if (comp.category === 'tech') { color = "#7c3aed"; icon = "code-slash-outline"; }
+                if (comp.category === 'sports') { color = "#3b82f6"; icon = "basketball-outline"; }
+                if (comp.category === 'arts') { color = "#10b981"; icon = "color-palette-outline"; }
+
+                const card = document.createElement('div');
+                card.className = 'glass-card';
+                card.style.borderTop = `3px solid ${color}`;
+                card.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                        <div style="width:52px;height:52px;border-radius:14px;background:rgba(${color === "#f59e0b" ? '245,158,11' : color === "#7c3aed" ? '124,58,237' : color === "#3b82f6" ? '59,130,246' : '16,185,129'},0.15);color:${color};display:flex;align-items:center;justify-content:center;font-size:1.6rem;"><ion-icon name="${icon}"></ion-icon></div>
+                        <span class="status-badge success" style="padding:4px 12px;font-size:0.78rem;">${comp.status || 'Active'}</span>
+                    </div>
+                    <h3 style="font-size:1.1rem;margin-bottom:6px;">${comp.name}</h3>
+                    <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:16px;">Assigned for evaluation. Please review participants and submit scores.</p>
+                    <div style="font-size:0.82rem;color:var(--text-muted);display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
+                        <span><ion-icon name="calendar-outline" style="vertical-align:middle;"></ion-icon> ${comp.date || 'Active Today'}</span>
+                        <span><ion-icon name="location-outline" style="vertical-align:middle;"></ion-icon> ${comp.location || 'Campus Hall'}</span>
+                    </div>
+                    <a href="judge-scoring.html" class="btn-primary" style="display:block;text-align:center;text-decoration:none;padding:12px;">Start Scoring</a>
+                `;
+                grid.appendChild(card);
+            });
+        });
+    </script>
+</body>
+</html>

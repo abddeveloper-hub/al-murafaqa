@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Score Entry | Judge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="../js/main.js"></script>
+    <style>
+        .form-group{margin-bottom:18px;}
+        .form-group label{display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:8px;font-weight:500;}
+        .form-control{width:100%;padding:12px 16px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-family:inherit;font-size:0.95rem;outline:none;transition:all .2s;appearance:none;}
+        .form-control:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,0.15);}
+        .score-row{display:grid;grid-template-columns:2fr 1fr 1fr;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--border-color);}
+        .score-row:last-child{border-bottom:none;}
+        .score-label{font-weight:500;font-size:0.95rem;}
+        .score-max{font-size:0.82rem;color:var(--text-muted);}
+        .score-input{padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-family:inherit;font-size:0.95rem;outline:none;transition:all .2s;text-align:center;width:100%;}
+        .score-input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,0.15);}
+        .score-input::-webkit-inner-spin-button{opacity:0;}
+        .total-bar{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;background:rgba(245,158,11,0.08);border-top:1px solid rgba(245,158,11,0.2);}
+        .total-label{font-weight:700;font-size:1rem;}
+        .total-value{font-size:1.8rem;font-weight:800;color:#f59e0b;}
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo">
+                <ion-icon name="medal"></ion-icon>
+            </div>
+            <h2>abdsite Hub</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="judge.html" class="nav-item"><ion-icon name="grid-outline"></ion-icon><span>Dashboard</span></a>
+            <a href="judge-assignments.html" class="nav-item"><ion-icon name="clipboard-outline"></ion-icon><span>My Assignments</span></a>
+            <a href="judge-scoring.html" class="nav-item active"><ion-icon name="create-outline"></ion-icon><span>Score Entry</span></a>
+            <a href="judge-results.html" class="nav-item"><ion-icon name="bar-chart-outline"></ion-icon><span>Submitted Scores</span></a>
+            <a href="judge-profile.html" class="nav-item"><ion-icon name="person-outline"></ion-icon><span>My Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div style="padding:12px 20px;margin-bottom:8px;background:rgba(245,158,11,0.1);border-radius:10px;border:1px solid rgba(245,158,11,0.2);">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Signed in as</p>
+                <p style="font-size:0.85rem;font-weight:600;color:#f59e0b;">Judge</p>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='../login.html'"><ion-icon name="log-out-outline"></ion-icon><span>Log Out</span></button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="search-bar"><ion-icon name="search-outline"></ion-icon><input type="text" placeholder="Search participants..."></div>
+            <div class="header-actions">
+                <button class="notification-btn"><ion-icon name="notifications-outline"></ion-icon><span class="badge">2</span></button>
+                <div class="admin-profile">
+                    <img id="judge-avatar-img" src="https://ui-avatars.com/api/?name=Dr+Khalid&background=f59e0b&color=fff" class="avatar" alt="Judge">
+                    <div class="profile-info"><span class="name" id="judge-profile-name">Dr. Khalid Omar</span><span class="role">Judge</span></div>
+                    <ion-icon name="chevron-down-outline"></ion-icon>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="header-title"><h1>Score Entry</h1><p>Select a participant and fill in scores for each criterion.</p></div>
+
+            <!-- Selector -->
+            <div class="glass-card" style="padding:24px;margin-bottom:24px;display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;">
+                <div class="form-group" style="flex:1;min-width:200px;margin:0;">
+                    <label>Competition</label>
+                    <select class="form-control" id="comp-select" onchange="updateParticipants()">
+                        <option value="hackathon">Annual Hackathon 2026</option>
+                        <option value="sports">Campus Sports Meet</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:200px;margin:0;">
+                    <label>Participant</label>
+                    <select class="form-control" id="participant-select" onchange="loadParticipant()"></select>
+                </div>
+                <button class="btn-primary" onclick="clearForm()" style="padding:12px 20px;white-space:nowrap;">
+                    <ion-icon name="refresh-outline" style="vertical-align:middle;margin-right:4px;"></ion-icon>Clear
+                </button>
+            </div>
+
+            <!-- Scoring Sheet -->
+            <div class="glass-card" style="padding:0;overflow:hidden;">
+                <div style="padding:20px 24px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:16px;">
+                    <div class="user-avatar bg-purple" id="p-avatar" style="width:48px;height:48px;font-size:1rem;">JD</div>
+                    <div>
+                        <h2 id="p-name" style="font-size:1.1rem;">John Doe</h2>
+                        <p id="p-project" style="color:var(--text-muted);font-size:0.85rem;">Project Apollo · Annual Hackathon 2026</p>
+                    </div>
+                    <span id="p-status" class="status-badge pending" style="margin-left:auto;">Pending</span>
+                </div>
+
+                <form id="scoring-form" style="padding:0 24px;">
+                    <div class="score-row">
+                        <div><p class="score-label">Innovation & Creativity</p><p class="score-max">Max: 40 points</p></div>
+                        <div><input type="number" class="score-input" id="s-innovation" min="0" max="40" placeholder="0" oninput="handleInput('innovation')"></div>
+                        <div><input type="range" min="0" max="40" value="0" style="width:100%;accent-color:#f59e0b;" id="r-innovation" oninput="handleInput('innovation', true)"></div>
+                    </div>
+                    <div class="score-row">
+                        <div><p class="score-label">Technical Execution</p><p class="score-max">Max: 30 points</p></div>
+                        <div><input type="number" class="score-input" id="s-execution" min="0" max="30" placeholder="0" oninput="handleInput('execution')"></div>
+                        <div><input type="range" min="0" max="30" value="0" style="width:100%;accent-color:#f59e0b;" id="r-execution" oninput="handleInput('execution', true)"></div>
+                    </div>
+                    <div class="score-row">
+                        <div><p class="score-label">Presentation & Communication</p><p class="score-max">Max: 20 points</p></div>
+                        <div><input type="number" class="score-input" id="s-presentation" min="0" max="20" placeholder="0" oninput="handleInput('presentation')"></div>
+                        <div><input type="range" min="0" max="20" value="0" style="width:100%;accent-color:#f59e0b;" id="r-presentation" oninput="handleInput('presentation', true)"></div>
+                    </div>
+                    <div class="score-row">
+                        <div><p class="score-label">Impact & Feasibility</p><p class="score-max">Max: 10 points</p></div>
+                        <div><input type="number" class="score-input" id="s-impact" min="0" max="10" placeholder="0" oninput="handleInput('impact')"></div>
+                        <div><input type="range" min="0" max="10" value="0" style="width:100%;accent-color:#f59e0b;" id="r-impact" oninput="handleInput('impact', true)"></div>
+                    </div>
+                    <div class="score-row" style="border-bottom:none;">
+                        <div><p class="score-label">Judge's Comments</p><p class="score-max">Feedback for participant</p></div>
+                        <div style="grid-column:span 2;">
+                            <textarea class="form-control" id="s-comment" rows="2" placeholder="Optional: Write your feedback here..." style="resize:vertical;" oninput="autoSaveDraft()"></textarea>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="total-bar">
+                    <div>
+                        <p class="total-label">Total Score</p>
+                        <p style="font-size:0.82rem;color:var(--text-muted);margin-top:2px;">Out of 100 points</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="total-value" id="total-display">0</span>
+                        <span style="color:var(--text-muted);font-size:1rem;font-weight:600;">/100</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end;">
+                <button class="btn-secondary" onclick="saveDraft()" style="color:var(--text-primary);">
+                    <ion-icon name="save-outline" style="vertical-align:middle;margin-right:4px;"></ion-icon>Save Draft
+                </button>
+                <button class="btn-primary" onclick="submitScore()" style="padding:12px 28px;">
+                    <ion-icon name="checkmark-circle-outline" style="vertical-align:middle;margin-right:4px;"></ion-icon>Submit Score
+                </button>
+            </div>
+        </div>
+    </main>
+    <div class="toast-container" id="toastContainer"></div>
+</div>
+
+<script>
+let allCompetitions = [];
+let allParticipants = [];
+let currentParticipantList = [];
+
+function initJudgeScoring() {
+    const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+    if (user.name) {
+        const nameEl = document.getElementById('judge-profile-name');
+        if (nameEl) nameEl.textContent = user.name;
+        const avatarEl = document.getElementById('judge-avatar-img');
+        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=f59e0b&color=fff`;
+    }
+
+    allCompetitions = JSON.parse(localStorage.getItem('compete_competitions') || '[]');
+    if (allCompetitions.length === 0) {
+        allCompetitions = [
+            { name: "Annual Hackathon 2026", category: "tech" },
+            { name: "Campus Sports Meet", category: "sports" }
+        ];
+    }
+
+    allParticipants = JSON.parse(localStorage.getItem('compete_participants') || localStorage.getItem('compete_candidates') || '[]');
+    if (allParticipants.length === 0) {
+        allParticipants = [
+            { name: "Ahmed Raza", comp: "Annual Hackathon 2026", section: "Senior", team: "Red Team" },
+            { name: "Sarah Khan", comp: "Campus Sports Meet", section: "Senior", team: "Blue Team" },
+            { name: "Mohamed Ali", comp: "Campus Sports Meet", section: "Junior", team: "Green Team" }
+        ];
+    }
+
+    // Populate competitions dropdown
+    const compSelect = document.getElementById('comp-select');
+    compSelect.innerHTML = allCompetitions.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+
+    updateParticipants();
+}
+
+function updateParticipants() {
+    const compName = document.getElementById('comp-select').value;
+    const results = JSON.parse(localStorage.getItem('compete_results') || '[]');
+
+    // Filter participants for this competition, or show all if none specified
+    currentParticipantList = allParticipants.filter(p => !p.comp || p.comp.toLowerCase() === compName.toLowerCase());
+    if (currentParticipantList.length === 0) {
+        currentParticipantList = allParticipants;
+    }
+
+    const sel = document.getElementById('participant-select');
+    sel.innerHTML = currentParticipantList.map((p, i) => {
+        const isScored = results.some(r => r.name === p.name && (!r.prog || r.prog.toLowerCase() === compName.toLowerCase()));
+        return `<option value="${i}">${p.name} (${p.team || 'General'}) ${isScored ? '✓ Scored' : ''}</option>`;
+    }).join('');
+
+    loadParticipant();
+}
+
+function loadParticipant() {
+    const compName = document.getElementById('comp-select').value;
+    const idx = parseInt(document.getElementById('participant-select').value) || 0;
+    const p = currentParticipantList[idx];
+
+    if (!p) {
+        document.getElementById('p-name').textContent = "No participant";
+        document.getElementById('p-project').textContent = "Please select or add participants.";
+        return;
+    }
+
+    const initials = p.name ? p.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'P';
+    document.getElementById('p-avatar').textContent = initials;
+    document.getElementById('p-avatar').className = 'user-avatar bg-purple';
+    document.getElementById('p-name').textContent = p.name;
+    document.getElementById('p-project').textContent = `${p.team || 'General'} · ${compName}`;
+
+    // Check if already scored in compete_results
+    const results = JSON.parse(localStorage.getItem('compete_results') || '[]');
+    const existing = results.find(r => r.name === p.name && (!r.prog || r.prog.toLowerCase() === compName.toLowerCase()));
+
+    const statusEl = document.getElementById('p-status');
+    if (existing) {
+        statusEl.textContent = `Scored: ${existing.score} (${existing.grade})`;
+        statusEl.className = 'status-badge success';
+    } else {
+        statusEl.textContent = 'Pending';
+        statusEl.className = 'status-badge pending';
+    }
+
+    clearForm();
+
+    // Check if detailed judge scores exist
+    const judgeScores = JSON.parse(localStorage.getItem('compete_judge_scores') || '[]');
+    const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+    const existingJudgeScore = judgeScores.find(s => s.name === p.name && s.prog === compName);
+
+    if (existingJudgeScore) {
+        document.getElementById('s-innovation').value = existingJudgeScore.innovation || 0;
+        document.getElementById('r-innovation').value = existingJudgeScore.innovation || 0;
+        document.getElementById('s-execution').value = existingJudgeScore.execution || 0;
+        document.getElementById('r-execution').value = existingJudgeScore.execution || 0;
+        document.getElementById('s-presentation').value = existingJudgeScore.presentation || 0;
+        document.getElementById('r-presentation').value = existingJudgeScore.presentation || 0;
+        document.getElementById('s-impact').value = existingJudgeScore.impact || 0;
+        document.getElementById('r-impact').value = existingJudgeScore.impact || 0;
+        document.getElementById('s-comment').value = existingJudgeScore.comment || '';
+        updateTotal();
+    } else if (existing) {
+        // Approximate breakdown from total score
+        const s = existing.score;
+        const inn = Math.min(40, Math.round(s * 0.4));
+        const exe = Math.min(30, Math.round(s * 0.3));
+        const pre = Math.min(20, Math.round(s * 0.2));
+        const imp = Math.min(10, Math.max(0, s - inn - exe - pre));
+        document.getElementById('s-innovation').value = inn;
+        document.getElementById('r-innovation').value = inn;
+        document.getElementById('s-execution').value = exe;
+        document.getElementById('r-execution').value = exe;
+        document.getElementById('s-presentation').value = pre;
+        document.getElementById('r-presentation').value = pre;
+        document.getElementById('s-impact').value = imp;
+        document.getElementById('r-impact').value = imp;
+        updateTotal();
+    } else {
+        loadDraft();
+    }
+}
+
+function handleInput(field, isRange = false) {
+    if (isRange) {
+        document.getElementById(`s-${field}`).value = document.getElementById(`r-${field}`).value;
+    } else {
+        const s = document.getElementById(`s-${field}`);
+        const max = parseInt(s.max);
+        if (parseInt(s.value) > max) s.value = max;
+        if (s.value !== '') document.getElementById(`r-${field}`).value = s.value;
+    }
+    updateTotal();
+    autoSaveDraft();
+}
+
+function updateTotal() {
+    const fields = ['innovation','execution','presentation','impact'];
+    const total = fields.reduce((sum, f) => {
+        const v = parseInt(document.getElementById(`s-${f}`).value) || 0;
+        return sum + v;
+    }, 0);
+    document.getElementById('total-display').textContent = total;
+}
+
+function clearForm() {
+    ['innovation','execution','presentation','impact'].forEach(f => {
+        document.getElementById(`s-${f}`).value = '';
+        document.getElementById(`r-${f}`).value = 0;
+    });
+    document.getElementById('s-comment').value = '';
+    document.getElementById('total-display').textContent = '0';
+}
+
+function autoSaveDraft() {
+    const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+    const compName = document.getElementById('comp-select').value;
+    const idx = parseInt(document.getElementById('participant-select').value) || 0;
+    const p = currentParticipantList[idx];
+    if (!p) return;
+
+    const draft = {
+        innovation: document.getElementById('s-innovation').value,
+        execution: document.getElementById('s-execution').value,
+        presentation: document.getElementById('s-presentation').value,
+        impact: document.getElementById('s-impact').value,
+        comment: document.getElementById('s-comment').value,
+        timestamp: Date.now()
+    };
+
+    const draftKey = `compete_draft_${user.email || 'judge'}_${encodeURIComponent(compName)}_${encodeURIComponent(p.name)}`;
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+}
+
+function loadDraft() {
+    const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+    const compName = document.getElementById('comp-select').value;
+    const idx = parseInt(document.getElementById('participant-select').value) || 0;
+    const p = currentParticipantList[idx];
+    if (!p) return;
+
+    const draftKey = `compete_draft_${user.email || 'judge'}_${encodeURIComponent(compName)}_${encodeURIComponent(p.name)}`;
+    const draft = JSON.parse(localStorage.getItem(draftKey));
+    if (draft) {
+        document.getElementById('s-innovation').value = draft.innovation || '';
+        document.getElementById('s-execution').value = draft.execution || '';
+        document.getElementById('s-presentation').value = draft.presentation || '';
+        document.getElementById('s-impact').value = draft.impact || '';
+        document.getElementById('s-comment').value = draft.comment || '';
+
+        ['innovation','execution','presentation','impact'].forEach(f => {
+            const val = document.getElementById(`s-${f}`).value;
+            if (val !== '') document.getElementById(`r-${f}`).value = val;
+        });
+
+        updateTotal();
+    }
+}
+
+function calculateGrade(score) {
+    if (score >= 90) return "A+";
+    if (score >= 80) return "A";
+    if (score >= 70) return "B+";
+    if (score >= 60) return "B";
+    return "C";
+}
+
+function saveDraft() {
+    autoSaveDraft();
+    window.showToast('Draft saved successfully! You can resume anytime.', 'info');
+}
+
+function submitScore() {
+    const total = parseInt(document.getElementById('total-display').textContent) || 0;
+    if (total === 0) {
+        window.showToast('Please enter criteria scores before submitting.', 'error');
+        return;
+    }
+    const compName = document.getElementById('comp-select').value;
+    const idx = parseInt(document.getElementById('participant-select').value) || 0;
+    const p = currentParticipantList[idx];
+    if (!p) return;
+
+    const comment = document.getElementById('s-comment').value.trim();
+    const user = JSON.parse(localStorage.getItem('compete_logged_in_user') || '{}');
+    const judgeName = user.name || 'Certified Judge';
+    const judgeEmail = user.email || 'judge@abdsite.com';
+    const grade = calculateGrade(total);
+
+    // Save or update in compete_results
+    let results = JSON.parse(localStorage.getItem('compete_results') || '[]');
+    const existingIdx = results.findIndex(r => r.name === p.name && (!r.prog || r.prog.toLowerCase() === compName.toLowerCase()));
+    const resultObj = {
+        name: p.name,
+        team: p.team || 'General',
+        prog: compName,
+        score: total,
+        grade: grade
+    };
+
+    if (existingIdx !== -1) {
+        results[existingIdx] = resultObj;
+    } else {
+        results.push(resultObj);
+    }
+    localStorage.setItem('compete_results', JSON.stringify(results));
+
+    // Save detailed judge score
+    let judgeScores = JSON.parse(localStorage.getItem('compete_judge_scores') || '[]');
+    const jIdx = judgeScores.findIndex(s => s.name === p.name && s.prog === compName && s.judgeEmail === judgeEmail);
+    const scoreDetail = {
+        judge: judgeName,
+        judgeEmail: judgeEmail,
+        name: p.name,
+        team: p.team || 'General',
+        prog: compName,
+        score: total,
+        grade: grade,
+        innovation: parseInt(document.getElementById('s-innovation').value) || 0,
+        execution: parseInt(document.getElementById('s-execution').value) || 0,
+        presentation: parseInt(document.getElementById('s-presentation').value) || 0,
+        impact: parseInt(document.getElementById('s-impact').value) || 0,
+        comment: comment,
+        date: new Date().toLocaleDateString()
+    };
+
+    if (jIdx !== -1) {
+        judgeScores[jIdx] = scoreDetail;
+    } else {
+        judgeScores.push(scoreDetail);
+    }
+    localStorage.setItem('compete_judge_scores', JSON.stringify(judgeScores));
+
+    if (window.syncPublishedResults) {
+        window.syncPublishedResults(results);
+    }
+    if (window.logSystemActivity) {
+        window.logSystemActivity(`Judge ${judgeName} scored ${p.name} (${total} pts, ${grade}) in ${compName}`);
+    }
+
+    document.getElementById('p-status').textContent = `Scored: ${total} (${grade})`;
+    document.getElementById('p-status').className = 'status-badge success';
+
+    window.showToast(`Score of ${total}/100 (${grade}) submitted and published!`, 'success');
+    updateParticipants();
+}
+
+window.addEventListener('DOMContentLoaded', initJudgeScoring);
+</script>
+</body>
+</html>

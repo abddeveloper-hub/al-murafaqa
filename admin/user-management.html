@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Managers | abdsite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo">
+                    <ion-icon name="trophy"></ion-icon>
+                </div>
+                <h2>abdsite Hub</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <ion-icon name="grid-outline"></ion-icon>
+                    <span>Overview</span>
+                </a>
+                <a href="competitions.html" class="nav-item">
+                    <ion-icon name="trophy-outline"></ion-icon>
+                    <span>Competitions</span>
+                </a>
+                <a href="teams.html" class="nav-item">
+                    <ion-icon name="people-circle-outline"></ion-icon>
+                    <span>House Teams</span>
+                </a>
+                <a href="user-management.html" class="nav-item active">
+                    <ion-icon name="person-add-outline"></ion-icon>
+                    <span>Manage Managers</span>
+                </a>
+                <a href="judge-management.html" class="nav-item">
+                    <ion-icon name="medal-outline"></ion-icon>
+                    <span>Manage Judges</span>
+                </a>
+                <a href="participants.html" class="nav-item">
+                    <ion-icon name="people-outline"></ion-icon>
+                    <span>Participants</span>
+                </a>
+                <a href="results.html" class="nav-item">
+                    <ion-icon name="podium-outline"></ion-icon>
+                    <span>Scoring Desk</span>
+                </a>
+                <a href="data-management.html" class="nav-item">
+                    <ion-icon name="server-outline"></ion-icon>
+                    <span>Data Management</span>
+                </a>
+                <div style="margin: 20px 20px 10px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">System</div>
+                <a href="../super-admin/system-logs.html" class="nav-item">
+                    <ion-icon name="list-outline"></ion-icon>
+                    <span>Audit Logs</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <ion-icon name="settings-outline"></ion-icon>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="window.location.href='../login.html'">
+                    <ion-icon name="log-out-outline"></ion-icon>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-bar">
+                    <ion-icon name="search-outline"></ion-icon>
+                    <input type="text" id="manager-search" placeholder="Search managers or teams..." onkeyup="renderManagers()">
+                </div>
+
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <ion-icon name="notifications-outline"></ion-icon>
+                        <span class="badge">3</span>
+                    </button>
+
+                    <div class="admin-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=7c3aed&color=fff" alt="Admin" class="avatar">
+                        <div class="profile-info">
+                            <span class="name">Lead Administrator</span>
+                            <span class="role">Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="header-title" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 40px;">
+                    <div>
+                        <h1>Team Managers</h1>
+                        <p>Appoint and manage administrators for specific house teams.</p>
+                    </div>
+                    <button class="btn-primary" onclick="openModal('addManagerModal')">
+                        <ion-icon name="person-add-outline"></ion-icon> Appoint New Manager
+                    </button>
+                </div>
+
+                <div class="glass-card">
+                    <div class="table-responsive" style="padding: 24px;">
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Manager</th>
+                                    <th>Assigned Team</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="managers-body">
+                                <!-- Dynamically filled -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Manager Modal -->
+    <div class="modal-overlay" id="addManagerModal">
+        <div class="glass-card modal">
+            <div class="modal-header">
+                <h2>Appoint Team Manager</h2>
+                <button class="btn-close" onclick="closeModal('addManagerModal')">&times;</button>
+            </div>
+            <form onsubmit="handleManagerSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="m-name" class="form-control" placeholder="e.g. Ahmed Hassan" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="m-email" class="form-control" placeholder="manager@abdsite.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Phone Number</label>
+                            <input type="tel" id="m-phone" class="form-control" placeholder="+966 5X XXX XXXX" required>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="form-group">
+                            <label>Assign to Team</label>
+                            <select id="m-team" class="form-control" required>
+                                <!-- Dynamically filled from teams -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Manager Role Level</label>
+                            <select id="m-level" class="form-control" required>
+                                <option value="Junior">Junior Manager</option>
+                                <option value="Senior">Senior Manager</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Temporary Password</label>
+                        <input type="password" id="m-pass" class="form-control" value="manager123" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('addManagerModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Confirm Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        let managersList = [];
+        let teamsList = [];
+
+        function initializeManagers() {
+            // Load Teams
+            teamsList = JSON.parse(localStorage.getItem('compete_teams') || '[]');
+            const teamSelect = document.getElementById('m-team');
+            teamSelect.innerHTML = '<option value="" disabled selected>Select a team</option>';
+            teamsList.forEach(t => {
+                teamSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+            });
+
+            // Load Managers
+            const saved = localStorage.getItem('compete_managers');
+            if (saved) {
+                managersList = JSON.parse(saved);
+            } else {
+                managersList = [
+                    { name: "Ahmed Hassan", team: "Red Team", email: "ahmed@abdsite.com", status: "Active" }
+                ];
+                localStorage.setItem('compete_managers', JSON.stringify(managersList));
+            }
+            renderManagers();
+        }
+
+        function renderManagers() {
+            const tbody = document.getElementById('managers-body');
+            tbody.innerHTML = '';
+            
+            const search = (document.getElementById('manager-search').value || '').toLowerCase();
+            const filtered = managersList.filter(m =>
+                (m.name && m.name.toLowerCase().includes(search)) ||
+                (m.team && m.team.toLowerCase().includes(search)) ||
+                (m.email && m.email.toLowerCase().includes(search))
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">No managers found.</td></tr>';
+                return;
+            }
+
+            filtered.forEach((m) => {
+                const originalIdx = managersList.indexOf(m);
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar bg-purple">${(m.name || 'M')[0].toUpperCase()}</div>
+                                <div>
+                                    <strong>${m.name}</strong>
+                                    ${m.level ? `<div style="font-size:0.75rem; color:var(--text-muted);">${m.level} Manager</div>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="status-badge" style="background:rgba(0,0,0,0.05); color:var(--text-primary); border:1px solid var(--border-color);">${m.team}</span></td>
+                        <td>${m.email}</td>
+                        <td><span class="status-badge success">${m.status || 'Active'}</span></td>
+                        <td style="text-align: right;">
+                            <button class="btn-text" style="color:var(--accent-red);" onclick="deleteManager(${originalIdx})" title="Revoke Manager"><ion-icon name="trash-outline"></ion-icon></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function handleManagerSubmit(e) {
+            e.preventDefault();
+            const newManager = {
+                name: document.getElementById('m-name').value.trim(),
+                email: document.getElementById('m-email').value.trim(),
+                phone: document.getElementById('m-phone').value.trim(),
+                team: document.getElementById('m-team').value,
+                level: document.getElementById('m-level').value,
+                pass: document.getElementById('m-pass').value,
+                status: "Active"
+            };
+
+            managersList.push(newManager);
+            localStorage.setItem('compete_managers', JSON.stringify(managersList));
+            if (window.logSystemActivity) {
+                window.logSystemActivity(`Admin appointed Team Manager: ${newManager.name} for ${newManager.team}`);
+            }
+
+            closeModal('addManagerModal');
+            e.target.reset();
+            renderManagers();
+            window.showToast('Manager appointed successfully!');
+        }
+
+        function deleteManager(idx) {
+            if (idx < 0 || idx >= managersList.length) return;
+            const manager = managersList[idx];
+            if (confirm(`Revoke manager privileges for ${manager.name}?`)) {
+                managersList.splice(idx, 1);
+                localStorage.setItem('compete_managers', JSON.stringify(managersList));
+                if (window.logSystemActivity) {
+                    window.logSystemActivity(`Admin revoked privileges for Manager: ${manager.name}`);
+                }
+                renderManagers();
+                window.showToast('Privileges revoked.', 'info');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', initializeManagers);
+    </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management | abdsite Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo"><ion-icon name="trophy"></ion-icon></div>
+                <h2>abdsite Hub</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item"><ion-icon name="grid-outline"></ion-icon><span>Overview</span></a>
+                <a href="competitions.html" class="nav-item"><ion-icon name="trophy-outline"></ion-icon><span>Competitions</span></a>
+                <a href="teams.html" class="nav-item"><ion-icon name="people-circle-outline"></ion-icon><span>House Teams</span></a>
+                <a href="user-management.html" class="nav-item"><ion-icon name="person-add-outline"></ion-icon><span>Manage Managers</span></a>
+                <a href="judge-management.html" class="nav-item"><ion-icon name="medal-outline"></ion-icon><span>Manage Judges</span></a>
+                <a href="participants.html" class="nav-item"><ion-icon name="people-outline"></ion-icon><span>Participants</span></a>
+                <a href="results.html" class="nav-item"><ion-icon name="podium-outline"></ion-icon><span>Scoring Desk</span></a>
+                <div style="margin: 20px 20px 10px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">System</div>
+                <a href="data-management.html" class="nav-item active"><ion-icon name="server-outline"></ion-icon><span>Data & Backup</span></a>
+                <a href="../super-admin/system-logs.html" class="nav-item"><ion-icon name="list-outline"></ion-icon><span>Audit Logs</span></a>
+                <a href="settings.html" class="nav-item"><ion-icon name="settings-outline"></ion-icon><span>Settings</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="window.location.href='../login.html'"><ion-icon name="log-out-outline"></ion-icon><span>Log Out</span></button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-bar"><ion-icon name="search-outline"></ion-icon><input type="text" placeholder="Search system settings..."></div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="window.toggleDarkMode()" style="background:var(--bg-tertiary); border:none; width:40px; height:40px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-primary);">
+                        <ion-icon name="moon-outline"></ion-icon>
+                    </button>
+                    <div class="admin-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=7c3aed&color=fff" alt="Admin" class="avatar">
+                        <div class="profile-info"><span class="name">Lead Administrator</span><span class="role">Admin</span></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="header-title">
+                    <h1>Data Management Suite</h1>
+                    <p>Backup entire system state, restore from archives, or perform factory resets.</p>
+                </div>
+
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <!-- Backup & Restore -->
+                    <div class="glass-card" style="padding: 30px;">
+                        <div class="card-header">
+                            <h2>Backup & Restore</h2>
+                            <ion-icon name="cloud-upload-outline" style="font-size: 1.5rem; color: var(--accent-blue);"></ion-icon>
+                        </div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">
+                            Export all system data (competitions, users, results, settings) into a single JSON file.
+                        </p>
+                        <div style="display:flex; flex-direction:column; gap:16px;">
+                            <button class="btn-primary" onclick="exportSystemData()" style="width:100%;">
+                                <ion-icon name="download-outline"></ion-icon> Create Full System Backup
+                            </button>
+
+                            <div style="border: 2px dashed var(--border-color); border-radius: 16px; padding: 20px; text-align: center;">
+                                <input type="file" id="restore-file" style="display:none;" onchange="importSystemData(event)">
+                                <button class="btn-text" onclick="document.getElementById('restore-file').click()" style="color:var(--accent-purple);">
+                                    <ion-icon name="cloud-upload-outline"></ion-icon> Upload Backup to Restore
+                                </button>
+                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Supports .json files only</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Maintenance -->
+                    <div class="glass-card" style="padding: 30px;">
+                        <div class="card-header">
+                            <h2>System Maintenance</h2>
+                            <ion-icon name="construct-outline" style="font-size: 1.5rem; color: var(--accent-red);"></ion-icon>
+                        </div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">
+                            Dangerous actions to clear or reset system modules. Use with caution.
+                        </p>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <button class="btn-text" style="color:var(--accent-red); text-align:left; padding:12px; background:var(--accent-red-glow); border-radius:12px;" onclick="resetModule('compete_results')">
+                                <ion-icon name="refresh-outline"></ion-icon> Clear All Scoring Results
+                            </button>
+                            <button class="btn-text" style="color:var(--accent-red); text-align:left; padding:12px; background:var(--accent-red-glow); border-radius:12px;" onclick="resetModule('compete_candidates')">
+                                <ion-icon name="refresh-outline"></ion-icon> Clear Participant Roster
+                            </button>
+                            <button class="btn-danger" style="width:100%; margin-top:10px;" onclick="factoryReset()">
+                                <ion-icon name="trash-outline"></ion-icon> Factory Reset Entire System
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Storage Info -->
+                <div class="glass-card" style="margin-top: 30px; padding: 30px;">
+                    <div class="card-header">
+                        <h2>LocalStorage Health</h2>
+                        <span class="status-badge success" id="storage-status-badge">Healthy</span>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:700; font-size:0.9rem;">
+                            <span>Available Storage Capacity</span>
+                            <span id="storage-usage-text">0.0 KB / 5 MB</span>
+                        </div>
+                        <div style="height:12px; background:var(--bg-tertiary); border-radius:10px; overflow:hidden;">
+                            <div id="storage-progress-bar" style="width:0%; height:100%; background:var(--gradient-primary); border-radius:10px; transition:width 0.5s;"></div>
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:12px;">
+                            Browsers typically allow up to 5MB of LocalStorage per domain. Your data is currently using a small fraction of this.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="../js/main.js"></script>
+    <script>
+        function updateStorageStats() {
+            let total = 0;
+            for (let x in localStorage) {
+                if (localStorage.hasOwnProperty(x)) {
+                    total += ((localStorage[x].length + x.length) * 2);
+                }
+            }
+            const kb = (total / 1024).toFixed(2);
+            const mb = (total / (1024 * 1024)).toFixed(2);
+            const pct = (total / (5 * 1024 * 1024) * 100).toFixed(2);
+
+            document.getElementById('storage-usage-text').textContent = `${kb} KB / 5 MB`;
+            document.getElementById('storage-progress-bar').style.width = `${pct}%`;
+
+            const badge = document.getElementById('storage-status-badge');
+            if (pct > 80) {
+                badge.textContent = 'Critically Low';
+                badge.className = 'status-badge error';
+            } else if (pct > 50) {
+                badge.textContent = 'Moderate Usage';
+                badge.className = 'status-badge warning';
+            } else {
+                badge.textContent = 'Healthy';
+                badge.className = 'status-badge success';
+            }
+        }
+
+        function exportSystemData() {
+            window.showToast('Preparing system backup...', 'info');
+            setTimeout(() => {
+                const data = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('compete_')) {
+                        const raw = localStorage.getItem(key);
+                        try {
+                            data[key] = JSON.parse(raw);
+                        } catch (e) {
+                            data[key] = raw;
+                        }
+                    }
+                }
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `al-murafaqa-backup-${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                window.showToast('Backup created successfully!', 'success');
+                if (window.logSystemActivity) {
+                    window.logSystemActivity('💾 Full system backup generated.', 'success');
+                }
+            }, 600);
+        }
+
+        function importSystemData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (confirm('This will overwrite current system data. Are you sure you want to proceed?')) {
+                        // Clear old compete keys
+                        for (let i = localStorage.length - 1; i >= 0; i--) {
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith('compete_')) localStorage.removeItem(key);
+                        }
+
+                        // Import new keys
+                        for (let key in data) {
+                            const val = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
+                            localStorage.setItem(key, val);
+                        }
+
+                        // Run synchronizer to mirror data
+                        if (window.initCompeteSystem) {
+                            window.initCompeteSystem();
+                        }
+
+                        window.showToast('System restored successfully! Reloading...', 'success');
+                        if (window.logSystemActivity) {
+                            window.logSystemActivity('🔄 System state restored from backup.', 'info');
+                        }
+                        setTimeout(() => window.location.reload(), 1200);
+                    }
+                } catch (err) {
+                    window.showToast('Invalid backup file.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetModule(key) {
+            if (confirm(`Are you sure you want to clear ${key.replace('compete_', '')}? This action cannot be undone.`)) {
+                localStorage.setItem(key, '[]');
+                if (key === 'compete_candidates') {
+                    localStorage.setItem('compete_participants', '[]');
+                } else if (key === 'compete_results') {
+                    localStorage.setItem('compete_published_results', '[]');
+                }
+                window.showToast('Module cleared.', 'success');
+                if (window.logSystemActivity) {
+                    window.logSystemActivity(`⚠️ Module ${key} was reset to factory defaults.`, 'error');
+                }
+                updateStorageStats();
+            }
+        }
+
+        function factoryReset() {
+            if (confirm('CRITICAL ACTION: This will erase ALL application data, settings, and users. Proceed?')) {
+                if (confirm('FINAL CONFIRMATION: Are you absolutely sure?')) {
+                    localStorage.clear();
+                    window.showToast('System factory reset. Redirecting...', 'error');
+                    setTimeout(() => window.location.href = '../login.html', 2000);
+                }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', updateStorageStats);
+    </script>
+</body>
+</html>

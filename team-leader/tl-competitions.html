@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitions | Team Leader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="../js/main.js"></script>
+    <style>
+        .comp-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;font-size:0.78rem;font-weight:600;}
+        .comp-status.registered{background:rgba(16,185,129,0.15);color:#10b981;}
+        .comp-status.upcoming{background:rgba(245,158,11,0.15);color:#f59e0b;}
+        .comp-status.completed{background:rgba(139,92,246,0.15);color:var(--accent-purple);}
+        .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo">
+                <ion-icon name="people"></ion-icon>
+            </div>
+            <h2>abdsite Hub</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="team-leader.html" class="nav-item"><ion-icon name="grid-outline"></ion-icon><span>Dashboard</span></a>
+            <a href="tl-team.html" class="nav-item"><ion-icon name="people-outline"></ion-icon><span>My Team</span></a>
+            <a href="tl-participants.html" class="nav-item"><ion-icon name="person-add-outline"></ion-icon><span>Participants</span></a>
+            <a href="tl-competitions.html" class="nav-item active"><ion-icon name="trophy-outline"></ion-icon><span>Competitions</span></a>
+            <a href="tl-results.html" class="nav-item"><ion-icon name="podium-outline"></ion-icon><span>Results</span></a>
+            <a href="tl-profile.html" class="nav-item"><ion-icon name="person-outline"></ion-icon><span>My Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div style="padding:12px 20px;margin-bottom:8px;background:rgba(139,92,246,0.1);border-radius:10px;border:1px solid rgba(139,92,246,0.2);">
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Signed in as</p>
+                <p style="font-size:0.85rem;font-weight:600;color:var(--accent-purple);">Team Leader</p>
+            </div>
+            <button class="logout-btn" onclick="window.location.href='../login.html'"><ion-icon name="log-out-outline"></ion-icon><span>Log Out</span></button>
+        </div>
+    </aside>
+    <main class="main-content">
+        <header class="top-header">
+            <div class="search-bar"><ion-icon name="search-outline"></ion-icon><input type="text" placeholder="Search competitions..."></div>
+            <div class="header-actions">
+                <button class="notification-btn"><ion-icon name="notifications-outline"></ion-icon><span class="badge">2</span></button>
+                <div class="admin-profile">
+                    <img src="https://ui-avatars.com/api/?name=Team+Leader&background=8b5cf6&color=fff" class="avatar" alt="TL">
+                    <div class="profile-info"><span class="name">Ahmed Hassan</span><span class="role">Team Leader</span></div>
+                    <ion-icon name="chevron-down-outline"></ion-icon>
+                </div>
+            </div>
+        </header>
+        <div class="dashboard-content">
+            <div class="header-title"><h1>Competitions</h1><p>View all competitions your team is registered in or eligible for.</p></div>
+
+            <div class="card-header" style="margin-bottom:20px;"><h2>Registered &amp; Active</h2><span class="status-badge success" style="padding:6px 14px;">3 Joined</span></div>
+            <div class="grid-cards" style="margin-bottom:32px;">
+                <div class="glass-card">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                        <div style="width:52px;height:52px;border-radius:14px;background:var(--accent-purple-transparent);color:var(--accent-purple);display:flex;align-items:center;justify-content:center;font-size:1.6rem;"><ion-icon name="code-slash-outline"></ion-icon></div>
+                        <span class="comp-status registered"><span class="status-dot"></span> Registered</span>
+                    </div>
+                    <h3 style="font-size:1.1rem;margin-bottom:8px;">Annual Hackathon 2026</h3>
+                    <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:16px;">48-hour coding marathon. Build innovative solutions and win prizes.</p>
+                    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;display:flex;flex-direction:column;gap:6px;">
+                        <span><ion-icon name="calendar-outline" style="vertical-align:middle;"></ion-icon> Oct 15–17, 2026 · Main Auditorium</span>
+                        <span><ion-icon name="people-outline" style="vertical-align:middle;"></ion-icon> 5 members registered</span>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;"><button class="btn-text">Details</button></div>
+                </div>
+
+                <div class="glass-card">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                        <div style="width:52px;height:52px;border-radius:14px;background:rgba(16,185,129,0.15);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:1.6rem;"><ion-icon name="basketball-outline"></ion-icon></div>
+                        <span class="comp-status completed"><span class="status-dot"></span> Completed</span>
+                    </div>
+                    <h3 style="font-size:1.1rem;margin-bottom:8px;">Campus Sports Meet</h3>
+                    <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:16px;">Track, basketball &amp; football tournaments. Team ranked #2 overall.</p>
+                    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;display:flex;flex-direction:column;gap:6px;">
+                        <span><ion-icon name="calendar-outline" style="vertical-align:middle;"></ion-icon> Nov 5–8, 2026 · Sports Complex</span>
+                        <span><ion-icon name="trophy-outline" style="vertical-align:middle;"></ion-icon> Final Rank: #2</span>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;"><a href="tl-results.html" class="btn-primary" style="padding:8px 18px;font-size:0.85rem;text-decoration:none;">View Results</a></div>
+                </div>
+            </div>
+
+            <div class="card-header" style="margin-bottom:20px;"><h2>Available to Join</h2></div>
+            <div class="glass-card" style="padding:0;overflow:hidden;">
+                <table class="activity-table">
+                    <thead><tr><th>Competition</th><th>Category</th><th>Date</th><th>Spots Left</th><th>Action</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight:600;">National Arts Showcase</td>
+                            <td style="color:var(--text-secondary);">Arts &amp; Culture</td>
+                            <td style="color:var(--text-muted);">Dec 12, 2026</td>
+                            <td>220</td>
+                            <td><button class="btn-primary" style="padding:6px 16px;font-size:0.82rem;" onclick="showToast('Interest registered!')">Express Interest</button></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:600;">Math Olympiad 2027</td>
+                            <td style="color:var(--text-secondary);">Academic</td>
+                            <td style="color:var(--text-muted);">Jan 20, 2027</td>
+                            <td>180</td>
+                            <td><button class="btn-primary" style="padding:6px 16px;font-size:0.82rem;" onclick="showToast('Interest registered!')">Express Interest</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+function showToast(msg){let c=document.querySelector('.toast-container');if(!c){c=document.createElement('div');c.className='toast-container';document.body.appendChild(c);}const t=document.createElement('div');t.className='toast success';t.innerHTML=`<ion-icon name="checkmark-circle-outline"></ion-icon><span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.classList.add('show'),10);setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);}
+</script>
+</body>
+</html>

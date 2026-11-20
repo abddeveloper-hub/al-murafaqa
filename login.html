@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | abdsite</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/main.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <style>
+        body {
+            display: flex; align-items: center; justify-content: center; min-height: 100vh;
+            padding: 20px; background: var(--bg-primary);
+        }
+        .login-wrapper {
+            width: 1060px; min-height: 680px; display: flex;
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 40px; overflow: hidden; box-shadow: var(--shadow-premium);
+        }
+        .login-visual {
+            flex: 1.1; background: var(--role-gradient); padding: 50px 40px;
+            display: flex; flex-direction: column; justify-content: space-between; color: white;
+            position: relative;
+        }
+        .login-visual::after {
+            content: ''; position: absolute; top: -10%; right: -10%; width: 300px; height: 300px;
+            background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(50px);
+        }
+        .login-form-side { flex: 1.3; padding: 50px; display: flex; flex-direction: column; justify-content: center; }
+        .role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-top: 10px; }
+        .role-option { cursor: pointer; }
+        .role-option input { display: none; }
+        .role-card {
+            padding: 12px 6px; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+            border-radius: 14px; text-align: center; transition: all var(--transition-fast);
+        }
+        .role-card ion-icon { font-size: 1.4rem; display: block; margin: 0 auto 6px; }
+        .role-card span { font-size: 0.75rem; font-weight: 700; display: block; white-space: nowrap; }
+        .role-option input:checked + .role-card {
+            background: var(--role-glow); border-color: var(--role-accent); color: var(--role-accent);
+            transform: translateY(-2px); box-shadow: var(--shadow-sm);
+        }
+        @media (max-width: 900px) {
+            .login-wrapper { flex-direction: column; width: 100%; min-height: auto; border-radius: 24px; }
+            .login-visual { padding: 30px; }
+            .login-form-side { padding: 30px; }
+        }
+    </style>
+</head>
+<body data-role="admin">
+
+    <div class="login-wrapper">
+        <div class="login-visual">
+            <div style="width: 50px; height: 50px; background: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: var(--role-accent); font-size: 1.8rem;">
+                <ion-icon name="trophy"></ion-icon>
+            </div>
+            <div>
+                <h1 style="font-size: 3rem; line-height: 1.1; margin-bottom: 16px; font-weight: 900;">Enter the <br>Command Hub.</h1>
+                <p style="font-size: 1rem; opacity: 0.9; max-width: 320px;">Manage tournaments, delegate scoring, and monitor campus standings with absolute precision.</p>
+            </div>
+            <p style="font-size: 0.8rem; opacity: 0.7;">© 2026 Al Murafaqa Festival System. All rights reserved.</p>
+        </div>
+
+        <div class="login-form-side">
+            <div style="margin-bottom: 30px;">
+                <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 6px;">Sign In</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Select your role and enter credentials to access your console.</p>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Role</label>
+                    <div class="role-grid">
+                        <label class="role-option">
+                            <input type="radio" name="role" value="admin" checked>
+                            <div class="role-card">
+                                <ion-icon name="shield-outline"></ion-icon>
+                                <span>Admin</span>
+                            </div>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="role" value="super-admin">
+                            <div class="role-card">
+                                <ion-icon name="globe-outline"></ion-icon>
+                                <span>Super Admin</span>
+                            </div>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="role" value="manager">
+                            <div class="role-card">
+                                <ion-icon name="people-outline"></ion-icon>
+                                <span>Manager</span>
+                            </div>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="role" value="leader">
+                            <div class="role-card">
+                                <ion-icon name="flag-outline"></ion-icon>
+                                <span>Leader</span>
+                            </div>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="role" value="judge">
+                            <div class="role-card">
+                                <ion-icon name="star-outline"></ion-icon>
+                                <span>Judge</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" class="form-control" value="admin@abdsite.com" placeholder="admin@abdsite.com" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Password</label>
+                    <input type="password" id="login-password" class="form-control" value="password123" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    <span>Sign In to Console</span>
+                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; text-align: center;">
+                <a href="index.html" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <ion-icon name="globe-outline"></ion-icon> Back to Main Gathering
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const roleEmails = {
+            'admin': 'admin@abdsite.com',
+            'super-admin': 'director@abdsite.com',
+            'manager': 'manager@abdsite.com',
+            'leader': 'leader@abdsite.com',
+            'judge': 'judge@abdsite.com'
+        };
+
+        const roleNames = {
+            'admin': 'Lead Administrator',
+            'super-admin': 'System Director',
+            'manager': 'Ahmed Hassan',
+            'leader': 'Ahmed Hassan',
+            'judge': 'Dr. Khalid Omar'
+        };
+
+        document.querySelectorAll('input[name="role"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const val = e.target.value;
+                document.getElementById('login-email').value = roleEmails[val] || '';
+                document.getElementById('login-email').placeholder = roleEmails[val] || '';
+            });
+        });
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const email = document.getElementById('login-email').value;
+
+            const userObj = {
+                name: roleNames[role] || (role.charAt(0).toUpperCase() + role.slice(1) + ' User'),
+                email: email,
+                role: role,
+                team: (role === 'manager' || role === 'leader') ? 'Red Team' : undefined
+            };
+
+            localStorage.setItem('compete_logged_in_user', JSON.stringify(userObj));
+            window.logSystemActivity(`🔐 User ${userObj.name} logged into ${role} console.`, 'info');
+
+            if (role === 'admin') window.location.href = 'admin/admin.html';
+            else if (role === 'super-admin') window.location.href = 'super-admin/super-admin.html';
+            else if (role === 'manager') window.location.href = 'team-manager/dashboard.html';
+            else if (role === 'leader') window.location.href = 'team-leader/team-leader.html';
+            else if (role === 'judge') window.location.href = 'judge/judge.html';
+        });
+    </script>
+</body>
+</html>
