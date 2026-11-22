@@ -93,11 +93,26 @@ CREATE TABLE IF NOT EXISTS public.winners (
 -- ROW-LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 
+-- Provision trusted administrators with app_metadata.role = 'admin' using server-side tooling.
+-- Do not store this role in user_metadata, which account holders can edit themselves.
 ALTER TABLE public.fest_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.winners ENABLE ROW LEVEL SECURITY;
+
+-- Make this policy section safe to rerun when tightening permissions.
+DROP POLICY IF EXISTS "Public can view settings" ON public.fest_settings;
+DROP POLICY IF EXISTS "Admins can update settings" ON public.fest_settings;
+DROP POLICY IF EXISTS "Public can view events" ON public.events;
+DROP POLICY IF EXISTS "Admins can manage events" ON public.events;
+DROP POLICY IF EXISTS "Public can register" ON public.registrations;
+DROP POLICY IF EXISTS "Public can view own registration" ON public.registrations;
+DROP POLICY IF EXISTS "Admins can view and manage all registrations" ON public.registrations;
+DROP POLICY IF EXISTS "Public can view active announcements" ON public.announcements;
+DROP POLICY IF EXISTS "Admins can manage announcements" ON public.announcements;
+DROP POLICY IF EXISTS "Public can view published winners" ON public.winners;
+DROP POLICY IF EXISTS "Admins can manage winners" ON public.winners;
 
 -- 1. fest_settings policies
 -- Public can view settings (e.g. UPI ID, maintenance mode, live ticker)
@@ -110,8 +125,8 @@ CREATE POLICY "Public can view settings"
 CREATE POLICY "Admins can update settings"
     ON public.fest_settings FOR ALL
     TO authenticated
-    USING (true)
-    WITH CHECK (true);
+    USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- 2. events policies
 -- Public can view all events
@@ -124,28 +139,28 @@ CREATE POLICY "Public can view events"
 CREATE POLICY "Admins can manage events"
     ON public.events FOR ALL
     TO authenticated
-    USING (true)
-    WITH CHECK (true);
+    USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- 3. registrations policies
 -- Public can insert new registrations (when registering from front page)
 CREATE POLICY "Public can register"
     ON public.registrations FOR INSERT
     TO anon, authenticated
-    WITH CHECK (true);
+    WITH CHECK (payment_status = 'pending' AND checked_in = false AND checked_in_at IS NULL);
 
--- Public can check their own registration status via ticket code
+-- Public can view registrations for pass verification and insert confirmation
 CREATE POLICY "Public can view own registration"
     ON public.registrations FOR SELECT
-    TO anon
-    USING (ticket_code IS NOT NULL);
+    TO anon, authenticated
+    USING (true);
 
 -- Authenticated admins have full control over all registrations
 CREATE POLICY "Admins can view and manage all registrations"
     ON public.registrations FOR ALL
     TO authenticated
-    USING (true)
-    WITH CHECK (true);
+    USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- 4. announcements policies
 -- Public can view active announcements
@@ -158,8 +173,8 @@ CREATE POLICY "Public can view active announcements"
 CREATE POLICY "Admins can manage announcements"
     ON public.announcements FOR ALL
     TO authenticated
-    USING (true)
-    WITH CHECK (true);
+    USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- 5. winners policies
 -- Public can view published winners
@@ -172,8 +187,8 @@ CREATE POLICY "Public can view published winners"
 CREATE POLICY "Admins can manage winners"
     ON public.winners FOR ALL
     TO authenticated
-    USING (true)
-    WITH CHECK (true);
+    USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin')
+    WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin' OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- ==============================================================================
 -- INITIAL SEED DATA
@@ -347,3 +362,32 @@ VALUES
     'INVALID_REF_99182',
     false
 );
+
+-- Initial Published Winners (Leaderboard Podium)
+INSERT INTO public.winners (id, event_id, position, winner_name, college_name, published)
+VALUES
+(
+    'd1e2f3a4-0001-4000-8000-000000000001',
+    'a1b2c3d4-0001-4000-8000-000000000001',
+    1,
+    'Zaid Al-Husseini',
+    'Faculty of Fine Arts & Design',
+    true
+),
+(
+    'd1e2f3a4-0002-4000-8000-000000000002',
+    'a1b2c3d4-0001-4000-8000-000000000001',
+    2,
+    'Mariam Al-Khatib',
+    'School of Traditional Arts',
+    true
+),
+(
+    'd1e2f3a4-0003-4000-8000-000000000003',
+    'a1b2c3d4-0001-4000-8000-000000000001',
+    3,
+    'Hassan Bilal',
+    'Andalusian Arts Guild',
+    true
+) ON CONFLICT (event_id, position) DO NOTHING;
+

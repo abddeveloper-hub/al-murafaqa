@@ -1,9 +1,22 @@
 // ==============================================================================
 // AL MURAFAQA • SUPABASE CLIENT & HYBRID DATA ENGINE
-// Supports live Supabase cloud connectivity with automatic localStorage fallback
+// Uses Supabase when configured; read failures can fall back to the local cache.
+// Cloud write errors are surfaced so local-only changes are never reported as saved.
 // ==============================================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Helper to generate RFC4122 v4 UUIDs
+export function generateUuid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+export const isUuid = (val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val || '');
 
 // ------------------------------------------------------------------------------
 // 1. SUPABASE CREDENTIALS (PASTE YOUR SUPABASE DETAILS HERE)
@@ -35,6 +48,7 @@ if (isConfigured) {
 
 // ------------------------------------------------------------------------------
 // 2. DEFAULT SEED DATA (For Local Storage Fallback & Offline Demo)
+// Matches initial schema.sql UUIDs for seamless online/offline interoperability
 // ------------------------------------------------------------------------------
 const DEFAULT_SETTINGS = {
   id: 1,
@@ -50,7 +64,7 @@ const DEFAULT_SETTINGS = {
 
 const DEFAULT_EVENTS = [
   {
-    id: 'evt-001',
+    id: 'a1b2c3d4-0001-4000-8000-000000000001',
     title: 'Andalusian Calligraphy Championship',
     category: 'Calligraphy',
     fee: 150,
@@ -67,7 +81,7 @@ const DEFAULT_EVENTS = [
     created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
-    id: 'evt-002',
+    id: 'a1b2c3d4-0002-4000-8000-000000000002',
     title: 'Diwan Classical Poetry Recital',
     category: 'Poetry',
     fee: 100,
@@ -84,7 +98,7 @@ const DEFAULT_EVENTS = [
     created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
-    id: 'evt-003',
+    id: 'a1b2c3d4-0003-4000-8000-000000000003',
     title: 'Oud & Maqam Ensemble Showcase',
     category: 'Music',
     fee: 300,
@@ -101,7 +115,7 @@ const DEFAULT_EVENTS = [
     created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
   },
   {
-    id: 'evt-004',
+    id: 'a1b2c3d4-0004-4000-8000-000000000004',
     title: 'Sacred Geometry & Architectural Model Design',
     category: 'Architecture',
     fee: 250,
@@ -118,7 +132,7 @@ const DEFAULT_EVENTS = [
     created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
   },
   {
-    id: 'evt-005',
+    id: 'a1b2c3d4-0005-4000-8000-000000000005',
     title: 'Hikmah & Moral Philosophy Colloquium',
     category: 'Philosophy',
     fee: 100,
@@ -138,9 +152,9 @@ const DEFAULT_EVENTS = [
 
 const DEFAULT_REGISTRATIONS = [
   {
-    id: 'reg-001',
+    id: 'b1c2d3e4-0001-4000-8000-000000000001',
     ticket_code: 'ALM-1042',
-    event_id: 'evt-001',
+    event_id: 'a1b2c3d4-0001-4000-8000-000000000001',
     team_name: 'Qalam Vanguard',
     leader_name: 'Zaid Al-Husseini',
     leader_email: 'zaid@example.com',
@@ -154,9 +168,9 @@ const DEFAULT_REGISTRATIONS = [
     created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
   },
   {
-    id: 'reg-002',
+    id: 'b1c2d3e4-0002-4000-8000-000000000002',
     ticket_code: 'ALM-1043',
-    event_id: 'evt-003',
+    event_id: 'a1b2c3d4-0003-4000-8000-000000000003',
     team_name: 'Qurtuba Trio',
     leader_name: 'Sofia Benali',
     leader_email: 'sofia.b@example.com',
@@ -174,9 +188,9 @@ const DEFAULT_REGISTRATIONS = [
     created_at: new Date(Date.now() - 86400000 * 1.5).toISOString(),
   },
   {
-    id: 'reg-003',
+    id: 'b1c2d3e4-0003-4000-8000-000000000003',
     ticket_code: 'ALM-1044',
-    event_id: 'evt-002',
+    event_id: 'a1b2c3d4-0002-4000-8000-000000000002',
     team_name: 'Diwan Soloist',
     leader_name: 'Ammar Qureshi',
     leader_email: 'ammar.q@example.com',
@@ -190,9 +204,9 @@ const DEFAULT_REGISTRATIONS = [
     created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
   },
   {
-    id: 'reg-004',
+    id: 'b1c2d3e4-0004-4000-8000-000000000004',
     ticket_code: 'ALM-1045',
-    event_id: 'evt-004',
+    event_id: 'a1b2c3d4-0004-4000-8000-000000000004',
     team_name: 'Alhambra Builders',
     leader_name: 'Kareem Mansoor',
     leader_email: 'kareem@example.com',
@@ -209,9 +223,9 @@ const DEFAULT_REGISTRATIONS = [
     created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
-    id: 'reg-005',
+    id: 'b1c2d3e4-0005-4000-8000-000000000005',
     ticket_code: 'ALM-1046',
-    event_id: 'evt-005',
+    event_id: 'a1b2c3d4-0005-4000-8000-000000000005',
     team_name: 'Hikmah Dialogue',
     leader_name: 'Dr. Tariq Jamil',
     leader_email: 'tariq.j@example.com',
@@ -228,7 +242,7 @@ const DEFAULT_REGISTRATIONS = [
 
 const DEFAULT_ANNOUNCEMENTS = [
   {
-    id: 'anc-001',
+    id: 'c1d2e3f4-0001-4000-8000-000000000001',
     title: 'Oud Showcase Venue & Soundcheck Update',
     message: 'The Oud & Maqam Ensemble showcase soundcheck will begin promptly at 04:30 PM at the Central Amphitheatre.',
     is_urgent: false,
@@ -236,7 +250,7 @@ const DEFAULT_ANNOUNCEMENTS = [
     created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
   },
   {
-    id: 'anc-002',
+    id: 'c1d2e3f4-0002-4000-8000-000000000002',
     title: 'Calligraphy Handmade Paper Distribution',
     message: 'Registered scribes can collect their handmade Andalusian parchment kits from Helpdesk Counter 2 starting at 08:30 AM.',
     is_urgent: true,
@@ -247,8 +261,8 @@ const DEFAULT_ANNOUNCEMENTS = [
 
 const DEFAULT_WINNERS = [
   {
-    id: 'win-001',
-    event_id: 'evt-001',
+    id: 'd1e2f3a4-0001-4000-8000-000000000001',
+    event_id: 'a1b2c3d4-0001-4000-8000-000000000001',
     position: 1,
     winner_name: 'Zaid Al-Husseini',
     college_name: 'Faculty of Fine Arts & Design',
@@ -256,8 +270,8 @@ const DEFAULT_WINNERS = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'win-002',
-    event_id: 'evt-001',
+    id: 'd1e2f3a4-0002-4000-8000-000000000002',
+    event_id: 'a1b2c3d4-0001-4000-8000-000000000001',
     position: 2,
     winner_name: 'Mariam Al-Khatib',
     college_name: 'School of Traditional Arts',
@@ -265,8 +279,8 @@ const DEFAULT_WINNERS = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'win-003',
-    event_id: 'evt-001',
+    id: 'd1e2f3a4-0003-4000-8000-000000000003',
+    event_id: 'a1b2c3d4-0001-4000-8000-000000000001',
     position: 3,
     winner_name: 'Hassan Bilal',
     college_name: 'Andalusian Arts Guild',
@@ -275,28 +289,32 @@ const DEFAULT_WINNERS = [
   },
 ];
 
-// Initialize localStorage cache if empty
+// Initialize localStorage cache if empty or using legacy non-UUID formats
 function initStorage() {
+  if (typeof localStorage === 'undefined') return;
+  const existingEventsRaw = localStorage.getItem('almurafaqa_events');
+  if (!existingEventsRaw || existingEventsRaw.includes('evt-001')) {
+    localStorage.setItem('almurafaqa_events', JSON.stringify(DEFAULT_EVENTS));
+  }
+  const existingRegsRaw = localStorage.getItem('almurafaqa_registrations');
+  if (!existingRegsRaw || existingRegsRaw.includes('evt-001')) {
+    localStorage.setItem('almurafaqa_registrations', JSON.stringify(DEFAULT_REGISTRATIONS));
+  }
+  const existingWinnersRaw = localStorage.getItem('almurafaqa_winners');
+  if (!existingWinnersRaw || existingWinnersRaw.includes('evt-001')) {
+    localStorage.setItem('almurafaqa_winners', JSON.stringify(DEFAULT_WINNERS));
+  }
   if (!localStorage.getItem('almurafaqa_settings')) {
     localStorage.setItem('almurafaqa_settings', JSON.stringify(DEFAULT_SETTINGS));
   }
-  if (!localStorage.getItem('almurafaqa_events')) {
-    localStorage.setItem('almurafaqa_events', JSON.stringify(DEFAULT_EVENTS));
-  }
-  if (!localStorage.getItem('almurafaqa_registrations')) {
-    localStorage.setItem('almurafaqa_registrations', JSON.stringify(DEFAULT_REGISTRATIONS));
-  }
   if (!localStorage.getItem('almurafaqa_announcements')) {
     localStorage.setItem('almurafaqa_announcements', JSON.stringify(DEFAULT_ANNOUNCEMENTS));
-  }
-  if (!localStorage.getItem('almurafaqa_winners')) {
-    localStorage.setItem('almurafaqa_winners', JSON.stringify(DEFAULT_WINNERS));
   }
 }
 initStorage();
 
 // ------------------------------------------------------------------------------
-// 3. UNIFIED DATA SERVICE (Cloud Supabase with Offline LocalStorage Fallback)
+// 3. UNIFIED DATA SERVICE (Cloud Supabase with Local Demo Cache)
 // ------------------------------------------------------------------------------
 export const db = {
   // Check active mode
@@ -317,6 +335,7 @@ export const db = {
           id: 'demo-admin-id',
           email: 'admin@almurafaqa.com',
           user_metadata: { name: 'Al Murafaqa Director', role: 'admin' },
+          app_metadata: { role: 'admin' },
         };
         const demoSession = { user: demoUser, token: 'demo-token-xyz' };
         localStorage.setItem('almurafaqa_admin_session', JSON.stringify(demoSession));
@@ -329,7 +348,8 @@ export const db = {
 
   async signOut() {
     if (this.isLive()) {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     }
     localStorage.removeItem('almurafaqa_admin_session');
   },
@@ -358,10 +378,10 @@ export const db = {
     updates.updated_at = new Date().toISOString();
     if (this.isLive()) {
       const { data, error } = await supabase.from('fest_settings').update(updates).eq('id', 1).select().single();
-      if (!error && data) {
-        localStorage.setItem('almurafaqa_settings', JSON.stringify(data));
-        return data;
-      }
+      if (error) throw error;
+      if (!data) throw new Error('Festival settings were not returned by Supabase.');
+      localStorage.setItem('almurafaqa_settings', JSON.stringify(data));
+      return data;
     }
     const current = await this.getSettings();
     const updated = { ...current, ...updates };
@@ -381,14 +401,18 @@ export const db = {
 
   async saveEvent(eventData) {
     if (this.isLive()) {
-      if (eventData.id && !eventData.id.startsWith('evt-')) {
+      if (eventData.id && isUuid(eventData.id)) {
         const { data, error } = await supabase.from('events').update(eventData).eq('id', eventData.id).select().single();
-        if (!error && data) return data;
+        if (error) throw error;
+        if (!data) throw new Error('Event update did not return a record.');
+        return data;
       } else {
         const payload = { ...eventData };
         delete payload.id;
         const { data, error } = await supabase.from('events').insert([payload]).select().single();
-        if (!error && data) return data;
+        if (error) throw error;
+        if (!data) throw new Error('Event creation did not return a record.');
+        return data;
       }
     }
     // Local fallback
@@ -401,7 +425,7 @@ export const db = {
         events.push(eventData);
       }
     } else {
-      eventData.id = 'evt-' + Date.now().toString(36);
+      eventData.id = generateUuid();
       eventData.created_at = new Date().toISOString();
       events.push(eventData);
     }
@@ -411,11 +435,17 @@ export const db = {
 
   async deleteEvent(id) {
     if (this.isLive()) {
-      await supabase.from('events').delete().eq('id', id);
+      const { error } = await supabase.from('events').delete().eq('id', id);
+      if (error) throw error;
+      return true;
     }
     const events = await this.getEvents();
     const filtered = events.filter((e) => e.id !== id);
     localStorage.setItem('almurafaqa_events', JSON.stringify(filtered));
+    const registrations = await this.getRegistrations();
+    localStorage.setItem('almurafaqa_registrations', JSON.stringify(registrations.filter((r) => r.event_id !== id)));
+    const winners = await this.getWinners();
+    localStorage.setItem('almurafaqa_winners', JSON.stringify(winners.filter((w) => w.event_id !== id)));
     return true;
   },
 
@@ -440,7 +470,9 @@ export const db = {
         .eq('id', id)
         .select()
         .single();
-      if (!error && data) return data;
+      if (error) throw error;
+      if (!data) throw new Error('Payment status update did not return a registration.');
+      return data;
     }
     const list = await this.getRegistrations();
     const item = list.find((r) => r.id === id);
@@ -460,7 +492,9 @@ export const db = {
         .eq('id', id)
         .select()
         .single();
-      if (!error && data) return data;
+      if (error) throw error;
+      if (!data) throw new Error('Check-in update did not return a registration.');
+      return data;
     }
     const list = await this.getRegistrations();
     const item = list.find((r) => r.id === id);
@@ -478,10 +512,14 @@ export const db = {
     if (!regData.team_members) regData.team_members = [{ name: regData.leader_name, role: 'Lead' }];
 
     if (this.isLive()) {
-      const { data, error } = await supabase.from('registrations').insert([regData]).select().single();
-      if (!error && data) return data;
+      const payload = { ...regData };
+      delete payload.id;
+      const { data, error } = await supabase.from('registrations').insert([payload]).select().single();
+      if (error) throw error;
+      if (!data) throw new Error('Registration creation did not return a record.');
+      return data;
     }
-    regData.id = 'reg-' + Date.now().toString(36);
+    regData.id = generateUuid();
     const list = await this.getRegistrations();
     list.unshift(regData);
     localStorage.setItem('almurafaqa_registrations', JSON.stringify(list));
@@ -503,14 +541,16 @@ export const db = {
 
   async saveAnnouncement(data) {
     if (this.isLive()) {
-      if (data.id && !data.id.startsWith('anc-')) {
+      if (data.id && isUuid(data.id)) {
         const { data: updated, error } = await supabase
           .from('announcements')
           .update(data)
           .eq('id', data.id)
           .select()
           .single();
-        if (!error && updated) return updated;
+        if (error) throw error;
+        if (!updated) throw new Error('Announcement update did not return a record.');
+        return updated;
       } else {
         const payload = { ...data };
         delete payload.id;
@@ -519,7 +559,9 @@ export const db = {
           .insert([payload])
           .select()
           .single();
-        if (!error && inserted) return inserted;
+        if (error) throw error;
+        if (!inserted) throw new Error('Announcement creation did not return a record.');
+        return inserted;
       }
     }
     const list = await this.getAnnouncements();
@@ -527,7 +569,7 @@ export const db = {
       const index = list.findIndex((a) => a.id === data.id);
       if (index !== -1) list[index] = { ...list[index], ...data };
     } else {
-      data.id = 'anc-' + Date.now().toString(36);
+      data.id = generateUuid();
       data.created_at = new Date().toISOString();
       list.unshift(data);
     }
@@ -537,7 +579,9 @@ export const db = {
 
   async deleteAnnouncement(id) {
     if (this.isLive()) {
-      await supabase.from('announcements').delete().eq('id', id);
+      const { error } = await supabase.from('announcements').delete().eq('id', id);
+      if (error) throw error;
+      return true;
     }
     const list = await this.getAnnouncements();
     const filtered = list.filter((a) => a.id !== id);
@@ -559,26 +603,32 @@ export const db = {
   },
 
   async saveWinners(eventId, winnersArray, published = true) {
-    const records = winnersArray.map((w) => ({
-      event_id: eventId,
-      position: w.position,
-      winner_name: w.winner_name,
-      college_name: w.college_name,
-      published,
-      created_at: new Date().toISOString(),
-    }));
+    const records = winnersArray
+      .filter((w) => w && w.winner_name && w.winner_name.trim().length > 0)
+      .map((w) => ({
+        event_id: eventId,
+        position: Number(w.position),
+        winner_name: w.winner_name.trim(),
+        college_name: (w.college_name || '').trim(),
+        published: Boolean(published),
+        created_at: new Date().toISOString(),
+      }));
 
     if (this.isLive()) {
-      // Upsert into supabase
-      await supabase.from('winners').delete().eq('event_id', eventId);
-      const { data, error } = await supabase.from('winners').insert(records).select();
-      if (!error && data) return data;
+      const { error: delError } = await supabase.from('winners').delete().eq('event_id', eventId);
+      if (delError) throw delError;
+      if (records.length > 0) {
+        const { data, error } = await supabase.from('winners').insert(records).select();
+        if (error) throw error;
+        return data || [];
+      }
+      return [];
     }
 
     // Local fallback
     const list = (await this.getWinners()).filter((w) => w.event_id !== eventId);
-    records.forEach((r, idx) => {
-      r.id = 'win-' + Date.now().toString(36) + '-' + idx;
+    records.forEach((r) => {
+      r.id = generateUuid();
       list.push(r);
     });
     localStorage.setItem('almurafaqa_winners', JSON.stringify(list));

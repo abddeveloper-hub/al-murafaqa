@@ -2,12 +2,12 @@
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
   <meta content="mobile_tab" name="shell-type">
   <title>Al Murafaqa • 5th Edition — Live Cultural Gathering</title>
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script id="tailwind-config">
@@ -72,10 +72,10 @@
             "surface-tint": "#ffb4a8"
           },
           fontFamily: {
-            headline: ["Outfit", "sans-serif"],
-            body: ["Plus Jakarta Sans", "sans-serif"],
-            display: ["Outfit", "sans-serif"],
-            label: ["Plus Jakarta Sans", "sans-serif"]
+            headline: ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            body: ["DM Sans", "Noto Sans Arabic", "sans-serif"],
+            display: ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            label: ["DM Sans", "Noto Sans Arabic", "sans-serif"]
           },
           borderRadius: {
             DEFAULT: "0.25rem",
@@ -225,7 +225,34 @@
         </a>
       </div>
     </div>
+
+    <!-- Live Marquee Ticker Bar (Driven by Festival Command Center Settings) -->
+    <div id="live-ticker-container" class="hidden bg-black/25 border-t border-fest-gold/20 text-fest-cream py-1 px-4 overflow-hidden">
+      <div class="flex items-center gap-2 max-w-7xl mx-auto text-xs font-body">
+        <span class="inline-flex items-center gap-1 bg-fest-gold text-fest-dark text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-fest-red animate-pulse"></span>
+          Bulletin
+        </span>
+        <marquee id="live-ticker-content" class="text-[12px] font-medium tracking-wide">
+          ✨ Welcome to Al Murafaqa 5th Edition • Live Cultural Gathering
+        </marquee>
+      </div>
+    </div>
   </header>
+
+  <!-- Emergency Maintenance Mode Overlay -->
+  <div id="maintenance-overlay" class="hidden fixed inset-0 z-50 bg-fest-dark/95 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-center text-white">
+    <div class="w-16 h-16 rounded-2xl bg-fest-red/20 border border-fest-red text-fest-orange flex items-center justify-center mb-4 shadow-lg">
+      <span class="material-symbols-outlined text-[36px]">construction</span>
+    </div>
+    <h2 class="font-headline text-2xl font-bold text-fest-cream">Festival Maintenance In Progress</h2>
+    <p class="font-body text-sm text-fest-cream/80 max-w-md mt-2 mb-6">
+      The Al Murafaqa portal is undergoing scheduled maintenance or stage system calibration. Live broadcasts and updates will resume shortly.
+    </p>
+    <a href="login.html" class="px-5 py-2.5 rounded-xl bg-fest-orange hover:bg-fest-orange-warm text-white font-body text-xs font-bold transition-all shadow-md">
+      Staff &amp; Delegate Gateway
+    </a>
+  </div>
 
   <!-- Main View Container -->
   <main id="explore-section" class="flex flex-col relative w-full pb-28 z-10 min-h-screen pt-20">
@@ -691,7 +718,7 @@
                   <span class="font-body text-[11px] text-fest-gold font-bold uppercase tracking-wider">5-DAY ALL-ACCESS PASS</span>
                 </div>
                 <h4 class="font-headline text-[16px] text-white font-bold truncate">Festival Pass • VIP</h4>
-                <span class="font-body text-[12px] text-fest-cream/80 truncate">Passholder: Sofia Benali (ID: ALM-5829)</span>
+                <span id="pass-holder-label" class="font-body text-[12px] text-fest-cream/80 truncate">Passholder: Sofia Benali (ID: ALM-5829)</span>
               </div>
             </div>
             <button aria-label="View Full Pass" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-fest-orange text-white flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-sm" id="show-full-qr">
@@ -827,7 +854,7 @@
       </div>
 
       <div class="flex flex-col items-center text-center">
-        <span class="font-body text-[12px] text-neutral-800 font-mono font-bold tracking-wider">Passholder: Sofia Benali (ID: ALM-5829)</span>
+        <span id="modal-pass-holder-label" class="font-body text-[12px] text-neutral-800 font-mono font-bold tracking-wider">Passholder: Sofia Benali (ID: ALM-5829)</span>
         <span class="font-body text-[11px] text-fest-orange font-semibold mt-1">Maximum screen brightness recommended</span>
       </div>
     </div>
@@ -932,11 +959,13 @@
     if (fullscreenBtn && videoCard) {
       fullscreenBtn.addEventListener('click', () => {
         if (!document.fullscreenElement) {
-          if (videoCard.requestFullscreen) videoCard.requestFullscreen();
-          else if (videoCard.webkitRequestFullscreen) videoCard.webkitRequestFullscreen();
+          const request = videoCard.requestFullscreen || videoCard.webkitRequestFullscreen;
+          if (request) {
+            Promise.resolve(request.call(videoCard)).catch(() => showToast('Fullscreen is unavailable in this browser'));
+          }
         } else {
-          if (document.exitFullscreen) document.exitFullscreen();
-          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          const exit = document.exitFullscreen || document.webkitExitFullscreen;
+          if (exit) Promise.resolve(exit.call(document)).catch(() => showToast('Could not exit fullscreen'));
         }
       });
     }
@@ -1053,11 +1082,63 @@
             title: 'Al Murafaqa - 5th Edition',
             text: 'Live from the Al Murafaqa Cultural Gathering',
             url: window.location.href,
-          }).catch(() => {});
+          }).catch((err) => {
+            if (err.name !== 'AbortError') showToast('Unable to share this stream right now');
+          });
+        } else if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(window.location.href)
+            .then(() => showToast('Stream link copied to clipboard'))
+            .catch(() => showToast('Copy the stream link from your browser address bar'));
         } else {
-          showToast('Stream link copied to clipboard');
+          showToast('Copy the stream link from your browser address bar');
         }
       });
+    }
+  </script>
+
+  <script type="module">
+    import { db } from './supabase-config.js';
+
+    // Hydrate active settings (Ticker & Maintenance Mode)
+    try {
+      const settings = await db.getSettings();
+      if (settings) {
+        if (settings.maintenance_mode) {
+          const maint = document.getElementById('maintenance-overlay');
+          if (maint) maint.classList.remove('hidden');
+        }
+        if (settings.live_ticker_enabled && settings.live_ticker_text) {
+          const tickerBox = document.getElementById('live-ticker-container');
+          const tickerContent = document.getElementById('live-ticker-content');
+          if (tickerBox && tickerContent) {
+            tickerContent.textContent = settings.live_ticker_text;
+            tickerBox.classList.remove('hidden');
+            const mainView = document.getElementById('explore-section');
+            if (mainView) {
+              mainView.classList.remove('pt-20');
+              mainView.classList.add('pt-28');
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load settings:', err);
+    }
+
+    // Hydrate saved delegate pass
+    try {
+      const rawPass = localStorage.getItem('almurafaqa_delegate_pass');
+      if (rawPass) {
+        const pass = JSON.parse(rawPass);
+        const name = pass.leader_name || 'Passholder';
+        const code = pass.ticket_code || 'ALM-5829';
+        const passLabel = document.getElementById('pass-holder-label');
+        const modalLabel = document.getElementById('modal-pass-holder-label');
+        if (passLabel) passLabel.textContent = `Passholder: ${name} (ID: ${code})`;
+        if (modalLabel) modalLabel.textContent = `Passholder: ${name} (ID: ${code})`;
+      }
+    } catch (err) {
+      console.warn('Could not parse delegate pass:', err);
     }
   </script>
 </body>

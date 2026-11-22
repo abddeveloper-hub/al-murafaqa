@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
   <meta content="mobile_stack" name="shell-type">
   <title>Al Murafaqa Portal • Sign In</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
   
   <style>
@@ -112,17 +112,17 @@
             "gutter": "1rem"
           },
           fontFamily: {
-            "headline-md": ["Outfit"],
-            "display-lg-mobile": ["Outfit"],
-            "body-md": ["Plus Jakarta Sans"],
-            "label-md": ["Plus Jakarta Sans"],
-            "headline-sm": ["Outfit"],
-            "body-sm": ["Plus Jakarta Sans"],
-            "label-sm": ["Plus Jakarta Sans"],
-            "label-lg": ["Plus Jakarta Sans"],
-            "headline-lg": ["Outfit"],
-            "display-lg": ["Outfit"],
-            "body-lg": ["Plus Jakarta Sans"]
+            "headline-md": ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            "display-lg-mobile": ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            "body-md": ["DM Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-md": ["DM Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-sm": ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            "body-sm": ["DM Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-sm": ["DM Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-lg": ["DM Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-lg": ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            "display-lg": ["Playfair Display", "Noto Sans Arabic", "Georgia", "serif"],
+            "body-lg": ["DM Sans", "Noto Sans Arabic", "sans-serif"]
           },
           fontSize: {
             "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }],
@@ -170,9 +170,9 @@
     <header class="sticky top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-surface-variant/20 pt-safe">
       <div class="h-16 px-margin flex items-center justify-between">
         <div class="flex items-center gap-space-sm">
-          <button aria-label="Go back or close" class="w-11 h-11 flex items-center justify-center rounded-full text-surface-container-lowest hover:bg-surface-variant/20 active:scale-95 transition-all" onclick="if(history.length > 1){history.back();}else{window.location.href='index.html';}" type="button">
+          <a href="index.html" aria-label="Return to Festival Home" class="w-11 h-11 flex items-center justify-center rounded-full text-surface-container-lowest hover:bg-surface-variant/20 active:scale-95 transition-all">
             <span class="material-symbols-outlined text-headline-sm">arrow_back</span>
-          </button>
+          </a>
           <div class="flex flex-col">
             <span class="font-headline-sm text-headline-sm text-surface-container-lowest tracking-tight leading-tight">Sign In</span>
             <span class="font-label-sm text-label-sm text-secondary-container font-semibold tracking-wide uppercase">5th Edition • Festival Portal</span>
@@ -183,7 +183,7 @@
             <span class="material-symbols-outlined text-headline-sm">help_outline</span>
           </a>
           <div class="p-0.5 rounded-full ring-2 ring-primary-container/40">
-            <img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/ALJJyrCSdY1VSjXSH8ey8JJabJGFz53SDwVigg9lQfuKxkTT2c4-KiRXRfs3aUhCi9Vfbhj2Xc7CPtSP7YmTWPdSk47tOFivlgtTk5GfqijMRRIQAZdCkFHNtq5CoVwBy2er212o0jxp_Y6DO4hBXA3RkB3D0wTPYGsL0K3ywrA3wsYgJDNAmhXKClgEutoe4CWFj73WAdJUUeS48bYz6aj5Vchu-DinYQZArgG6KTWA8jSCd3U9UeigXVxGUD_A">
+            <span role="img" aria-label="Profile" class="w-8 h-8 rounded-full bg-secondary-container text-white text-[10px] font-bold flex items-center justify-center">AM</span>
           </div>
         </div>
       </div>
@@ -245,7 +245,7 @@
             <div class="flex flex-col gap-1 text-left">
               <div class="flex items-center justify-between">
                 <label class="font-label-sm text-label-sm text-surface-container-lowest font-semibold tracking-wide" for="authPassword">Access Passcode / PIN</label>
-                <a class="font-label-sm text-label-sm text-secondary-container font-semibold hover:underline" href="#" onclick="alert('For administrator access use: admin@almurafaqa.com / admin123'); return false;">Forgot Passcode?</a>
+                <a class="font-label-sm text-label-sm text-secondary-container font-semibold hover:underline" href="#" onclick="alert('Contact the festival desk to reset your passcode.'); return false;">Forgot Passcode?</a>
               </div>
               <div class="relative flex items-center">
                 <span class="absolute left-2.5 text-secondary-container flex items-center pointer-events-none">
@@ -282,11 +282,11 @@
           </button>
 
           <div class="grid grid-cols-2 gap-2 mt-2">
-            <button class="h-9 px-2 rounded-lg bg-surface-variant/10 hover:bg-surface-variant/20 border border-surface-variant/20 text-surface-container-lowest font-label-sm text-label-sm font-medium shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all" type="button" onclick="alert('Google Workspace delegate OAuth enabled for 5th Edition.')">
+            <button class="h-9 px-2 rounded-lg bg-surface-variant/10 hover:bg-surface-variant/20 border border-surface-variant/20 text-surface-container-lowest font-label-sm text-label-sm font-medium shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all" type="button" onclick="alert('Google sign-in is not configured yet. Use your festival email and passcode or contact the festival desk.')">
               <span class="material-symbols-outlined text-tertiary-container text-body-sm">mail</span>
               <span class="truncate">Google Access</span>
             </button>
-            <button class="h-9 px-2 rounded-lg bg-surface-variant/10 hover:bg-surface-variant/20 border border-surface-variant/20 text-surface-container-lowest font-label-sm text-label-sm font-medium shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all" type="button" onclick="alert('Cultural Org SSO federated authentication active.')">
+            <button class="h-9 px-2 rounded-lg bg-surface-variant/10 hover:bg-surface-variant/20 border border-surface-variant/20 text-surface-container-lowest font-label-sm text-label-sm font-medium shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all" type="button" onclick="alert('Organization single sign-on is not configured yet. Use your festival email and passcode or contact the festival desk.')">
               <span class="material-symbols-outlined text-secondary-container text-body-sm">corporate_fare</span>
               <span class="truncate">Cultural Org SSO</span>
             </button>
@@ -370,20 +370,48 @@
         btn.disabled = true;
         btn.innerHTML = '<span>Verifying Access...</span>';
 
+        // Check if identifier is a Delegate Ticket Code (e.g. ALM-1042 or 1042)
+        if (identifier.toUpperCase().startsWith('ALM-') || /^\d{4}$/.test(identifier)) {
+          try {
+            const regs = await db.getRegistrations();
+            const normalized = identifier.toUpperCase().replace(/[\s-]/g, '');
+            const found = regs.find((r) => {
+              const code = (r.ticket_code || '').toUpperCase().replace(/[\s-]/g, '');
+              return code === normalized || code === `ALM${normalized}`;
+            });
+
+            if (found) {
+              localStorage.setItem('almurafaqa_delegate_pass', JSON.stringify(found));
+              window.location.href = 'index.html#pass-section';
+              return;
+            } else {
+              alert(`Delegate ticket code "${identifier}" was not found. Please verify your ticket code or register at the festival desk.`);
+            }
+          } catch (err) {
+            alert('Unable to verify delegate pass right now: ' + (err.message || 'Network error'));
+          }
+          btn.disabled = false;
+          btn.innerHTML = '<span>Enter Festival Portal</span><span class="material-symbols-outlined text-body-md">arrow_forward</span>';
+          return;
+        }
+
         try {
-          // If identifier is email, try admin/user authentication
-          await db.signIn(identifier, password);
-          window.location.href = 'admin.html';
-        } catch (err) {
-          // If ticket code or delegate ID
-          if (identifier.startsWith('ALM-')) {
-            localStorage.setItem('almurafaqa_delegate_session', JSON.stringify({ code: identifier, time: Date.now() }));
+          const authResult = await db.signIn(identifier, password);
+          const session = authResult?.session || await db.getSession();
+          const user = session?.user;
+          const isAdmin = db.isLive()
+            ? (user?.app_metadata?.role === 'admin' || user?.user_metadata?.role === 'admin')
+            : (user?.id === 'demo-admin-id');
+
+          if (isAdmin) {
             window.location.href = 'admin.html';
           } else {
-            alert(err.message || 'Authentication error. Demo Admin: admin@almurafaqa.com / admin123');
-            btn.disabled = false;
-            btn.innerHTML = '<span>Enter Festival Portal</span><span class="material-symbols-outlined text-body-md">arrow_forward</span>';
+            window.location.href = 'index.html#pass-section';
           }
+        } catch (err) {
+          alert(err.message || 'Sign-in failed. Check your details or contact the festival desk.');
+          btn.disabled = false;
+          btn.innerHTML = '<span>Enter Festival Portal</span><span class="material-symbols-outlined text-body-md">arrow_forward</span>';
         }
       });
     }

@@ -30,16 +30,28 @@ function initLucide() {
   }
 }
 
+function isAdminSession(session) {
+  if (!session?.user) return false;
+  if (!db.isLive()) {
+    return session.user.id === 'demo-admin-id' || session.user.app_metadata?.role === 'admin';
+  }
+  return (
+    session.user.app_metadata?.role === 'admin' ||
+    session.user.user_metadata?.role === 'admin'
+  );
+}
+
 async function checkAuthSession() {
   try {
     const session = await db.getSession();
     const authOverlay = document.getElementById('auth-overlay');
 
-    if (session && session.user) {
+    if (isAdminSession(session)) {
       authOverlay.classList.add('hidden');
       updateCloudIndicator();
       await loadAllData();
     } else {
+      if (session?.user && db.isLive()) await db.signOut();
       authOverlay.classList.remove('hidden');
     }
   } catch (err) {
@@ -53,7 +65,7 @@ function updateCloudIndicator() {
   const text = document.getElementById('cloud-indicator-text');
   if (db.isLive()) {
     dot.className = 'cloud-dot';
-    text.textContent = 'Supabase Cloud Connected';
+    text.textContent = 'Supabase Cloud Mode';
   } else {
     dot.className = 'cloud-dot demo';
     text.textContent = 'Local Demo Mode (Offline)';
@@ -77,7 +89,12 @@ function setupEventListeners() {
       btn.innerHTML = '<span>Verifying credentials...</span>';
 
       try {
-        await db.signIn(email, password);
+        const authResult = await db.signIn(email, password);
+        const session = authResult?.session || await db.getSession();
+        if (!isAdminSession(session)) {
+          if (session?.user && db.isLive()) await db.signOut();
+          throw new Error('This account is not assigned the administrator role.');
+        }
         document.getElementById('auth-overlay').classList.add('hidden');
         showToast('Authenticated successfully as Administrator', 'success');
         updateCloudIndicator();
@@ -106,9 +123,13 @@ function setupEventListeners() {
   const btnSignout = document.getElementById('btn-signout');
   if (btnSignout) {
     btnSignout.addEventListener('click', async () => {
-      await db.signOut();
-      document.getElementById('auth-overlay').classList.remove('hidden');
-      showToast('Signed out of command center', 'info');
+      try {
+        await db.signOut();
+        document.getElementById('auth-overlay').classList.remove('hidden');
+        showToast('Signed out of command center', 'info');
+      } catch (err) {
+        showToast('Sign out failed: ' + err.message, 'error');
+      }
     });
   }
 
@@ -330,40 +351,43 @@ function renderOverview() {
 
   // Calculate Metrics
   const totalRegs = cachedRegistrations.length;
-  const verifiedList = cachedRegistrations.filter((r) => r.payment_status === 'verified');
-  const pendingCount = cachedRegistrations.filter((r) => r.payment_status === 'pending').length;
   const checkedInCount = cachedRegistrations.filter((r) => r.checked_in).length;
+  const pendingCheckInCount = cachedRegistrations.filter((r) => !r.checked_in).length;
 
-  // Calculate total verified revenue based on event fee
-  let totalRevenue = 0;
-  verifiedList.forEach((r) => {
-    const evt = cachedEvents.find((e) => e.id === r.event_id);
-    if (evt && evt.fee) totalRevenue += Number(evt.fee);
-  });
+  // Calculate institutions and teams
+  const institutionsSet = new Set(
+    cachedRegistrations.map((r) => r.college_name || r.institution).filter(Boolean)
+  );
+  const totalInstitutions = institutionsSet.size;
+  const totalTeams = cachedRegistrations.filter((r) => r.team_name && r.team_name.trim().length > 0).length;
 
   const elRegs = document.getElementById('stat-total-regs');
   if (elRegs) elRegs.textContent = totalRegs.toLocaleString();
 
+  const totalParticipants = cachedRegistrations.reduce((count, registration) => {
+    const members = Array.isArray(registration.team_members) ? registration.team_members.length : 1;
+    return count + Math.max(members, 1);
+  }, 0);
   const elParts = document.getElementById('stat-total-participants');
-  if (elParts) elParts.textContent = (totalRegs * 3 + 120).toLocaleString();
+  if (elParts) elParts.textContent = totalParticipants.toLocaleString();
 
   const elProgs = document.getElementById('stat-total-programmes');
   if (elProgs) elProgs.textContent = cachedEvents.length.toString();
 
-  const elRevenue = document.getElementById('stat-total-revenue');
-  if (elRevenue) elRevenue.textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+  const elInstitutions = document.getElementById('stat-total-institutions');
+  if (elInstitutions) elInstitutions.textContent = totalInstitutions.toLocaleString();
 
-  const elPending = document.getElementById('stat-pending-payments');
-  if (elPending) elPending.textContent = pendingCount.toLocaleString();
+  const elTeams = document.getElementById('stat-total-teams');
+  if (elTeams) elTeams.textContent = totalTeams.toLocaleString();
 
   const elChecked = document.getElementById('stat-checkedin-count');
   if (elChecked) elChecked.textContent = checkedInCount.toLocaleString();
 
-  // Pending Badge in Sidebar
+  // Pending Admission Badge in Sidebar
   const badge = document.getElementById('badge-pending-count');
   if (badge) {
-    badge.textContent = pendingCount;
-    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+    badge.textContent = pendingCheckInCount;
+    badge.style.display = pendingCheckInCount > 0 ? 'inline-block' : 'none';
   }
 
   // Render Capacity Bars & Overview Programmes
@@ -371,18 +395,26 @@ function renderOverview() {
   renderOverviewProgrammes();
 }
 
-function renderOverviewProgrammes(filter = 'all') {
+let currentOverviewCategory = 'all';
+let currentOverviewDay = 'all';
+
+function renderOverviewProgrammes() {
   const tbody = document.getElementById('overview-programmes-table-body');
   if (!tbody) return;
 
   let list = cachedEvents;
-  if (filter && filter !== 'all') {
-    const fLower = filter.toLowerCase();
-    list = cachedEvents.filter(
+  if (currentOverviewCategory && currentOverviewCategory !== 'all') {
+    const fLower = currentOverviewCategory.toLowerCase();
+    list = list.filter(
       (e) =>
-        e.category.toLowerCase().includes(fLower) ||
-        e.title.toLowerCase().includes(fLower)
+        (e.category && e.category.toLowerCase().includes(fLower)) ||
+        (e.title && e.title.toLowerCase().includes(fLower))
     );
+  }
+
+  if (currentOverviewDay && currentOverviewDay !== 'all') {
+    const dayNum = Number(currentOverviewDay);
+    list = list.filter((e) => Number(e.day_number) === dayNum);
   }
 
   if (list.length === 0) {
@@ -464,44 +496,32 @@ function renderOverviewProgrammes(filter = 'all') {
 }
 
 window.filterOverviewSchedule = function (cat, btn) {
+  currentOverviewCategory = cat;
   document.querySelectorAll('#tab-overview button[onclick^="window.filterOverviewSchedule"]').forEach((b) => {
     b.className = 'px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-label-sm text-label-sm transition-colors';
   });
   if (btn) {
     btn.className = 'px-3 py-1.5 rounded-xl bg-red-600 text-white font-label-sm text-label-sm font-semibold shadow-sm';
   }
-  renderOverviewProgrammes(cat);
+  renderOverviewProgrammes();
 };
 
-function renderCapacityGauges() {
-  const container = document.getElementById('capacity-bars-container');
-  if (!container) return;
-
-  if (cachedEvents.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500">No events created yet.</p>';
-    return;
+window.filterOverviewByDay = function (day, btn) {
+  currentOverviewDay = day;
+  document.querySelectorAll('#tab-overview button[onclick^="window.filterOverviewByDay"]').forEach((b) => {
+    b.className = 'px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm';
+  });
+  if (btn) {
+    btn.className = 'px-3 py-1.5 rounded-lg bg-red-600 text-white font-label-sm text-label-sm font-bold shadow-sm transition-colors';
   }
-
-  container.innerHTML = cachedEvents
-    .map((evt) => {
-      const registeredCount = cachedRegistrations.filter((r) => r.event_id === evt.id).length;
-      const cap = evt.max_capacity || 50;
-      const pct = Math.min(100, Math.round((registeredCount / cap) * 100));
-
-      return `
-      <div class="p-3 bg-white rounded-xl border border-slate-200 flex flex-col gap-1.5">
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-bold text-slate-900">${escapeHtml(evt.title)} (${escapeHtml(evt.category)})</span>
-          <span class="text-slate-600"><strong>${registeredCount}</strong> / ${cap} slots <span class="font-bold text-red-600">(${pct}%)</span></span>
-        </div>
-        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-          <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 h-full rounded-full transition-all" style="width: ${pct}%;"></div>
-        </div>
-      </div>
-    `;
-    })
-    .join('');
-}
+  const countLabel = document.getElementById('overview-schedule-count');
+  if (countLabel) {
+    countLabel.textContent = day === 'all'
+      ? 'Showing all curated festival programmes across active hall spaces'
+      : `Showing curated programmes scheduled for Day ${day}`;
+  }
+  renderOverviewProgrammes();
+};
 
 function updateSwitchLabels() {
   const swReg = document.getElementById('switch-registrations');
@@ -530,27 +550,36 @@ function setupEmergencySwitches() {
   const swTicker = document.getElementById('switch-ticker');
   const swMaint = document.getElementById('switch-maintenance');
 
-  if (swReg) {
-    swReg.addEventListener('change', async () => {
+  const saveSwitch = async (toggle, setting, enabledMessage, disabledMessage) => {
+    const previousValue = Boolean(cachedSettings?.[setting]);
+    const nextValue = toggle.checked;
+    updateSwitchLabels();
+
+    try {
+      cachedSettings = await db.updateSettings({ [setting]: nextValue });
+      showToast(nextValue ? enabledMessage : disabledMessage, setting === 'maintenance_mode' && nextValue ? 'warning' : 'info');
+    } catch (err) {
+      toggle.checked = previousValue;
       updateSwitchLabels();
-      await db.updateSettings({ registrations_open: swReg.checked });
-      showToast(swReg.checked ? 'Registrations OPENED globally' : 'Registrations PAUSED globally', 'info');
+      showToast('Failed to save setting: ' + err.message, 'error');
+    }
+  };
+
+  if (swReg) {
+    swReg.addEventListener('change', () => {
+      saveSwitch(swReg, 'registrations_open', 'Registrations OPENED globally', 'Registrations PAUSED globally');
     });
   }
 
   if (swTicker) {
-    swTicker.addEventListener('change', async () => {
-      updateSwitchLabels();
-      await db.updateSettings({ live_ticker_enabled: swTicker.checked });
-      showToast(swTicker.checked ? 'Announcement ticker activated' : 'Announcement ticker silenced', 'info');
+    swTicker.addEventListener('change', () => {
+      saveSwitch(swTicker, 'live_ticker_enabled', 'Announcement ticker activated', 'Announcement ticker silenced');
     });
   }
 
   if (swMaint) {
-    swMaint.addEventListener('change', async () => {
-      updateSwitchLabels();
-      await db.updateSettings({ maintenance_mode: swMaint.checked });
-      showToast(swMaint.checked ? 'Site set to MAINTENANCE mode' : 'Site returned to LIVE mode', swMaint.checked ? 'warning' : 'success');
+    swMaint.addEventListener('change', () => {
+      saveSwitch(swMaint, 'maintenance_mode', 'Site set to MAINTENANCE mode', 'Site returned to LIVE mode');
     });
   }
 }
@@ -573,7 +602,7 @@ function renderCapacityGauges() {
       return `
       <div class="capacity-item">
         <div class="capacity-header">
-          <span>${evt.title} (${evt.category})</span>
+          <span>${escapeHtml(evt.title)} (${escapeHtml(evt.category)})</span>
           <span><strong>${registeredCount}</strong> / ${cap} slots (${pct}%)</span>
         </div>
         <div class="progress-track">
@@ -591,11 +620,9 @@ function renderCapacityGauges() {
 
 function renderAnnouncementsTab() {
   if (cachedSettings) {
-    const upiInput = document.getElementById('setting-upi');
     const phoneInput = document.getElementById('setting-phone');
     const tickerInput = document.getElementById('setting-ticker');
 
-    if (upiInput) upiInput.value = cachedSettings.upi_id || '';
     if (phoneInput) phoneInput.value = cachedSettings.support_phone || '';
     if (tickerInput) tickerInput.value = cachedSettings.live_ticker_text || '';
   }
@@ -644,12 +671,11 @@ function renderAnnouncementsTab() {
 
 async function handleSettingsSubmit(e) {
   e.preventDefault();
-  const upi_id = document.getElementById('setting-upi').value.trim();
   const support_phone = document.getElementById('setting-phone').value.trim();
   const live_ticker_text = document.getElementById('setting-ticker').value.trim();
 
   try {
-    cachedSettings = await db.updateSettings({ upi_id, support_phone, live_ticker_text });
+    cachedSettings = await db.updateSettings({ support_phone, live_ticker_text });
     showToast('Festival settings & live ticker updated successfully', 'success');
   } catch (err) {
     showToast('Failed to update settings: ' + err.message, 'error');
@@ -676,18 +702,30 @@ async function handleAnnouncementSubmit(e) {
 window.toggleAnnouncementActive = async function (id) {
   const item = cachedAnnouncements.find((a) => a.id === id);
   if (!item) return;
+  const previousValue = item.is_active;
   item.is_active = !item.is_active;
-  await db.saveAnnouncement(item);
-  renderAnnouncementsTab();
-  showToast(`Announcement ${item.is_active ? 'activated' : 'deactivated'}`, 'info');
+  try {
+    await db.saveAnnouncement(item);
+    cachedAnnouncements = await db.getAnnouncements();
+    renderAnnouncementsTab();
+    showToast(`Announcement ${item.is_active ? 'activated' : 'deactivated'}`, 'info');
+  } catch (err) {
+    item.is_active = previousValue;
+    renderAnnouncementsTab();
+    showToast('Failed to update announcement: ' + err.message, 'error');
+  }
 };
 
 window.deleteAnnouncement = async function (id) {
   if (!confirm('Are you sure you want to remove this announcement?')) return;
-  await db.deleteAnnouncement(id);
-  cachedAnnouncements = await db.getAnnouncements();
-  renderAnnouncementsTab();
-  showToast('Announcement removed', 'info');
+  try {
+    await db.deleteAnnouncement(id);
+    cachedAnnouncements = await db.getAnnouncements();
+    renderAnnouncementsTab();
+    showToast('Announcement removed', 'info');
+  } catch (err) {
+    showToast('Failed to delete announcement: ' + err.message, 'error');
+  }
 };
 
 // ==============================================================================
@@ -732,10 +770,6 @@ function renderEventsTab() {
         <td>
           <strong>Day ${evt.day_number}</strong> • ${escapeHtml(evt.time_slot)}
           <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(evt.venue)}</span>
-        </td>
-        <td>
-          <strong>₹${Number(evt.fee).toLocaleString()}</strong>
-          <span style="display: block; font-size: 0.75rem; color: #15803D;">Pool: ₹${Number(evt.prize_pool).toLocaleString()}</span>
         </td>
         <td>
           <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">${regCount} / ${evt.max_capacity}</div>
@@ -799,8 +833,8 @@ function setupEventControls() {
         title: document.getElementById('evt-title').value.trim(),
         category: document.getElementById('evt-category').value.trim(),
         venue: document.getElementById('evt-venue').value.trim(),
-        fee: Number(document.getElementById('evt-fee').value),
-        prize_pool: Number(document.getElementById('evt-prize').value),
+        fee: 0,
+        prize_pool: 0,
         max_capacity: Number(document.getElementById('evt-capacity').value),
         team_size_min: Number(document.getElementById('evt-team-min').value),
         team_size_max: Number(document.getElementById('evt-team-max').value),
@@ -818,6 +852,8 @@ function setupEventControls() {
         cachedEvents = await db.getEvents();
         renderEventsTab();
         renderOverview();
+        renderRegistrationsTab();
+        renderWinnersTab();
         showToast(`Event ${id ? 'updated' : 'created'} successfully`, 'success');
       } catch (err) {
         showToast('Error saving event: ' + err.message, 'error');
@@ -834,8 +870,6 @@ window.openEditEventModal = function (id) {
   document.getElementById('evt-title').value = evt.title;
   document.getElementById('evt-category').value = evt.category;
   document.getElementById('evt-venue').value = evt.venue;
-  document.getElementById('evt-fee').value = evt.fee;
-  document.getElementById('evt-prize').value = evt.prize_pool;
   document.getElementById('evt-capacity').value = evt.max_capacity;
   document.getElementById('evt-team-min').value = evt.team_size_min || 1;
   document.getElementById('evt-team-max').value = evt.team_size_max || 1;
@@ -852,31 +886,59 @@ window.openEditEventModal = function (id) {
 window.updateEventStatus = async function (id, status) {
   const evt = cachedEvents.find((e) => e.id === id);
   if (!evt) return;
+  const previousStatus = evt.status;
   evt.status = status;
-  await db.saveEvent(evt);
-  renderEventsTab();
-  showToast(`Status updated to ${status.replace('_', ' ').toUpperCase()}`, 'info');
+  try {
+    await db.saveEvent(evt);
+    renderEventsTab();
+    renderOverview();
+    showToast(`Status updated to ${status.replace('_', ' ').toUpperCase()}`, 'info');
+  } catch (err) {
+    evt.status = previousStatus;
+    renderEventsTab();
+    showToast('Failed to update event status: ' + err.message, 'error');
+  }
 };
 
 window.toggleEventFeatured = async function (id, is_featured) {
   const evt = cachedEvents.find((e) => e.id === id);
   if (!evt) return;
+  const previousValue = evt.is_featured;
   evt.is_featured = is_featured;
-  await db.saveEvent(evt);
-  showToast(`Event ${is_featured ? 'featured on front page' : 'unfeatured'}`, 'info');
+  try {
+    await db.saveEvent(evt);
+    renderEventsTab();
+    renderOverview();
+    showToast(`Event ${is_featured ? 'featured on front page' : 'unfeatured'}`, 'info');
+  } catch (err) {
+    evt.is_featured = previousValue;
+    renderEventsTab();
+    showToast('Failed to update event: ' + err.message, 'error');
+  }
 };
 
 window.deleteEvent = async function (id) {
   if (!confirm('Are you sure you want to delete this event? This will also remove its associated registrations.')) return;
-  await db.deleteEvent(id);
-  cachedEvents = await db.getEvents();
-  renderEventsTab();
-  renderOverview();
-  showToast('Event removed', 'info');
+  try {
+    await db.deleteEvent(id);
+    [cachedEvents, cachedRegistrations, cachedWinners] = await Promise.all([
+      db.getEvents(),
+      db.getRegistrations(),
+      db.getWinners(),
+    ]);
+    renderEventsTab();
+    renderOverview();
+    renderRegistrationsTab();
+    renderCheckInTab();
+    renderWinnersTab();
+    showToast('Event and its registrations removed', 'info');
+  } catch (err) {
+    showToast('Failed to delete event: ' + err.message, 'error');
+  }
 };
 
 // ==============================================================================
-// 7. TAB 4: REGISTRATIONS & PAYMENTS
+// 7. TAB 3: TEAMS & PARTICIPANTS / REGISTRATIONS DESK
 // ==============================================================================
 
 function renderRegistrationsTab() {
@@ -884,14 +946,17 @@ function renderRegistrationsTab() {
   const eventSelect = document.getElementById('reg-event-filter');
   if (!tbody) return;
 
-  // Populate event dropdown filter if needed
-  if (eventSelect && eventSelect.options.length <= 1) {
+  // Rebuild the filter so newly created or deleted events stay in sync.
+  if (eventSelect) {
+    const selectedEventId = eventSelect.value || 'all';
+    eventSelect.length = 1;
     cachedEvents.forEach((evt) => {
       const opt = document.createElement('option');
       opt.value = evt.id;
       opt.textContent = evt.title;
       eventSelect.appendChild(opt);
     });
+    eventSelect.value = cachedEvents.some((evt) => evt.id === selectedEventId) ? selectedEventId : 'all';
   }
 
   const searchVal = (document.getElementById('reg-search-input')?.value || '').toLowerCase();
@@ -903,21 +968,24 @@ function renderRegistrationsTab() {
       r.ticket_code.toLowerCase().includes(searchVal) ||
       r.leader_name.toLowerCase().includes(searchVal) ||
       r.leader_phone.toLowerCase().includes(searchVal) ||
-      r.college_name.toLowerCase().includes(searchVal) ||
-      (r.transaction_id && r.transaction_id.toLowerCase().includes(searchVal));
-    const matchesStatus = statusFilter === 'all' || r.payment_status === statusFilter;
+      (r.college_name && r.college_name.toLowerCase().includes(searchVal)) ||
+      (r.team_name && r.team_name.toLowerCase().includes(searchVal));
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'admitted' && r.checked_in) ||
+      (statusFilter === 'not_admitted' && !r.checked_in);
     const matchesEvent = eventFilter === 'all' || r.event_id === eventFilter;
     return matchesSearch && matchesStatus && matchesEvent;
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">No registrations match search or filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">No registrations match search or filter.</td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered
     .map((r) => {
-      const evt = cachedEvents.find((e) => e.id === r.event_id);
+      const evt = cachedEvents.find((e) => e.id === r.event_id) || r.events;
       const membersCount = Array.isArray(r.team_members) ? r.team_members.length : 1;
 
       return `
@@ -926,7 +994,7 @@ function renderRegistrationsTab() {
           <span style="font-family: var(--font-display); font-weight: 800; color: var(--fest-red); letter-spacing: 0.5px;">
             ${escapeHtml(r.ticket_code)}
           </span>
-          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${new Date(r.created_at).toLocaleDateString()}</span>
+          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${formatDate(r.created_at)}</span>
         </td>
         <td>
           <strong>${escapeHtml(r.leader_name)}</strong>
@@ -941,33 +1009,20 @@ function renderRegistrationsTab() {
         </td>
         <td>${escapeHtml(r.college_name)}</td>
         <td>
-          <code>${escapeHtml(r.transaction_id || 'N/A')}</code>
-        </td>
-        <td>
-          <span class="badge ${r.payment_status}">
-            ${r.payment_status}
-          </span>
-        </td>
-        <td>
-          <span class="badge ${r.checked_in ? 'checked' : ''}" style="${!r.checked_in ? 'background: #F3F4F6; color: #6B7280;' : ''}">
-            ${r.checked_in ? '✓ Admitted' : 'Not Present'}
+          <span class="badge ${r.checked_in ? 'checked' : ''}" style="${!r.checked_in ? 'background: #FEF3C7; color: #92400E;' : ''}">
+            ${r.checked_in ? '✓ Admitted' : 'Pending Check-In'}
           </span>
         </td>
         <td style="text-align: right;">
           <div class="action-btn-group" style="justify-content: flex-end;">
             ${
-              r.payment_status !== 'verified'
-                ? `<button class="btn-icon verify" title="Verify Payment" onclick="window.updatePaymentStatus('${r.id}', 'verified')">
+              !r.checked_in
+                ? `<button class="btn-icon verify" title="Check-In Attendee" onclick="window.quickCheckIn('${r.id}')">
                      <i data-lucide="check" style="width: 16px; height: 16px;"></i>
                    </button>`
-                : ''
-            }
-            ${
-              r.payment_status !== 'rejected'
-                ? `<button class="btn-icon reject" title="Reject Payment" onclick="window.updatePaymentStatus('${r.id}', 'rejected')">
-                     <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                : `<button class="btn-icon" title="Admitted" disabled style="opacity: 0.5; cursor: default;">
+                     <i data-lucide="check-check" style="width: 16px; height: 16px;"></i>
                    </button>`
-                : ''
             }
           </div>
         </td>
@@ -978,6 +1033,19 @@ function renderRegistrationsTab() {
 
   initLucide();
 }
+
+window.quickCheckIn = async function (id) {
+  try {
+    await db.checkIn(id, true);
+    cachedRegistrations = await db.getRegistrations();
+    renderRegistrationsTab();
+    renderOverview();
+    renderCheckInTab();
+    showToast('Attendee checked in successfully', 'success');
+  } catch (err) {
+    showToast('Check-in failed: ' + err.message, 'error');
+  }
+};
 
 function setupRegistrationControls() {
   const searchInput = document.getElementById('reg-search-input');
@@ -992,12 +1060,17 @@ function setupRegistrationControls() {
   const btnOnSpot = document.getElementById('btn-open-onspot-modal');
   if (btnOnSpot) {
     btnOnSpot.addEventListener('click', () => {
+      if (cachedEvents.length === 0) {
+        showToast('Please create at least one event before adding walk-in registrations.', 'warning');
+        switchTab('events');
+        return;
+      }
       const select = document.getElementById('onspot-event');
       select.innerHTML = '';
       cachedEvents.forEach((evt) => {
         const opt = document.createElement('option');
         opt.value = evt.id;
-        opt.textContent = `${evt.title} (₹${evt.fee})`;
+        opt.textContent = `${evt.title} • Day ${evt.day_number}`;
         select.appendChild(opt);
       });
       document.getElementById('form-onspot').reset();
@@ -1011,13 +1084,15 @@ function setupRegistrationControls() {
     formOnSpot.addEventListener('submit', async (e) => {
       e.preventDefault();
       const event_id = document.getElementById('onspot-event').value;
+      if (!event_id) {
+        showToast('Please select a valid event for this registration.', 'warning');
+        return;
+      }
       const leader_name = document.getElementById('onspot-name').value.trim();
       const leader_email = document.getElementById('onspot-email').value.trim();
       const leader_phone = document.getElementById('onspot-phone').value.trim();
       const college_name = document.getElementById('onspot-college').value.trim();
       const team_name = document.getElementById('onspot-team').value.trim();
-      const payment_status = document.getElementById('onspot-payment').value;
-      const transaction_id = document.getElementById('onspot-txn').value.trim();
       const autoCheckIn = document.getElementById('onspot-checkin').checked;
 
       const regData = {
@@ -1027,8 +1102,8 @@ function setupRegistrationControls() {
         leader_phone,
         college_name,
         team_name: team_name || null,
-        payment_status,
-        transaction_id,
+        payment_status: 'free',
+        transaction_id: 'FREE-ENTRY',
         checked_in: autoCheckIn,
         checked_in_at: autoCheckIn ? new Date().toISOString() : null,
       };
@@ -1054,11 +1129,14 @@ function setupRegistrationControls() {
 }
 
 window.updatePaymentStatus = async function (id, status) {
-  await db.updatePayment(id, status);
-  cachedRegistrations = await db.getRegistrations();
-  renderRegistrationsTab();
-  renderOverview();
-  showToast(`Payment status updated to ${status.toUpperCase()}`, status === 'verified' ? 'success' : 'warning');
+  try {
+    await db.updatePayment(id, status);
+    cachedRegistrations = await db.getRegistrations();
+    renderRegistrationsTab();
+    renderOverview();
+  } catch (err) {
+    console.warn('Payment status update bypassed:', err.message);
+  }
 };
 
 window.viewTeamModal = function (id) {
@@ -1118,31 +1196,35 @@ function exportRegistrationsCSV() {
     return;
   }
 
-  const headers = ['Ticket Code', 'Event Title', 'Leader Name', 'Email', 'Phone', 'College', 'Fee (INR)', 'Payment Status', 'Transaction Ref', 'Checked In'];
+  const headers = ['Ticket Code', 'Event Title', 'Leader Name', 'Email', 'Phone', 'Institution', 'Team Name', 'Checked In'];
+  const csvCell = (value) => {
+    const text = String(value ?? '');
+    const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+    return `"${safeText.replace(/"/g, '""')}"`;
+  };
   const rows = cachedRegistrations.map((r) => {
-    const evt = cachedEvents.find((e) => e.id === r.event_id);
+    const evt = cachedEvents.find((e) => e.id === r.event_id) || r.events;
     return [
       r.ticket_code,
-      evt ? `"${evt.title.replace(/"/g, '""')}"` : 'Unknown',
-      `"${r.leader_name.replace(/"/g, '""')}"`,
+      evt ? evt.title : 'Unknown',
+      r.leader_name,
       r.leader_email,
       r.leader_phone,
-      `"${r.college_name.replace(/"/g, '""')}"`,
-      evt ? evt.fee : 0,
-      r.payment_status,
-      r.transaction_id || '',
+      r.college_name,
+      r.team_name || '',
       r.checked_in ? 'YES' : 'NO',
-    ];
+    ].map(csvCell);
   });
 
-  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-  const encodedUri = encodeURI(csvContent);
+  const csvContent = '\uFEFF' + [headers.map(csvCell).join(','), ...rows.map((row) => row.join(','))].join('\r\n');
+  const downloadUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
+  link.setAttribute('href', downloadUrl);
   link.setAttribute('download', `al_murafaqa_registrations_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
   showToast('CSV downloaded successfully', 'success');
 }
 
@@ -1166,14 +1248,14 @@ function renderCheckInTab() {
   streamBody.innerHTML = checkedInList
     .slice(0, 15)
     .map((r) => {
-      const evt = cachedEvents.find((e) => e.id === r.event_id);
+      const evt = cachedEvents.find((e) => e.id === r.event_id) || r.events;
       return `
       <tr>
         <td><strong style="color: var(--fest-red);">${escapeHtml(r.ticket_code)}</strong></td>
         <td>${escapeHtml(r.leader_name)} ${r.team_name ? `(${escapeHtml(r.team_name)})` : ''}</td>
         <td>${evt ? escapeHtml(evt.title) : 'Event'}</td>
         <td>${escapeHtml(r.college_name)}</td>
-        <td>${r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString() : 'Checked In'}</td>
+        <td>${formatTime(r.checked_in_at)}</td>
       </tr>
     `;
     })
@@ -1187,19 +1269,24 @@ function setupCheckInControls() {
   const ticketInput = document.getElementById('checkin-ticket-input');
   const resultCard = document.getElementById('attendee-result-card');
   const btnConfirm = document.getElementById('btn-confirm-checkin');
-  const btnCollect = document.getElementById('btn-collect-verify');
 
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const query = ticketInput.value.trim().toUpperCase();
-      if (!query) return;
+      const rawQuery = ticketInput.value.trim().toUpperCase();
+      if (!rawQuery) return;
 
-      const found = cachedRegistrations.find((r) => r.ticket_code.toUpperCase() === query);
+      const normalizedQuery = rawQuery.replace(/[\s-]/g, '');
+      const found = cachedRegistrations.find((r) => {
+        const code = (r.ticket_code || '').toUpperCase();
+        const normCode = code.replace(/[\s-]/g, '');
+        return code === rawQuery || normCode === normalizedQuery || normCode === `ALM${normalizedQuery}`;
+      });
+
       if (!found) {
         resultCard.classList.remove('active');
         resultCard.classList.add('hidden');
-        showToast(`Ticket ${query} not found in system`, 'error');
+        showToast(`Ticket ${rawQuery} not found in system`, 'error');
         return;
       }
 
@@ -1211,34 +1298,27 @@ function setupCheckInControls() {
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
       if (!currentAttendeeLookup) return;
-      await db.checkIn(currentAttendeeLookup.id, true);
-      cachedRegistrations = await db.getRegistrations();
-      currentAttendeeLookup = cachedRegistrations.find((r) => r.id === currentAttendeeLookup.id);
-      displayAttendeeCheckInCard(currentAttendeeLookup);
-      renderCheckInTab();
-      renderOverview();
-      showToast(`Admitted ${currentAttendeeLookup.leader_name} (${currentAttendeeLookup.ticket_code})`, 'success');
-    });
-  }
 
-  if (btnCollect) {
-    btnCollect.addEventListener('click', async () => {
-      if (!currentAttendeeLookup) return;
-      await db.updatePayment(currentAttendeeLookup.id, 'verified');
-      await db.checkIn(currentAttendeeLookup.id, true);
-      cachedRegistrations = await db.getRegistrations();
-      currentAttendeeLookup = cachedRegistrations.find((r) => r.id === currentAttendeeLookup.id);
-      displayAttendeeCheckInCard(currentAttendeeLookup);
-      renderCheckInTab();
-      renderOverview();
-      showToast(`Payment collected & admitted ${currentAttendeeLookup.leader_name}!`, 'success');
+      try {
+        await db.checkIn(currentAttendeeLookup.id, true);
+        cachedRegistrations = await db.getRegistrations();
+        currentAttendeeLookup = cachedRegistrations.find((r) => r.id === currentAttendeeLookup.id);
+        if (!currentAttendeeLookup) throw new Error('Registration could not be reloaded after check-in.');
+        displayAttendeeCheckInCard(currentAttendeeLookup);
+        renderCheckInTab();
+        renderOverview();
+        renderRegistrationsTab();
+        showToast(`Admitted ${currentAttendeeLookup.leader_name} (${currentAttendeeLookup.ticket_code})`, 'success');
+      } catch (err) {
+        showToast('Check-in failed: ' + err.message, 'error');
+      }
     });
   }
 }
 
 function displayAttendeeCheckInCard(reg) {
   const resultCard = document.getElementById('attendee-result-card');
-  const evt = cachedEvents.find((e) => e.id === reg.event_id);
+  const evt = cachedEvents.find((e) => e.id === reg.event_id) || reg.events;
 
   document.getElementById('res-ticket-code').textContent = reg.ticket_code;
   document.getElementById('res-leader-name').textContent = reg.leader_name;
@@ -1249,28 +1329,17 @@ function displayAttendeeCheckInCard(reg) {
   // Badge Container
   const badgeContainer = document.getElementById('res-status-badge-container');
   badgeContainer.innerHTML = `
-    <span class="badge ${reg.payment_status}" style="font-size: 0.85rem; padding: 6px 12px;">
-      Payment: ${reg.payment_status.toUpperCase()}
+    <span class="badge ${reg.checked_in ? 'checked' : 'pending'}" style="font-size: 0.85rem; padding: 6px 12px; ${!reg.checked_in ? 'background: #FEF3C7; color: #92400E;' : ''}">
+      ${reg.checked_in ? '✓ ADMITTED' : 'READY FOR CHECK-IN'}
     </span>
   `;
 
-  // Warning Box
-  const warningBox = document.getElementById('checkin-warning-box');
-  const btnCollect = document.getElementById('btn-collect-verify');
   const btnConfirm = document.getElementById('btn-confirm-checkin');
   const labelConfirm = document.getElementById('btn-checkin-label');
 
-  if (reg.payment_status !== 'verified') {
-    warningBox.style.display = 'block';
-    btnCollect.style.display = 'inline-flex';
-  } else {
-    warningBox.style.display = 'none';
-    btnCollect.style.display = 'none';
-  }
-
   if (reg.checked_in) {
     btnConfirm.style.background = '#6B7280';
-    labelConfirm.textContent = `Already Admitted (${new Date(reg.checked_in_at).toLocaleTimeString()})`;
+    labelConfirm.textContent = `Already Admitted (${formatTime(reg.checked_in_at)})`;
     btnConfirm.disabled = true;
   } else {
     btnConfirm.style.background = 'var(--status-verified)';
@@ -1289,13 +1358,30 @@ function displayAttendeeCheckInCard(reg) {
 
 function renderWinnersTab() {
   const select = document.getElementById('winner-event-select');
-  if (select && select.options.length === 0) {
+  if (select) {
+    const selectedEventId = select.value;
+    select.innerHTML = '';
+
+    if (cachedEvents.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No events available';
+      opt.disabled = true;
+      opt.selected = true;
+      select.appendChild(opt);
+    }
+
     cachedEvents.forEach((evt) => {
       const opt = document.createElement('option');
       opt.value = evt.id;
       opt.textContent = `${evt.title} (${evt.category})`;
       select.appendChild(opt);
     });
+
+    if (cachedEvents.length > 0) {
+      select.value = cachedEvents.some((evt) => evt.id === selectedEventId) ? selectedEventId : cachedEvents[0].id;
+      select.dispatchEvent(new Event('change'));
+    }
   }
 
   // Right column: Published Winners Feed
@@ -1362,13 +1448,22 @@ function setupWinnersControls() {
       document.getElementById('win-2-college').value = w2 ? w2.college_name : '';
       document.getElementById('win-3-name').value = w3 ? w3.winner_name : '';
       document.getElementById('win-3-college').value = w3 ? w3.college_name : '';
+
+      const pubToggle = document.getElementById('winner-publish-toggle');
+      if (pubToggle) {
+        pubToggle.checked = existing.length > 0 ? Boolean(existing[0]?.published) : true;
+      }
     });
   }
 
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const eventId = select.value;
+      const eventId = select?.value;
+      if (!eventId) {
+        showToast('Please select an event before saving podium results.', 'warning');
+        return;
+      }
       const isPublished = document.getElementById('winner-publish-toggle').checked;
 
       const winnersArray = [
@@ -1387,7 +1482,12 @@ function setupWinnersControls() {
           winner_name: document.getElementById('win-3-name').value.trim(),
           college_name: document.getElementById('win-3-college').value.trim(),
         },
-      ];
+      ].filter((w) => w.winner_name.length > 0);
+
+      if (winnersArray.length === 0) {
+        showToast('Please enter at least one winner name before saving.', 'warning');
+        return;
+      }
 
       try {
         await db.saveWinners(eventId, winnersArray, isPublished);
@@ -1399,6 +1499,19 @@ function setupWinnersControls() {
       }
     });
   }
+}
+
+// Format helpers
+function formatDate(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+}
+
+function formatTime(isoStr) {
+  if (!isoStr) return 'Checked In';
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? 'Checked In' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 // ==============================================================================

@@ -9,7 +9,7 @@
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -50,17 +50,18 @@
             margin: "1.25rem"
           },
           fontFamily: {
-            "headline-lg": ["Outfit", "sans-serif"],
-            "headline-md": ["Outfit", "sans-serif"],
-            "headline-sm": ["Outfit", "sans-serif"],
-            "display-lg": ["Outfit", "sans-serif"],
-            "display-lg-mobile": ["Outfit", "sans-serif"],
-            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
-            "body-md": ["Plus Jakarta Sans", "sans-serif"],
-            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
-            "label-lg": ["Plus Jakarta Sans", "sans-serif"],
-            "label-md": ["Plus Jakarta Sans", "sans-serif"],
-            "label-sm": ["Plus Jakarta Sans", "sans-serif"]
+            "headline-lg": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "display-lg-mobile": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "body-sm": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-lg": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-md": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"],
+            sans: ["Plus Jakarta Sans", "Noto Sans Arabic", "sans-serif"]
           },
           fontSize: {
             "headline-lg": ["28px", { lineHeight: "36px", fontWeight: "700" }],
@@ -420,23 +421,23 @@
               </div>
             </div>
 
-            <!-- Global Broadcast & Revenue -->
+            <!-- Accredited Institutions -->
             <div class="bg-white border border-slate-200/90 p-space-md rounded-xl shadow-sm flex flex-col justify-between group hover:border-slate-300 transition-colors">
               <div class="flex items-center justify-between text-slate-500 mb-space-sm">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Verified Revenue</span>
-                <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
-                  <span class="material-symbols-outlined text-[18px]">currency_rupee</span>
+                <span class="font-label-sm text-label-sm uppercase tracking-wider font-semibold">Institutions Represented</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">school</span>
                 </div>
               </div>
               <div>
                 <div class="flex items-baseline gap-space-xs">
-                  <span id="stat-total-revenue" class="font-headline-lg text-headline-lg text-red-600 font-bold">₹0</span>
-                  <span class="font-label-sm text-label-sm text-red-600 font-semibold">Approved</span>
+                  <span id="stat-total-institutions" class="font-headline-lg text-headline-lg text-blue-600 font-bold">0</span>
+                  <span class="font-label-sm text-label-sm text-blue-600 font-semibold">Colleges</span>
                 </div>
-                <p class="font-body-sm text-body-sm text-slate-500 mt-1"><span id="stat-pending-payments" class="font-bold text-amber-600">0</span> pending approvals</p>
+                <p class="font-body-sm text-body-sm text-slate-500 mt-1"><span id="stat-total-teams" class="font-bold text-slate-700">0</span> active delegations</p>
               </div>
               <div class="mt-space-sm w-full bg-slate-100 h-1 rounded-full overflow-hidden">
-                <div class="bg-red-600 h-full w-[84%] rounded-full animate-pulse"></div>
+                <div class="bg-blue-600 h-full w-[80%] rounded-full"></div>
               </div>
             </div>
 
@@ -853,15 +854,17 @@
                 Showing all curated festival programmes across active hall spaces
               </span>
               <div class="flex items-center gap-2">
-                <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm">
+                <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm" onclick="window.filterOverviewByDay(1, this)">
                   Day 1
                 </button>
-                <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm">
+                <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm" onclick="window.filterOverviewByDay(2, this)">
                   Day 2
                 </button>
-                <span class="font-label-sm text-label-sm text-red-600 font-bold px-2">Day 3 (Active)</span>
-                <button class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm">
-                  Day 4
+                <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm" onclick="window.filterOverviewByDay(3, this)">
+                  Day 3
+                </button>
+                <button type="button" class="px-3 py-1.5 rounded-lg bg-red-600 text-white font-label-sm text-label-sm font-bold shadow-sm transition-colors" onclick="window.filterOverviewByDay('all', this)">
+                  All Days
                 </button>
               </div>
             </div>
@@ -921,7 +924,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div>
               <h2 class="font-headline-md text-2xl font-bold text-slate-900">Cultural Tracks &amp; Competitions Manager</h2>
-              <p class="text-sm text-slate-500 mt-0.5">Configure schedules, maximum capacity, registration fees, and prize pools</p>
+              <p class="text-sm text-slate-500 mt-0.5">Configure schedules, maximum capacity, venues, and competition guidelines</p>
             </div>
             <button id="btn-open-add-event" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
               <span class="material-symbols-outlined text-[20px]">add_circle</span>
@@ -955,7 +958,6 @@
                     <th class="py-3.5 px-6">Competition Title</th>
                     <th class="py-3.5 px-4">Category</th>
                     <th class="py-3.5 px-4">Schedule &amp; Venue</th>
-                    <th class="py-3.5 px-4">Fee &amp; Prize</th>
                     <th class="py-3.5 px-4">Capacity Gauge</th>
                     <th class="py-3.5 px-4 text-center">Featured</th>
                     <th class="py-3.5 px-4">Status</th>
@@ -977,7 +979,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <div>
               <h2 class="font-headline-md text-2xl font-bold text-slate-900">Teams &amp; Participants Desk</h2>
-              <p class="text-sm text-slate-500 mt-0.5">Verify UPI payment references, inspect full rosters, and register on-spot walk-ins</p>
+              <p class="text-sm text-slate-500 mt-0.5">Manage attendee credentials, inspect team rosters, and register walk-ins</p>
             </div>
             <div class="flex items-center gap-3">
               <button id="btn-open-onspot-modal" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
@@ -995,14 +997,13 @@
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
             <div class="relative w-full md:w-96">
               <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[20px]">search</span>
-              <input type="text" id="reg-search-input" class="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="Search by Ticket Code, Name, Phone, College, UPI Ref..."/>
+              <input type="text" id="reg-search-input" class="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="Search by Ticket Code, Name, Phone, Institution..."/>
             </div>
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <select id="reg-status-filter" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-red-500">
-                <option value="all">All Payment Statuses</option>
-                <option value="pending">Pending Approval</option>
-                <option value="verified">Verified</option>
-                <option value="rejected">Rejected</option>
+                <option value="all">All Attendees</option>
+                <option value="admitted">Admitted / Checked-In</option>
+                <option value="not_admitted">Pending Check-In</option>
               </select>
               <select id="reg-event-filter" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-red-500">
                 <option value="all">All Competitions</option>
@@ -1020,9 +1021,7 @@
                     <th class="py-3.5 px-4">Participant / Leader</th>
                     <th class="py-3.5 px-4">Competition</th>
                     <th class="py-3.5 px-4">Institution</th>
-                    <th class="py-3.5 px-4">Transaction / UPI Ref</th>
-                    <th class="py-3.5 px-4">Payment</th>
-                    <th class="py-3.5 px-4">Grounds Check-In</th>
+                    <th class="py-3.5 px-4">Grounds Admission</th>
                     <th class="py-3.5 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1040,21 +1039,17 @@
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 class="font-headline-md text-2xl font-bold text-slate-900">Live Broadcasts &amp; Site-Wide Announcements</h2>
-            <p class="text-sm text-slate-500 mt-0.5">Push urgent alerts to attendee screens and configure global UPI payment coordinates</p>
+            <p class="text-sm text-slate-500 mt-0.5">Push urgent alerts to attendee screens and configure helpdesk coordinates</p>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
-            <!-- Festival Payment & Support Coordinates -->
+            <!-- Festival Helpdesk & Support Coordinates -->
             <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
               <h3 class="font-headline-sm text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <span class="material-symbols-outlined text-red-600 text-[22px]">payments</span>
-                Official Payment &amp; Support Coordinates
+                <span class="material-symbols-outlined text-red-600 text-[22px]">contact_support</span>
+                Official Helpdesk &amp; Support Coordinates
               </h3>
               <form id="settings-form" class="space-y-4">
-                <div>
-                  <label for="setting-upi" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Festival UPI ID</label>
-                  <input type="text" id="setting-upi" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="almurafaqa@upi" required/>
-                </div>
                 <div>
                   <label for="setting-phone" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Support Helpline Phone</label>
                   <input type="text" id="setting-phone" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white" placeholder="+91 98765 43210" required/>
@@ -1127,7 +1122,7 @@
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 class="font-headline-md text-2xl font-bold text-slate-900">Passes &amp; Venue Gate Check-In Desk</h2>
-            <p class="text-sm text-slate-500 mt-0.5">Instant attendee ticket verification, payment audit, and badge admission</p>
+            <p class="text-sm text-slate-500 mt-0.5">Instant attendee ticket verification, credentials audit, and badge admission</p>
           </div>
 
           <!-- Ticket Code Search Box -->
@@ -1162,20 +1157,11 @@
                 <div class="flex justify-between"><span class="text-slate-500">Contact Phone:</span><span id="res-phone" class="text-slate-700 font-medium"></span></div>
               </div>
 
-              <!-- Unverified Warning -->
-              <div id="checkin-warning-box" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs">
-                <strong class="block mb-1">⚠️ Payment Not Verified</strong>
-                Payment is still marked pending. Collect registration fee before gate admission.
-              </div>
-
               <!-- Action Buttons -->
               <div class="flex gap-3">
                 <button type="button" id="btn-confirm-checkin" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
                   <span class="material-symbols-outlined text-[20px]">check_circle</span>
                   <span id="btn-checkin-label">Confirm Gate Check-In</span>
-                </button>
-                <button type="button" id="btn-collect-verify" class="hidden px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 text-xs">
-                  <span>Collect &amp; Approve</span>
                 </button>
               </div>
             </div>
@@ -1343,17 +1329,6 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="evt-fee" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Fee (₹)</label>
-              <input type="number" id="evt-fee" class="form-input" placeholder="150" min="0" required>
-            </div>
-            <div>
-              <label for="evt-prize" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Prize Pool (₹)</label>
-              <input type="number" id="evt-prize" class="form-input" placeholder="15000" min="0" required>
-            </div>
-          </div>
-
           <div class="grid grid-cols-3 gap-3">
             <div>
               <label for="evt-capacity" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Max Capacity</label>
@@ -1454,20 +1429,6 @@
             <div>
               <label for="onspot-team" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Team Name (Optional)</label>
               <input type="text" id="onspot-team" class="form-input" placeholder="e.g. Qalam Guild">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="onspot-payment" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Payment Method</label>
-              <select id="onspot-payment" class="form-input">
-                <option value="verified">Cash Paid On-Spot (Verified)</option>
-                <option value="pending">UPI Transfer (Pending)</option>
-              </select>
-            </div>
-            <div>
-              <label for="onspot-txn" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Ref ID / Receipt</label>
-              <input type="text" id="onspot-txn" class="form-input" value="CASH-ON-SPOT">
             </div>
           </div>
 

@@ -1,10 +1,9 @@
 /* ==============================================================================
    AL MURAFAQA • FEST COMMAND CENTER DESIGN SYSTEM (admin.css)
    Executive SaaS / Festival Operations Dashboard
-   Typography: Outfit (Headlines & Numbers) + Plus Jakarta Sans (Body & UI)
+   Typography: Plus Jakarta Sans (Modern Executive Sans-Serif)
    ============================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Brand Festive Palette */
@@ -22,11 +21,12 @@
   --bg-sidebar: #120504;
   --bg-card: #FFFFFF;
   --border-subtle: rgba(143, 30, 29, 0.1);
+  --border-color: rgba(143, 30, 29, 0.12);
   --border-focus: #E35A24;
 
-  /* Premium Typography (Outfit + Plus Jakarta Sans) */
-  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Modern Executive Typography (Plus Jakarta Sans) */
+  --font-display: 'Plus Jakarta Sans', 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Text Colors */
   --text-main: #1C0A08;
@@ -553,7 +553,7 @@ th {
   border-bottom: 1px solid var(--border-subtle);
 }
 
-td {
+td, table td {
   padding: 16px 20px;
   font-size: 0.92rem;
   border-bottom: 1px solid rgba(143, 30, 29, 0.06);
