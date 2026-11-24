@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <title>Programmes &amp; Schedule • Al Murafaqa 5th Edition</title>
+
+  <!-- Typography & Google Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "fest-red": "#8F1E1D",
+            "fest-red-dark": "#4B100F",
+            "fest-red-light": "#BA2A28",
+            "fest-orange": "#E35A24",
+            "fest-orange-warm": "#F37324",
+            "fest-gold": "#F7A823",
+            "fest-dark": "#170807",
+            "fest-cream": "#FFF8F4",
+            primary: "#ffb4a8",
+            "primary-container": "#ff5540",
+            "secondary-container": "#970301"
+          },
+          fontFamily: {
+            headline: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            body: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            syne: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            sans: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            display: ["Clash Display", "Noto Sans Arabic", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @layer base {
+      html, body {
+        overflow-x: hidden;
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      button, input, select, textarea {
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+
+    .scrollbar-none {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Ambient Orb Drift Animations */
+    @keyframes orbDriftOne {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(35px, 25px) scale(1.08); }
+      66% { transform: translate(-20px, 40px) scale(0.95); }
+    }
+    @keyframes orbDriftTwo {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      40% { transform: translate(-40px, -30px) scale(1.12); }
+      75% { transform: translate(25px, -15px) scale(0.96); }
+    }
+    .animate-orb-1 { animation: orbDriftOne 14s ease-in-out infinite; }
+    .animate-orb-2 { animation: orbDriftTwo 18s ease-in-out infinite; }
+
+    /* Schedule Card Micro-interactions */
+    .schedule-card {
+      background: linear-gradient(180deg, #ffffff 0%, #fdfbf9 100%);
+      box-shadow: 0 4px 20px -2px rgba(23, 8, 7, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(227, 90, 36, 0.16);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .schedule-card:hover {
+      box-shadow: 0 10px 28px -4px rgba(23, 8, 7, 0.12);
+      border-color: rgba(227, 90, 36, 0.4);
+      transform: translateY(-2px);
+    }
+    .schedule-card:active {
+      transform: scale(0.985);
+      box-shadow: 0 2px 10px -2px rgba(23, 8, 7, 0.1);
+    }
+
+    /* Filter Chips Tap Micro-interaction */
+    .filter-chip {
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .filter-chip:active {
+      transform: scale(0.92);
+    }
+    .filter-chip.active-chip {
+      background: linear-gradient(135deg, #E35A24, #BA2A28) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(227, 90, 36, 0.35);
+      border: 1px solid rgba(247, 168, 35, 0.4) !important;
+    }
+
+    /* Day Selector Tabs */
+    .day-tab {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .day-tab.active-day {
+      background: #8F1E1D;
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(143, 30, 29, 0.3);
+    }
+
+    /* Modal slide up */
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-animate {
+      animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#fcf9f7] text-neutral-800 font-body antialiased min-h-screen relative selection:bg-fest-orange/30 selection:text-fest-red">
+
+  <!-- ================= TOP ATMOSPHERE WITH GRADIENT & MOVING ORBS ================= -->
+  <div class="absolute top-0 left-0 right-0 h-[520px] bg-gradient-to-b from-fest-red-dark via-fest-red to-[#9B231F] pointer-events-none z-0 overflow-hidden">
+    <div class="animate-orb-1 absolute -top-28 -left-20 w-[420px] h-[420px] rounded-full bg-fest-orange/35 blur-[95px]"></div>
+    <div class="animate-orb-2 absolute top-20 -right-24 w-[380px] h-[380px] rounded-full bg-fest-gold/30 blur-[105px]"></div>
+    <div class="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-b from-transparent to-[#fcf9f7] z-10"></div>
+  </div>
+
+  <!-- ================= MAIN TOP HEADER & MENU BAR ================= -->
+  <header class="fixed top-0 w-full z-50 pt-safe bg-fest-red-dark/90 backdrop-blur-xl border-b border-fest-gold/25 shadow-[0_4px_24px_-4px_rgba(20,5,5,0.45)]">
+    <div class="h-20 px-4 sm:px-6 max-w-7xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo & Title -->
+      <a href="index.html" class="flex items-center gap-3 min-w-0 group cursor-pointer">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
+          <img alt="Al Murafaqa Mini" class="w-full h-full object-contain filter drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+        </div>
+        <div class="flex flex-col min-w-0 justify-center">
+          <span class="font-headline text-[22px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="font-body text-[11px] sm:text-[12px] text-fest-gold font-extrabold tracking-widest uppercase truncate drop-shadow-sm">Quinta Edición • 2025</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Right Action Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Digital Pass Trigger -->
+        <button aria-label="Tickets and Passes" id="header-pass-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-white/90 hover:text-fest-gold hover:bg-white/10 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[22px]">confirmation_number</span>
+        </button>
+        <!-- Portal Sign In -->
+        <a href="login.html" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-fest-gold hover:bg-fest-gold/90 text-fest-dark font-body text-xs font-bold transition-all shadow-md active:scale-95">
+          <span class="material-symbols-outlined text-[16px]">login</span>
+          <span>Portal</span>
+        </a>
+        <!-- Universal Menu Bar Toggle Button (Hamburger) -->
+        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-all" title="Navigation Menu">
+          <span class="material-symbols-outlined text-[24px]">menu</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= SLIDE-OUT MOBILE NAVIGATION DRAWER ================= -->
+  <div id="mobile-menu-overlay" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300"></div>
+
+  <div id="mobile-menu-drawer" class="fixed top-0 right-0 bottom-0 w-[300px] max-w-[85vw] z-50 bg-[#1f0b08]/95 backdrop-blur-2xl border-l border-fest-gold/30 shadow-2xl flex flex-col justify-between p-6 transition-transform duration-300 translate-x-full">
+    <div class="flex flex-col gap-6">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-md">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA" alt="Logo" class="w-full h-full object-contain">
+          </div>
+          <div class="flex flex-col">
+            <span class="font-headline text-lg font-bold text-white leading-tight">Al Murafaqa</span>
+            <span class="font-body text-[10px] text-fest-gold font-bold tracking-widest uppercase">Quinta Edición</span>
+          </div>
+        </div>
+        <button id="close-mobile-menu" aria-label="Close menu" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Drawer Nav Links -->
+      <nav class="flex flex-col gap-1.5 font-body">
+        <a href="index.html" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">explore</span>
+          <span>Explore &amp; Theme</span>
+        </a>
+        <a href="schedule.html" class="flex items-center justify-between px-3.5 py-3 rounded-xl bg-gradient-to-r from-fest-orange/20 to-fest-red/20 border border-fest-orange/30 text-white font-bold transition-colors">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-fest-orange text-[22px]">calendar_month</span>
+            <span>Festival Schedule</span>
+          </div>
+          <span class="text-[10px] bg-fest-orange text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Day 3</span>
+        </a>
+        <a href="index.html#video-en-vivo" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">live_tv</span>
+          <span>Main Stage Live</span>
+        </a>
+        <a href="index.html#thematic-tracks" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">palette</span>
+          <span>Thematic Tracks</span>
+        </a>
+        <button id="drawer-pass-btn" type="button" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium text-left w-full">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">local_activity</span>
+          <span>My Digital Pass</span>
+        </button>
+        <a href="login.html" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">school</span>
+          <span>Student Portal</span>
+        </a>
+        <a href="admin.html" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">admin_panel_settings</span>
+          <span>Fest Command Center (Admin)</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="pt-6 border-t border-white/10 flex flex-col gap-2.5">
+      <a href="login.html" class="w-full py-2.5 px-4 rounded-xl bg-fest-red hover:bg-fest-red-light text-white font-bold text-center text-sm shadow-md transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">login</span>
+        <span>Sign In to Portal</span>
+      </a>
+      <span class="text-center font-body text-[11px] text-fest-cream/60">
+        Al Murafaqa • 5th Edition • Live Gathering
+      </span>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="relative z-10 w-full pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-8">
+    
+    <!-- Breadcrumb & Back Link -->
+    <div class="flex items-center justify-between gap-3 pt-2">
+      <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-fest-cream/90 bg-white/15 hover:bg-white/25 border border-white/20 px-3.5 py-1.5 rounded-full transition-all">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+        <span>Back to Festival Home</span>
+      </a>
+      <div class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
+        <span class="w-2 h-2 rounded-full bg-fest-orange animate-ping"></span>
+        <span>LIVE • DAY 3 IN PROGRESS</span>
+      </div>
+    </div>
+
+    <!-- Page Title & Header Banner -->
+    <div class="flex flex-col gap-3 text-center sm:text-left">
+      <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+        <span class="bg-fest-gold text-fest-dark text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          Official Schedule
+        </span>
+        <span class="bg-white/15 border border-fest-gold/30 text-fest-gold text-xs font-semibold px-3 py-1 rounded-full">
+          3 Teams • 100+ Programmes
+        </span>
+      </div>
+      <h1 class="font-headline text-3xl sm:text-5xl font-extrabold text-white tracking-tight drop-shadow-md">
+        Festival Programmes &amp; Schedule
+      </h1>
+      <p class="font-body text-base sm:text-lg text-fest-cream/90 max-w-3xl leading-relaxed">
+        Browse the complete itinerary across all 3 festival days: masterclasses in Thuluth calligraphy, Andalusian oud improvisations, manuscript codices, and student team tournaments.
+      </p>
+    </div>
+
+    <!-- ================= DAY SWITCHER TABS ================= -->
+    <div class="bg-white/95 border border-fest-gold/30 rounded-3xl p-3 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="grid grid-cols-3 gap-2 w-full sm:w-auto">
+        <button data-day="day1" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex flex-col sm:flex-row items-center justify-center gap-1">
+          <span>Day 1</span>
+          <span class="text-[10px] font-normal opacity-75 hidden sm:inline">• Oct 24</span>
+        </button>
+        <button data-day="day2" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex flex-col sm:flex-row items-center justify-center gap-1">
+          <span>Day 2</span>
+          <span class="text-[10px] font-normal opacity-75 hidden sm:inline">• Oct 25</span>
+        </button>
+        <button data-day="day3" class="day-tab active-day px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-center justify-center gap-1">
+          <span>Day 3 (Today)</span>
+          <span class="text-[10px] bg-fest-gold text-fest-dark px-1.5 py-0.2 rounded-full uppercase font-bold text-[9px]">Live</span>
+        </button>
+      </div>
+
+      <!-- Quick Venues Filter Pill -->
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div class="relative w-full sm:w-56">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[18px]">search</span>
+          <input id="schedule-search" type="text" placeholder="Search programmes..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-neutral-100 border border-neutral-200 text-xs font-body focus:outline-none focus:ring-2 focus:ring-fest-red/30">
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CATEGORY FILTER CHIPS ================= -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
+      <button data-filter="all" class="filter-chip active-chip shrink-0 bg-fest-red text-white font-body text-[13px] px-4 py-2 rounded-full font-bold shadow-md shadow-fest-red/25 transition-all">
+        All Programmes
+      </button>
+      <button data-filter="live" class="filter-chip shrink-0 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 font-body text-[13px] px-4 py-2 rounded-full font-semibold transition-all flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-fest-orange animate-ping"></span>
+        <span>Live Now</span>
+      </button>
+      <button data-filter="music" class="filter-chip shrink-0 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 font-body text-[13px] px-4 py-2 rounded-full font-semibold transition-all">
+        Music &amp; Oud
+      </button>
+      <button data-filter="workshops" class="filter-chip shrink-0 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 font-body text-[13px] px-4 py-2 rounded-full font-semibold transition-all">
+        Qalam Workshops
+      </button>
+      <button data-filter="masterclasses" class="filter-chip shrink-0 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 font-body text-[13px] px-4 py-2 rounded-full font-semibold transition-all">
+        Masterclasses
+      </button>
+      <button data-filter="contests" class="filter-chip shrink-0 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 font-body text-[13px] px-4 py-2 rounded-full font-semibold transition-all">
+        Team Contests
+      </button>
+    </div>
+
+    <!-- ================= FULL SCHEDULE CARDS LIST ================= -->
+    <div id="schedule-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="col-span-full py-12 text-center text-neutral-400 font-medium">
+        <span class="material-symbols-outlined text-3xl animate-spin text-fest-red">sync</span>
+        <p class="mt-2 text-sm font-body">Loading festival schedule...</p>
+      </div>
+    </div>
+
+    <!-- ================= DIGITAL PASS BANNER ================= -->
+    <section class="w-full mt-4">
+      <div class="relative w-full rounded-3xl overflow-hidden bg-gradient-to-r from-fest-red to-[#721514] p-6 sm:p-8 shadow-xl text-white flex flex-col sm:flex-row items-center justify-between gap-6 border border-fest-orange/30">
+        <div class="animate-orb-2 absolute right-0 top-0 bottom-0 w-64 bg-fest-orange/20 blur-2xl pointer-events-none"></div>
+        <div class="flex items-center gap-4 min-w-0">
+          <div class="w-16 h-16 rounded-2xl bg-white p-2 flex items-center justify-center shrink-0 shadow-lg">
+            <span class="material-symbols-outlined text-fest-red text-[36px]">qr_code_2</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-body text-xs text-fest-gold font-bold uppercase tracking-wider">Access All 100+ Programmes</span>
+            <h3 class="font-headline text-xl sm:text-2xl font-bold">Have your Pass ready for entry?</h3>
+            <p class="font-body text-sm text-fest-cream/80 mt-0.5">Show your digital badge at any pavilion gate for rapid priority check-in.</p>
+          </div>
+        </div>
+        <button id="open-pass-btn-schedule" class="px-6 py-3 rounded-xl bg-fest-gold hover:bg-fest-gold/90 text-fest-dark font-bold text-sm transition-all shadow-lg active:scale-95 shrink-0 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">badge</span>
+          <span>View My Pass</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="w-full bg-[#170807] text-white border-t border-fest-gold/20 py-10 px-5">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-fest-cream/70 font-body">
+      <div class="flex items-center gap-3">
+        <span class="font-headline text-base font-bold text-white">Al Murafaqa</span>
+        <span>•</span>
+        <span>Quinta Edición 2025</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="index.html" class="hover:text-fest-gold transition-colors">Home</a>
+        <a href="schedule.html" class="hover:text-fest-gold text-fest-gold transition-colors">Schedule</a>
+        <a href="login.html" class="hover:text-fest-gold transition-colors">Portal</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= PASS MODAL ================= -->
+  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex-col items-center justify-center p-5" id="pass-modal">
+    <div class="modal-animate relative w-full max-w-sm rounded-3xl bg-white p-6 flex flex-col items-center gap-4 shadow-2xl border border-neutral-200">
+      <button class="absolute top-4 right-4 w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-700 transition-colors" id="close-pass-modal">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-fest-red to-fest-orange p-1 flex items-center justify-center shadow-lg">
+        <img alt="Al Murafaqa Pass Logo" class="w-full h-full object-contain filter brightness-0 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+      </div>
+
+      <div class="flex flex-col items-center text-center">
+        <span class="font-body text-[11px] text-fest-orange font-bold uppercase tracking-widest">AL MURAFAQA • 5TH EDITION</span>
+        <h3 class="font-headline text-[22px] font-bold text-neutral-900 mt-0.5">VIP Delegate Pass</h3>
+        <span class="font-body text-[12px] text-neutral-500">All-Access Cultural Gathering Accreditation</span>
+      </div>
+
+      <div class="w-48 h-48 rounded-2xl bg-neutral-50 border-2 border-dashed border-fest-gold p-3 flex items-center justify-center shadow-inner">
+        <svg class="w-full h-full text-fest-dark fill-current" viewBox="0 0 100 100">
+          <rect height="30" width="30" x="0" y="0"></rect>
+          <rect fill="white" height="18" width="18" x="6" y="6"></rect>
+          <rect height="10" width="10" x="10" y="10"></rect>
+          <rect height="30" width="30" x="70" y="0"></rect>
+          <rect fill="white" height="18" width="18" x="76" y="6"></rect>
+          <rect height="10" width="10" x="80" y="10"></rect>
+          <rect height="30" width="30" x="0" y="70"></rect>
+          <rect fill="white" height="18" width="18" x="6" y="76"></rect>
+          <rect height="10" width="10" x="10" y="80"></rect>
+          <rect height="10" width="15" x="40" y="10"></rect>
+          <rect height="10" width="20" x="45" y="30"></rect>
+          <rect height="20" width="10" x="35" y="50"></rect>
+          <rect height="15" width="20" x="55" y="55"></rect>
+          <rect height="15" width="15" x="80" y="45"></rect>
+          <rect height="10" width="25" x="40" y="80"></rect>
+          <rect height="15" width="15" x="75" y="75"></rect>
+        </svg>
+      </div>
+
+      <div class="flex flex-col items-center text-center">
+        <span id="schedule-pass-holder-label" class="font-body text-[12px] text-neutral-800 font-mono font-bold tracking-wider">Passholder: Guest / Delegate</span>
+        <span class="font-body text-[11px] text-fest-orange font-semibold mt-1">Maximum screen brightness recommended</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Banner -->
+  <div id="toast-banner" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-fest-dark text-white border border-fest-gold/40 px-4 py-2.5 rounded-full shadow-2xl font-body text-[12px] font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 translate-y-3">
+    <span class="material-symbols-outlined text-fest-gold text-[18px]">check_circle</span>
+    <span id="toast-text">Action completed</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    // Toast Notification Helper
+    const toastBanner = document.getElementById('toast-banner');
+    const toastText = document.getElementById('toast-text');
+    let toastTimeout;
+
+    function showToast(message) {
+      if (!toastBanner || !toastText) return;
+      toastText.textContent = message;
+      toastBanner.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+      toastBanner.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toastBanner.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+        toastBanner.classList.remove('opacity-100', 'translate-y-0');
+      }, 3200);
+    }
+
+    // Mobile Navigation Drawer Toggle
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+    const mobileMenuDrawer = document.getElementById('mobile-menu-drawer');
+    const closeMobileMenu = document.getElementById('close-mobile-menu');
+
+    function openDrawer() {
+      mobileMenuOverlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        mobileMenuOverlay.classList.remove('opacity-0');
+        mobileMenuDrawer.classList.remove('translate-x-full');
+      });
+    }
+
+    function closeDrawer() {
+      mobileMenuOverlay.classList.add('opacity-0');
+      mobileMenuDrawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        mobileMenuOverlay.classList.add('hidden');
+      }, 300);
+    }
+
+    if (mobileMenuToggle) mobileMenuToggle.addEventListener('click', openDrawer);
+    if (closeMobileMenu) closeMobileMenu.addEventListener('click', closeDrawer);
+    if (mobileMenuOverlay) mobileMenuOverlay.addEventListener('click', closeDrawer);
+
+    // Pass Modal Handlers
+    const passModal = document.getElementById('pass-modal');
+    const closePassModal = document.getElementById('close-pass-modal');
+    const openPassBtns = [
+      document.getElementById('header-pass-btn'),
+      document.getElementById('drawer-pass-btn'),
+      document.getElementById('open-pass-btn-schedule')
+    ];
+
+    function openModal() {
+      if (passModal) {
+        passModal.classList.remove('hidden');
+        passModal.classList.add('flex');
+      }
+    }
+    function closeModal() {
+      if (passModal) {
+        passModal.classList.add('hidden');
+        passModal.classList.remove('flex');
+      }
+    }
+
+    openPassBtns.forEach((btn) => {
+      if (btn) btn.addEventListener('click', () => {
+        closeDrawer();
+        openModal();
+      });
+    });
+    if (closePassModal) closePassModal.addEventListener('click', closeModal);
+    if (passModal) passModal.addEventListener('click', (e) => {
+      if (e.target === passModal) closeModal();
+    });
+
+    // Hydrate saved delegate pass
+    try {
+      const rawPass = localStorage.getItem('almurafaqa_delegate_pass');
+      if (rawPass) {
+        const pass = JSON.parse(rawPass);
+        const name = pass.leader_name || pass.full_name || 'Delegate';
+        const code = pass.ticket_code || '---';
+        const lbl = document.getElementById('schedule-pass-holder-label');
+        if (lbl) lbl.textContent = `Passholder: ${name} (ID: ${code})`;
+      }
+    } catch(e) {}
+
+    // Dynamic Events State & Rendering
+    let allEvents = [];
+    let currentFilter = 'all';
+    let currentDay = 'all';
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.handleRemind = function(btn) {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[15px] text-fest-red">notifications_active</span> Reminder Set';
+      showToast('Reminder scheduled 15 mins before session');
+    };
+
+    window.handleBook = function(btn) {
+      btn.textContent = 'Seat Reserved ✓';
+      btn.classList.remove('bg-fest-orange', 'hover:bg-fest-orange-warm');
+      btn.classList.add('bg-fest-red');
+      showToast('Workshop seat reserved successfully');
+    };
+
+    function renderScheduleCards() {
+      const container = document.getElementById('schedule-cards-container');
+      if (!container) return;
+
+      const searchTerm = (document.getElementById('schedule-search')?.value || '').toLowerCase().trim();
+
+      const filtered = allEvents.filter((evt) => {
+        const cat = (evt.category || '').toLowerCase();
+        const evtDay = `day${evt.day_number || 1}`;
+        const title = (evt.title || '').toLowerCase();
+        const desc = (evt.rules || '').toLowerCase();
+        const venue = (evt.venue || '').toLowerCase();
+
+        const matchDay = currentDay === 'all' || evtDay === currentDay;
+        const matchCategory = currentFilter === 'all' || cat.includes(currentFilter);
+        const matchSearch = !searchTerm || title.includes(searchTerm) || desc.includes(searchTerm) || venue.includes(searchTerm);
+
+        return matchDay && matchCategory && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        const hasAnyEvents = allEvents.length > 0;
+        container.innerHTML = `
+          <div class="col-span-full py-16 px-6 text-center bg-white rounded-3xl border border-neutral-200/80 shadow-sm max-w-xl mx-auto my-4">
+            <div class="w-16 h-16 rounded-2xl bg-fest-red/10 text-fest-red flex items-center justify-center mx-auto mb-4 border border-fest-red/20 shadow-sm">
+              <span class="material-symbols-outlined text-[32px]">${hasAnyEvents ? 'filter_alt_off' : 'event_busy'}</span>
+            </div>
+            <h3 class="font-headline text-xl font-bold text-neutral-900 mb-2">
+              ${hasAnyEvents ? 'No Sessions Matching Filter' : 'No Schedule Sessions Published'}
+            </h3>
+            <p class="font-body text-neutral-600 text-sm leading-relaxed mb-6">
+              ${hasAnyEvents 
+                ? 'Try selecting a different day or category filter to browse scheduled festival sessions.'
+                : 'Festival program sessions and workshops will be published here once live. Check back shortly or view the live stream on the main portal.'}
+            </p>
+            <a href="index.html" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-fest-red hover:bg-fest-red-light text-white font-body text-sm font-bold shadow-md transition-all">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span>Return to Main Portal</span>
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map((evt) => {
+        const cat = evt.category || 'General';
+        const day = `day${evt.day_number || 1}`;
+        const isLive = evt.status === 'open';
+        const isFull = evt.status === 'full';
+        const timeSlot = evt.time_slot || '20:00 - 22:00';
+        const venue = evt.venue || 'Grand Andalusian Dome';
+        const initial = (evt.title || 'A')[0].toUpperCase();
+
+        return `
+          <div data-day="${day}" data-category="${escapeHtml(cat.toLowerCase())}" class="schedule-card relative rounded-2xl p-5 flex flex-col justify-between gap-4 overflow-hidden group bg-white border border-neutral-200/80 shadow-sm hover:shadow-md transition-all">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 ${isLive ? 'bg-gradient-to-b from-fest-orange to-fest-red' : 'bg-fest-gold'}"></div>
+            <div class="flex flex-col gap-2 pl-2">
+              <div class="flex items-center justify-between">
+                <span class="font-body text-[11px] ${isLive ? 'bg-fest-red/10 text-fest-red border border-fest-red/20' : 'bg-neutral-100 text-neutral-700'} px-2.5 py-0.5 rounded-full font-bold">
+                  ${escapeHtml(timeSlot)}
+                </span>
+                ${isLive ? `
+                  <span class="flex items-center gap-1.5 font-body text-[11px] text-fest-orange font-bold">
+                    <span class="w-2 h-2 rounded-full bg-fest-orange animate-ping"></span>
+                    Live Now
+                  </span>
+                ` : isFull ? `
+                  <span class="font-body text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">Capacity Full</span>
+                ` : `
+                  <span class="font-body text-[11px] text-neutral-500 font-semibold">Day ${evt.day_number || 1}</span>
+                `}
+              </div>
+              <h3 class="font-headline text-[18px] text-neutral-900 font-bold group-hover:text-fest-red transition-colors mt-1">
+                ${escapeHtml(evt.title)}
+              </h3>
+              <p class="font-body text-[13px] text-neutral-600 leading-relaxed">
+                ${escapeHtml(evt.rules || 'Official festival session and assembly.')}
+              </p>
+              <div class="flex items-center gap-2 text-xs text-neutral-500 font-medium mt-1">
+                <span class="material-symbols-outlined text-[16px] text-fest-orange">location_on</span>
+                <span>${escapeHtml(venue)}</span>
+              </div>
+            </div>
+
+            <div class="pl-2 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-8 h-8 rounded-full bg-fest-red/10 text-fest-red flex items-center justify-center font-headline text-xs font-bold shrink-0">
+                  ${escapeHtml(initial)}
+                </div>
+                <span class="font-body text-[12px] text-neutral-800 font-semibold truncate">${escapeHtml(cat)}</span>
+              </div>
+              ${isLive ? `
+                <a href="index.html#video-en-vivo" class="bg-fest-red hover:bg-fest-red-light text-white font-body text-[12px] font-bold px-3.5 py-1.5 rounded-xl active:scale-95 shadow-sm transition-all shrink-0 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[15px]">play_circle</span>
+                  <span>Watch Live</span>
+                </a>
+              ` : `
+                <button class="remind-btn bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-fest-red font-body text-[12px] font-semibold px-3 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1 shrink-0" onclick="handleRemind(this)">
+                  <span class="material-symbols-outlined text-[15px]">notifications_none</span>
+                  <span>Remind Me</span>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadScheduleEvents() {
+      try {
+        if (typeof db !== 'undefined' && db.getEvents) {
+          allEvents = await db.getEvents();
+        } else {
+          allEvents = [];
+        }
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        allEvents = [];
+      }
+      renderScheduleCards();
+    }
+
+    // Category Filtering
+    const chips = document.querySelectorAll('.filter-chip');
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => {
+          c.classList.remove('active-chip', 'bg-fest-red', 'text-white', 'shadow-md', 'shadow-fest-red/25');
+          c.classList.add('bg-white', 'text-neutral-700');
+        });
+        chip.classList.add('active-chip', 'bg-fest-red', 'text-white', 'shadow-md', 'shadow-fest-red/25');
+        chip.classList.remove('bg-white', 'text-neutral-700');
+
+        currentFilter = chip.getAttribute('data-filter') || 'all';
+        renderScheduleCards();
+      });
+    });
+
+    // Day Switcher Tabs
+    const dayTabs = document.querySelectorAll('.day-tab');
+    dayTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        dayTabs.forEach((t) => t.classList.remove('active-day'));
+        tab.classList.add('active-day');
+        currentDay = tab.getAttribute('data-day') || 'all';
+        renderScheduleCards();
+      });
+    });
+
+    // Search Input
+    const searchInput = document.getElementById('schedule-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', renderScheduleCards);
+    }
+
+    // Load initial events from DB
+    loadScheduleEvents();
+  </script>
+</body>
+</html>

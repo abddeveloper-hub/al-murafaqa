@@ -1,0 +1,25 @@
+{
+  "name": "al-murafaqa",
+  "version": "1.0.0",
+  "description": "",
+  "main": "admin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abddeveloper-hub/al-murafaqa.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/abddeveloper-hub/al-murafaqa/issues"
+  },
+  "homepage": "https://github.com/abddeveloper-hub/al-murafaqa#readme",
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2"
+  }
+}

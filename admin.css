@@ -1,9 +1,10 @@
 /* ==============================================================================
    AL MURAFAQA • FEST COMMAND CENTER DESIGN SYSTEM (admin.css)
    Executive SaaS / Festival Operations Dashboard
-   Typography: Plus Jakarta Sans (Modern Executive Sans-Serif)
+   Typography: Clash Display (Modern Geometric Display Sans-Serif)
    ============================================================================== */
 
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap');
 
 :root {
   /* Brand Festive Palette */
@@ -24,9 +25,9 @@
   --border-color: rgba(143, 30, 29, 0.12);
   --border-focus: #E35A24;
 
-  /* Modern Executive Typography (Plus Jakarta Sans) */
-  --font-display: 'Plus Jakarta Sans', 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Plus Jakarta Sans', 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Modern Clash Display Typography */
+  --font-display: 'Clash Display', 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Clash Display', 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Text Colors */
   --text-main: #1C0A08;
@@ -74,6 +75,10 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+button, input, select, textarea, optgroup {
+  font-family: var(--font-body);
 }
 
 /* ================= AUTH OVERLAY ================= */
