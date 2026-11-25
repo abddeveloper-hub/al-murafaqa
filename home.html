@@ -323,46 +323,13 @@
         </div>
       </a>
 
-      <!-- Corner 2 (Other Corner / Right Corner): The Menu Bar -->
+      <!-- Right Corner: Navigation Menu Button -->
       <div class="flex items-center gap-3 shrink-0">
-        <nav aria-label="Desktop Festival Navigation" class="hidden md:inline-flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-full bg-[#4F0E0E]/90 border border-fest-gold/30 backdrop-blur-md shadow-lg shadow-black/30 shrink-0">
-          <!-- Explore -->
-          <a href="#explore-section" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95">
-            <span class="material-symbols-outlined text-[18px]">explore</span>
-            <span>Explore</span>
-          </a>
-
-          <!-- Live Stage -->
-          <a href="#video-en-vivo" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95">
-            <span class="material-symbols-outlined text-[18px]">live_tv</span>
-            <span>Live Stage</span>
-          </a>
-
-          <!-- Schedule (Highlighted Pill with LIVE Badge) -->
-          <a href="schedule.html" class="nav-pill-schedule flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-fest-orange to-fest-red text-white font-body text-xs sm:text-[13px] font-bold shadow-md shadow-fest-orange/30 active:scale-95 transition-all">
-            <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-            <span>Schedule</span>
-            <span class="bg-fest-gold text-fest-dark text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-0.5">LIVE</span>
-          </a>
-
-          <!-- Tracks -->
-          <a href="#thematic-tracks" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95">
-            <span class="material-symbols-outlined text-[18px]">palette</span>
-            <span>Tracks</span>
-          </a>
-
-          <!-- VIP Pass -->
-          <button type="button" id="pill-pass-btn" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95 cursor-pointer">
-            <span class="material-symbols-outlined text-[18px]">confirmation_number</span>
-            <span>VIP Pass</span>
-          </button>
-        </nav>
-
         <!-- Mobile Menu Toggle Button (Hamburger) -->
-        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-all" title="Navigation Menu">
+        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-all cursor-pointer" title="Navigation Menu">
           <span class="material-symbols-outlined text-[24px]">menu</span>
         </button>
-      </div></div>
+      </div>
     </div>
 
     <!-- Live Marquee Ticker Bar (Driven by Festival Command Center Settings) -->
@@ -1684,31 +1651,6 @@
       console.warn('Could not parse delegate pass:', err);
     }
   </script>
-  <!-- Floating Mobile Bottom Navigation Dock (Matching User Menu Bar) -->
-  <aside aria-label="Mobile Navigation Bar" class="md:hidden fixed bottom-4 inset-x-0 z-40 flex justify-center px-3 pointer-events-none">
-    <nav class="pointer-events-auto inline-flex items-center gap-1 p-1.5 rounded-full bg-[#4B0A1F]/95 border border-fest-gold/40 backdrop-blur-xl shadow-2xl shadow-black/70 max-w-full overflow-x-auto scrollbar-none">
-      <a href="#explore-section" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0">
-        <span class="material-symbols-outlined text-[16px]">explore</span>
-        <span>Explore</span>
-      </a>
-      <a href="#video-en-vivo" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0">
-        <span class="material-symbols-outlined text-[16px]">live_tv</span>
-        <span>Live Stage</span>
-      </a>
-      <a href="schedule.html" class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-fest-orange to-fest-red text-white font-body text-[11px] font-bold shadow-md shrink-0">
-        <span class="material-symbols-outlined text-[16px]">calendar_month</span>
-        <span>Schedule</span>
-        <span class="bg-fest-gold text-fest-dark text-[8px] font-extrabold px-1 py-0.2 rounded-full uppercase">LIVE</span>
-      </a>
-      <a href="#thematic-tracks" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0">
-        <span class="material-symbols-outlined text-[16px]">palette</span>
-        <span>Tracks</span>
-      </a>
-      <button type="button" id="mobile-pill-pass-btn" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0 cursor-pointer">
-        <span class="material-symbols-outlined text-[16px]">confirmation_number</span>
-        <span>VIP Pass</span>
-      </button>
-    </nav>
-  </aside>
+  
 </body>
 </html>
