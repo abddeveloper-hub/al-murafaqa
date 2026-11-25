@@ -115,6 +115,42 @@ initStorage();
 // ------------------------------------------------------------------------------
 // 3. UNIFIED DATA SERVICE (Cloud Supabase with Local Demo Cache)
 // ------------------------------------------------------------------------------
+
+// Mock & Seed Data Purge Constants
+const MOCK_TICKET_CODES = new Set(['ALM-1042', 'ALM-1043', 'ALM-1044', 'ALM-1045', 'TEST-9999', 'ALM-5829']);
+const MOCK_LEADER_NAMES = new Set(['Zaid Al-Husseini', 'Sofia Benali', 'Ammar Qureshi', 'Kareem Mansoor', 'Test Attempter']);
+const MOCK_WINNER_NAMES = new Set(['Zaid Al-Husseini', 'Mariam Al-Khatib', 'Hassan Bilal']);
+const MOCK_ANNOUNCEMENT_TITLES = new Set(['Oud Showcase Venue Update', 'Calligraphy Kit Collection']);
+
+function purgeMockRegistrations(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((r) => {
+    if (!r) return false;
+    if (r.ticket_code && MOCK_TICKET_CODES.has(r.ticket_code)) return false;
+    if (r.leader_name && MOCK_LEADER_NAMES.has(r.leader_name)) return false;
+    if (r.team_name && (r.team_name.includes('Qalam Vanguard') || r.team_name.includes('Qurtuba Trio') || r.team_name.includes('Diwan Voices') || r.team_name.includes('Alhambra Builders'))) return false;
+    return true;
+  });
+}
+
+function purgeMockWinners(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((w) => {
+    if (!w) return false;
+    if (w.winner_name && MOCK_WINNER_NAMES.has(w.winner_name)) return false;
+    return true;
+  });
+}
+
+function purgeMockAnnouncements(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((a) => {
+    if (!a) return false;
+    if (a.title && MOCK_ANNOUNCEMENT_TITLES.has(a.title)) return false;
+    return true;
+  });
+}
+
 export const db = {
   // Check active mode
   isLive() {
@@ -346,10 +382,10 @@ export const db = {
         .from('registrations')
         .select('*, events(title, fee)')
         .order('created_at', { ascending: false });
-      if (!error && data) return data;
+      if (!error && data) return purgeMockRegistrations(data);
     }
     const raw = localStorage.getItem('almurafaqa_registrations');
-    return raw ? JSON.parse(raw) : DEFAULT_REGISTRATIONS;
+    return purgeMockRegistrations(raw ? JSON.parse(raw) : DEFAULT_REGISTRATIONS);
   },
 
   async updatePayment(id, payment_status) {
@@ -423,10 +459,10 @@ export const db = {
         .from('announcements')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data) return data;
+      if (!error && data) return purgeMockAnnouncements(data);
     }
     const raw = localStorage.getItem('almurafaqa_announcements');
-    return raw ? JSON.parse(raw) : DEFAULT_ANNOUNCEMENTS;
+    return purgeMockAnnouncements(raw ? JSON.parse(raw) : DEFAULT_ANNOUNCEMENTS);
   },
 
   async saveAnnouncement(data) {
@@ -486,10 +522,10 @@ export const db = {
         .from('winners')
         .select('*, events(title, category)')
         .order('position', { ascending: true });
-      if (!error && data) return data;
+      if (!error && data) return purgeMockWinners(data);
     }
     const raw = localStorage.getItem('almurafaqa_winners');
-    return raw ? JSON.parse(raw) : DEFAULT_WINNERS;
+    return purgeMockWinners(raw ? JSON.parse(raw) : DEFAULT_WINNERS);
   },
 
   async saveWinners(eventId, winnersArray, published = true) {

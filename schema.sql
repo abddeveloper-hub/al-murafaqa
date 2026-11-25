@@ -277,4 +277,16 @@ VALUES (
     ''
 ) ON CONFLICT (id) DO NOTHING;
 
+-- ==============================================================================
+-- DATABASE CLEANUP: PURGE LEGACY DEMO / MOCK DATA
+-- Run these statements in Supabase SQL Editor to wipe seed mock entries:
+-- ==============================================================================
+DELETE FROM public.registrations 
+WHERE ticket_code IN ('ALM-1042', 'ALM-1043', 'ALM-1044', 'ALM-1045', 'TEST-9999')
+   OR leader_name IN ('Zaid Al-Husseini', 'Sofia Benali', 'Ammar Qureshi', 'Kareem Mansoor', 'Test Attempter');
 
+DELETE FROM public.winners 
+WHERE winner_name IN ('Zaid Al-Husseini', 'Mariam Al-Khatib', 'Hassan Bilal');
+
+DELETE FROM public.announcements 
+WHERE title IN ('Oud Showcase Venue Update', 'Calligraphy Kit Collection');
