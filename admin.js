@@ -290,6 +290,21 @@ function setupEventListeners() {
     settingsForm.addEventListener('submit', handleSettingsSubmit);
   }
 
+  // Video Stream Form
+  const videoForm = document.getElementById('video-stream-form');
+  if (videoForm) {
+    videoForm.addEventListener('submit', handleVideoStreamSubmit);
+  }
+
+  // Live video preview input listeners
+  ['setting-video-title', 'setting-video-description', 'setting-video-venue', 'setting-video-live', 'setting-video-viewers', 'setting-video-duration'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateVideoPreview);
+      el.addEventListener('change', updateVideoPreview);
+    }
+  });
+
   // Announcement Form
   const ancForm = document.getElementById('announcement-form');
   if (ancForm) {
@@ -443,6 +458,20 @@ function renderOverview() {
   renderCapacityGauges();
   renderOverviewProgrammes();
   renderOverviewTelemetry();
+
+  // Sync Overview Stage Video Widget
+  if (cachedSettings) {
+    const elVenue = document.getElementById('overview-video-venue');
+    const elTitle = document.getElementById('overview-video-title');
+    const elDesc = document.getElementById('overview-video-desc');
+    const elViewers = document.getElementById('overview-video-viewers');
+    const elStatus = document.getElementById('overview-video-status');
+    if (elVenue) elVenue.textContent = cachedSettings.video_venue || 'LIVE TRANSMISSION STREAM';
+    if (elTitle) elTitle.textContent = cachedSettings.video_title || 'Main Cultural Stage Broadcast';
+    if (elDesc) elDesc.textContent = cachedSettings.video_description || 'Live Auditorium Cam 01';
+    if (elViewers) elViewers.textContent = cachedSettings.video_viewer_count || 'Stage Feed Active';
+    if (elStatus) elStatus.textContent = cachedSettings.video_is_live ? 'Broadcasting Live' : 'Feed Standby';
+  }
 }
 
 function renderOverviewTelemetry() {
@@ -759,6 +788,29 @@ function renderAnnouncementsTab() {
 
     if (phoneInput) phoneInput.value = cachedSettings.support_phone || '';
     if (tickerInput) tickerInput.value = cachedSettings.live_ticker_text || '';
+
+    // Main Stage Video Settings
+    const videoUrl = document.getElementById('setting-video-url');
+    const videoHeading = document.getElementById('setting-video-heading');
+    const videoTitle = document.getElementById('setting-video-title');
+    const videoDesc = document.getElementById('setting-video-description');
+    const videoVenue = document.getElementById('setting-video-venue');
+    const videoPoster = document.getElementById('setting-video-poster');
+    const videoLive = document.getElementById('setting-video-live');
+    const videoViewers = document.getElementById('setting-video-viewers');
+    const videoDuration = document.getElementById('setting-video-duration');
+
+    if (videoUrl) videoUrl.value = cachedSettings.video_url || '';
+    if (videoHeading) videoHeading.value = cachedSettings.video_heading || 'Main Stage Broadcast';
+    if (videoTitle) videoTitle.value = cachedSettings.video_title || 'Mystic Poetry Recital & Qurtuba Ensemble';
+    if (videoDesc) videoDesc.value = cachedSettings.video_description || 'Live Cultural Stage & Ensemble Performances';
+    if (videoVenue) videoVenue.value = cachedSettings.video_venue || 'GRAND ANDALUSIAN DOME';
+    if (videoPoster) videoPoster.value = cachedSettings.video_poster_url || '';
+    if (videoLive) videoLive.checked = cachedSettings.video_is_live !== false;
+    if (videoViewers) videoViewers.value = cachedSettings.video_viewer_count || '4.8k live';
+    if (videoDuration) videoDuration.value = cachedSettings.video_duration_note || '42 mins remaining';
+
+    updateVideoPreview();
   }
 
   const tbody = document.getElementById('announcements-table-body');
@@ -813,6 +865,75 @@ async function handleSettingsSubmit(e) {
     showToast('Festival settings & live ticker updated successfully', 'success');
   } catch (err) {
     showToast('Failed to update settings: ' + err.message, 'error');
+  }
+}
+
+function updateVideoPreview() {
+  const pTitle = document.getElementById('preview-video-title');
+  const pDesc = document.getElementById('preview-video-desc');
+  const pVenue = document.getElementById('preview-video-venue');
+  const pStatus = document.getElementById('preview-video-status');
+  const pViewers = document.getElementById('preview-video-viewers');
+  const pDuration = document.getElementById('preview-video-duration');
+
+  const titleVal = document.getElementById('setting-video-title')?.value || cachedSettings?.video_title || 'Main Stage Broadcast';
+  const descVal = document.getElementById('setting-video-description')?.value || cachedSettings?.video_description || 'Performance Details';
+  const venueVal = document.getElementById('setting-video-venue')?.value || cachedSettings?.video_venue || 'GRAND DOME';
+  const isLive = document.getElementById('setting-video-live')?.checked ?? true;
+  const viewersVal = document.getElementById('setting-video-viewers')?.value || '4.8k live';
+  const durationVal = document.getElementById('setting-video-duration')?.value || '42 mins remaining';
+
+  if (pTitle) pTitle.textContent = titleVal;
+  if (pDesc) pDesc.textContent = descVal;
+  if (pVenue) pVenue.textContent = venueVal.toUpperCase();
+  if (pStatus) {
+    pStatus.textContent = isLive ? 'LIVE' : 'OFFLINE';
+    pStatus.className = `px-2 py-0.5 rounded-full ${isLive ? 'bg-red-600' : 'bg-slate-600'} text-white font-bold text-[10px]`;
+  }
+  if (pViewers) pViewers.innerHTML = `<span class="material-symbols-outlined text-[14px] text-amber-500">visibility</span><span>${escapeHtml(viewersVal)}</span>`;
+  if (pDuration) pDuration.innerHTML = `<span class="material-symbols-outlined text-[14px] text-amber-500">schedule</span><span>${escapeHtml(durationVal)}</span>`;
+}
+
+async function handleVideoStreamSubmit(e) {
+  e.preventDefault();
+  const video_url = document.getElementById('setting-video-url').value.trim();
+  const video_heading = document.getElementById('setting-video-heading').value.trim();
+  const video_title = document.getElementById('setting-video-title').value.trim();
+  const video_description = document.getElementById('setting-video-description').value.trim();
+  const video_venue = document.getElementById('setting-video-venue').value.trim();
+  const video_poster_url = document.getElementById('setting-video-poster').value.trim();
+  const video_is_live = document.getElementById('setting-video-live').checked;
+  const video_viewer_count = document.getElementById('setting-video-viewers').value.trim();
+  const video_duration_note = document.getElementById('setting-video-duration').value.trim();
+
+  const btn = document.getElementById('btn-save-video');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span><span>Saving...</span>';
+  }
+
+  try {
+    cachedSettings = await db.updateSettings({
+      video_url,
+      video_heading,
+      video_title,
+      video_description,
+      video_venue,
+      video_poster_url,
+      video_is_live,
+      video_viewer_count,
+      video_duration_note,
+    });
+    showToast('Main stage video section updated successfully!', 'success');
+    renderAnnouncementsTab();
+    renderOverview();
+  } catch (err) {
+    showToast('Failed to update video section: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">save</span><span>Save Video Section Settings</span>';
+    }
   }
 }
 

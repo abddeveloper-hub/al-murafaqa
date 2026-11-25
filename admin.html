@@ -282,7 +282,7 @@
         <!-- Header Actions & Profile -->
         <div class="flex items-center gap-space-md">
           <div class="flex items-center gap-space-xs">
-            <a href="index.html" target="_blank" class="h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-1.5 transition-colors text-xs font-semibold" title="View Public Front Page">
+            <a href="home.html" target="_blank" class="h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-1.5 transition-colors text-xs font-semibold" title="View Public Front Page">
               <span class="material-symbols-outlined text-[18px]">open_in_new</span>
               <span class="hidden sm:inline">Live Site</span>
             </a>
@@ -604,27 +604,24 @@
 
                 <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-space-md bg-gradient-to-t from-slate-950 via-slate-900/90 to-transparent pt-8 pb-1 px-1 -mx-1">
                   <div>
-                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-red-400 font-semibold">Live Transmission Stream</span>
-                    <h3 class="font-headline-md text-headline-md text-white drop-shadow-sm mt-0.5 font-bold">
+                    <span class="font-label-sm text-label-sm uppercase tracking-wider text-red-400 font-semibold" id="overview-video-venue">Live Transmission Stream</span>
+                    <h3 class="font-headline-md text-headline-md text-white drop-shadow-sm mt-0.5 font-bold" id="overview-video-title">
                       Main Cultural Stage Broadcast
                     </h3>
                     <p class="font-body-sm text-body-sm text-slate-300 flex items-center gap-2 mt-1">
-                      <span>Live Auditorium Cam 01</span>
+                      <span id="overview-video-desc">Live Auditorium Cam 01</span>
                       <span>•</span>
-                      <span>Line-In Audio</span>
+                      <span id="overview-video-status">Line-In Audio</span>
                       <span>•</span>
-                      <span class="text-amber-400 font-medium">Stage Feed Active</span>
+                      <span class="text-amber-400 font-medium" id="overview-video-viewers">Stage Feed Active</span>
                     </p>
                   </div>
                   <!-- Quick Broadcast Controls -->
                   <div class="flex items-center gap-space-xs bg-slate-900/90 border border-slate-700/80 backdrop-blur-md p-1.5 rounded-xl shadow-lg">
-                    <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-label-sm font-label-sm flex items-center gap-1 transition-colors">
-                      <span class="material-symbols-outlined text-[16px]">pause</span> Mute Deck
-                    </button>
-                    <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-label-sm font-label-sm flex items-center gap-1 transition-colors">
-                      <span class="material-symbols-outlined text-[16px]">swap_horiz</span> Next Cam
-                    </button>
                     <button class="px-3 py-1.5 rounded-lg bg-red-600 text-white text-label-sm font-label-sm font-semibold flex items-center gap-1 shadow-sm hover:bg-red-700 transition-all" onclick="window.switchTab('announcements')">
+                      <span class="material-symbols-outlined text-[16px]">videocam</span> Edit Live Video
+                    </button>
+                    <button class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-label-sm font-label-sm flex items-center gap-1 transition-colors" onclick="window.switchTab('announcements')">
                       <span class="material-symbols-outlined text-[16px]">podium</span> Push Alert
                     </button>
                   </div>
@@ -977,8 +974,116 @@
       <section id="tab-announcements" class="tab-pane hidden">
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h2 class="font-headline-md text-2xl font-bold text-slate-900">Live Broadcasts &amp; Site-Wide Announcements</h2>
-            <p class="text-sm text-slate-500 mt-0.5">Push urgent alerts to attendee screens and configure helpdesk coordinates</p>
+            <h2 class="font-headline-md text-2xl font-bold text-slate-900">Live Broadcasts &amp; Main Stage Video Control</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Control front-page live stream media, programme titles, venue tags, and real-time announcements</p>
+          </div>
+
+          <!-- Main Stage Video Broadcast Manager Card -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 class="font-headline-sm text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-red-600 text-[22px]">videocam</span>
+                  Main Stage Live Video &amp; Broadcast Manager
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Edit video URL, YouTube live link, programme heading, performer details, and broadcast status for the front page</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <a href="home.html#video-en-vivo" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                  <span>View on Main Page</span>
+                </a>
+              </div>
+            </div>
+
+            <form id="video-stream-form" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Video Stream URL -->
+                <div class="md:col-span-2">
+                  <label for="setting-video-url" class="block text-xs font-semibold uppercase text-slate-600 mb-1">
+                    Live Stream / Video URL (YouTube, Vimeo, or Direct MP4)
+                  </label>
+                  <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-3 text-slate-400 text-[20px] pointer-events-none">link</span>
+                    <input type="url" id="setting-video-url" class="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/... or https://...video.mp4"/>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-1">Accepts YouTube watch links, embed links, YouTube Live, Vimeo, or direct MP4 links. Leave blank to display the interactive ambient stage player.</p>
+                </div>
+
+                <!-- Section Heading -->
+                <div>
+                  <label for="setting-video-heading" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Section Header Title</label>
+                  <input type="text" id="setting-video-heading" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="Main Stage Broadcast" required/>
+                </div>
+
+                <!-- Venue / Stage Tag -->
+                <div>
+                  <label for="setting-video-venue" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Stage &amp; Pavilion Tag</label>
+                  <input type="text" id="setting-video-venue" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="GRAND ANDALUSIAN DOME" required/>
+                </div>
+
+                <!-- Programme / Video Title -->
+                <div>
+                  <label for="setting-video-title" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Video / Programme Title</label>
+                  <input type="text" id="setting-video-title" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="Mystic Poetry Recital &amp; Qurtuba Ensemble" required/>
+                </div>
+
+                <!-- Performer / Details -->
+                <div>
+                  <label for="setting-video-description" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Performer &amp; Subtitle Details</label>
+                  <input type="text" id="setting-video-description" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="Live Cultural Stage &amp; Ensemble Performances" required/>
+                </div>
+
+                <!-- Poster Image URL -->
+                <div class="md:col-span-2">
+                  <label for="setting-video-poster" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Poster / Thumbnail Image URL</label>
+                  <input type="url" id="setting-video-poster" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="https://... cover image URL"/>
+                </div>
+
+                <!-- Viewer Count & Duration Note -->
+                <div>
+                  <label for="setting-video-viewers" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Live Viewers Badge</label>
+                  <input type="text" id="setting-video-viewers" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="4.8k live"/>
+                </div>
+
+                <div>
+                  <label for="setting-video-duration" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Duration / Time Remaining Note</label>
+                  <input type="text" id="setting-video-duration" class="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="42 mins remaining"/>
+                </div>
+              </div>
+
+              <!-- Live Indicator Switch -->
+              <div class="flex items-center gap-2 pt-1">
+                <input type="checkbox" id="setting-video-live" class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"/>
+                <label for="setting-video-live" class="text-xs font-bold text-slate-800 cursor-pointer">
+                  Broadcast Is Currently Live (Enables glowing red pulse badge on main page)
+                </label>
+              </div>
+
+              <!-- Live Preview Card Inside Admin -->
+              <div class="p-4 rounded-xl bg-slate-900 text-white mt-4 border border-slate-800">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+                  <span class="uppercase tracking-wider font-bold">Front-Page Video Preview</span>
+                  <span id="preview-video-status" class="px-2 py-0.5 rounded-full bg-red-600 text-white font-bold text-[10px]">LIVE</span>
+                </div>
+                <div class="border-t border-slate-800 pt-2 flex flex-col gap-1">
+                  <span id="preview-video-venue" class="text-amber-400 text-[10px] font-bold tracking-wider uppercase">GRAND ANDALUSIAN DOME</span>
+                  <h4 id="preview-video-title" class="font-headline-sm text-base font-bold text-white">Mystic Poetry Recital &amp; Qurtuba Ensemble</h4>
+                  <p id="preview-video-desc" class="text-xs text-slate-400">Live Cultural Stage &amp; Ensemble Performances</p>
+                  <div class="flex items-center gap-4 text-[11px] text-slate-400 pt-1">
+                    <span id="preview-video-viewers" class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-amber-500">visibility</span>4.8k live</span>
+                    <span id="preview-video-duration" class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-amber-500">schedule</span>42 mins remaining</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-2">
+                <button type="submit" id="btn-save-video" class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">save</span>
+                  <span>Save Video Section Settings</span>
+                </button>
+              </div>
+            </form>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">

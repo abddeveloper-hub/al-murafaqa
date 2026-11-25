@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport">
+  <meta content="mobile_tab" name="shell-type">
+  <title>Al Murafaqa • 5th Edition — Live Cultural Gathering</title>
+
+  <!-- Welcome Page Splash Entry Check -->
+  <script>
+    (function() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasEnteredParam = urlParams.has('entered') || urlParams.has('skip_welcome') || urlParams.has('home');
+        const hasHash = window.location.hash && window.location.hash.length > 1;
+        const isFromWelcome = document.referrer && document.referrer.toLowerCase().includes('welcome.html');
+        const hasSeenWelcome = sessionStorage.getItem('almurafaqa_welcome_seen') === 'true';
+
+        if (hasEnteredParam) {
+          sessionStorage.setItem('almurafaqa_welcome_seen', 'true');
+          const cleanUrl = window.location.pathname + (window.location.hash || '');
+          window.history.replaceState({}, '', cleanUrl);
+          return;
+        }
+
+        if (!hasSeenWelcome && !isFromWelcome && !hasHash) {
+          window.location.replace('welcome.html');
+        }
+      } catch (e) {
+        console.warn('Welcome entry check:', e);
+      }
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "fest-red": "#8F1E1D",
+            "fest-red-dark": "#631313",
+            "fest-red-light": "#BA2A28",
+            "fest-orange": "#E35A24",
+            "fest-orange-warm": "#F37324",
+            "fest-gold": "#F7A823",
+            "fest-dark": "#170807",
+            "fest-cream": "#FFF8F4",
+            "on-primary": "#690100",
+            primary: "#ffb4a8",
+            "on-error-container": "#ffdad6",
+            "tertiary-fixed-dim": "#acc7ff",
+            "on-secondary": "#690100",
+            "inverse-primary": "#c00100",
+            "error-container": "#93000a",
+            "on-tertiary-fixed": "#001a40",
+            "surface-bright": "#4c332f",
+            "secondary-fixed-dim": "#ffb4a8",
+            "inverse-on-surface": "#422a27",
+            "on-secondary-container": "#ff9f90",
+            "on-surface": "#ffdad4",
+            "surface-container-low": "#2b1613",
+            error: "#ffb4ab",
+            "primary-fixed": "#ffdad4",
+            "inverse-surface": "#ffdad4",
+            "primary-fixed-dim": "#ffb4a8",
+            "tertiary-fixed": "#d7e2ff",
+            "on-primary-fixed-variant": "#930100",
+            outline: "#b18780",
+            "on-secondary-fixed": "#410000",
+            "surface-dim": "#210e0b",
+            background: "#210e0b",
+            "tertiary-container": "#488fff",
+            "surface-container-high": "#3b2420",
+            "surface-container-lowest": "#1b0907",
+            "surface-container": "#2f1a17",
+            "on-tertiary-container": "#00285b",
+            "surface-variant": "#472f2b",
+            "surface-container-highest": "#472f2b",
+            "on-background": "#ffdad4",
+            "on-surface-variant": "#ebbbb4",
+            surface: "#210e0b",
+            "secondary-fixed": "#ffdad4",
+            "on-primary-fixed": "#410000",
+            "secondary-container": "#970301",
+            "outline-variant": "#603e39",
+            secondary: "#ffb4a8",
+            "primary-container": "#ff5540",
+            tertiary: "#acc7ff",
+            "on-primary-container": "#5c0000",
+            "on-tertiary": "#002f67",
+            "on-error": "#690005",
+            "on-tertiary-fixed-variant": "#004491",
+            "on-secondary-fixed-variant": "#930100",
+            "surface-tint": "#ffb4a8"
+          },
+          fontFamily: {
+            headline: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            body: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            display: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            label: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            sans: ["Clash Display", "Noto Sans Arabic", "sans-serif"]
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @layer base {
+      html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+        min-height: max(884px, 100dvh);
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      button, input, select, textarea {
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+
+    /* ================= AMBIENT BACKGROUND MOTIONS ================= */
+    @keyframes orbDriftOne {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(35px, 25px) scale(1.08); }
+      66% { transform: translate(-20px, 40px) scale(0.95); }
+    }
+
+    @keyframes orbDriftTwo {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      40% { transform: translate(-40px, -30px) scale(1.12); }
+      75% { transform: translate(25px, -15px) scale(0.96); }
+    }
+
+    @keyframes orbDriftThree {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      50% { transform: translate(30px, -35px) scale(1.1); }
+    }
+
+    @keyframes emblemFloat {
+      0%, 100% { transform: translateY(48px) rotate(0deg) scale(1.02); }
+      50% { transform: translateY(28px) rotate(2.5deg) scale(1.06); }
+    }
+
+    .animate-orb-1 { animation: orbDriftOne 14s ease-in-out infinite; }
+    .animate-orb-2 { animation: orbDriftTwo 18s ease-in-out infinite; }
+    .animate-orb-3 { animation: orbDriftThree 16s ease-in-out infinite; }
+    .animate-emblem { animation: emblemFloat 22s ease-in-out infinite; }
+
+    /* ================= SLIDE & REVEAL ANIMATIONS ================= */
+    .reveal-slide-up {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-slide-left {
+      opacity: 0;
+      transform: translateX(-28px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-slide-right {
+      opacity: 0;
+      transform: translateX(28px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal-visible {
+      opacity: 1 !important;
+      transform: translate(0, 0) !important;
+    }
+
+    /* Schedule card filter slide animation */
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .card-slide-enter {
+      animation: cardSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Modal slide up */
+    @keyframes modalSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-animate {
+      animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Continuous Infinite Left Marquee for Thematic Tracks */
+    @keyframes tracksSlideInfinite {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+
+    .animate-tracks-marquee {
+      display: flex;
+      width: max-content;
+      animation: tracksSlideInfinite 45s linear infinite;
+      will-change: transform;
+    }
+
+    .tracks-mask {
+      mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+    }
+
+    /* ================= MOBILE HIGH-END APP POLISH ================= */
+    .scrollbar-none {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Navigation Drawer & App Polish */
+    #mobile-menu-drawer {
+      will-change: transform;
+    }
+
+    /* Elevated Schedule Cards with Tactile Tap Feel */
+    .schedule-card {
+      background: linear-gradient(180deg, #ffffff 0%, #fdfbf9 100%);
+      box-shadow: 0 4px 20px -2px rgba(23, 8, 7, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(227, 90, 36, 0.16);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .schedule-card:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px -2px rgba(23, 8, 7, 0.1);
+      border-color: rgba(227, 90, 36, 0.45);
+    }
+
+    /* Filter Chips Tap Micro-interaction */
+    .filter-chip {
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .filter-chip:active {
+      transform: scale(0.92);
+    }
+    .filter-chip.active-chip {
+      background: linear-gradient(135deg, #E35A24, #BA2A28) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(227, 90, 36, 0.35);
+      border: 1px solid rgba(247, 168, 35, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-white text-neutral-800 font-body antialiased min-h-screen relative overflow-x-hidden selection:bg-fest-orange/30 selection:text-fest-red">
+
+  <!-- Ambient Rich Top Atmosphere with Moving Orbs & Floating Emblem -->
+  <div class="absolute top-0 left-0 right-0 h-[880px] bg-gradient-to-b from-fest-red-dark via-fest-red to-[#9B231F] pointer-events-none z-0 overflow-hidden">
+    <div class="animate-orb-1 absolute -top-32 -left-20 w-[440px] h-[440px] rounded-full bg-fest-orange/35 blur-[95px]"></div>
+    <div class="animate-orb-2 absolute top-44 -right-24 w-[400px] h-[400px] rounded-full bg-fest-gold/30 blur-[105px]"></div>
+    <div class="animate-orb-3 absolute top-[460px] left-1/4 w-[360px] h-[360px] rounded-full bg-fest-orange-warm/25 blur-[100px]"></div>
+
+    <!-- Soft transition scrim into pure white lower half -->
+    <div class="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-b from-transparent to-white z-10"></div>
+
+    <!-- Floating Parallax Traditional Emblems Background -->
+    <div id="parallax-emblem" class="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden transition-transform duration-150 ease-out">
+      <img alt="Al Murafaqa Traditional Emblems Background" class="animate-emblem w-[112%] max-w-none opacity-25 mix-blend-screen object-contain filter contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAQhZWrvrBGD3Fhaf0WGc-8D04RAKoUiV_BaO7ch3fx0rjABRvB8TOKSfj6RTfwyN38lvIxIvALuUNy0o8OHQ_O7Z6AdtdUO36iN9tJQ4ES4FcFFclvDME8PWXi1pl0CbEqNoc2tcnA3-BNkwWuDIZ_XshJ7bWLQzfWt6WF9keE8erFb1ZUxA--H6C55Y_5Dy3v5rVgvRThICr-BfBxKLBjKp7MVezLWlxQuL0nWYpQw_YAVMGan04ZQ">
+    </div>
+  </div>
+
+  <!-- Top Navigation Header & Menu Bar -->
+  <header class="fixed top-0 w-full z-50 pt-safe bg-fest-red-dark/90 backdrop-blur-xl border-b border-fest-gold/25 shadow-[0_4px_24px_-4px_rgba(20,5,5,0.45)]">
+    <div class="h-20 px-4 sm:px-6 max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <!-- Logo & Branding -->
+      <a href="home.html" class="flex items-center gap-3 min-w-0 group cursor-pointer">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
+          <img alt="Al Murafaqa Mini" class="w-full h-full object-contain filter drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+        </div>
+        <div class="flex flex-col min-w-0 justify-center">
+          <span class="font-headline text-[22px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="font-body text-[11px] sm:text-[12px] text-fest-gold font-extrabold tracking-widest uppercase truncate drop-shadow-sm">5TH EDITION • LIVE</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Center Desktop Navigation Pill Menu (Matching Screenshot) -->
+      <nav aria-label="Desktop Festival Navigation" class="hidden md:inline-flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-full bg-[#4F0E0E]/90 border border-fest-gold/30 backdrop-blur-md shadow-lg shadow-black/30 shrink-0">
+        <!-- Explore -->
+        <a href="#explore-section" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95">
+          <span class="material-symbols-outlined text-[18px]">explore</span>
+          <span>Explore</span>
+        </a>
+
+        <!-- Live Stage -->
+        <a href="#video-en-vivo" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95">
+          <span class="material-symbols-outlined text-[18px]">live_tv</span>
+          <span>Live Stage</span>
+        </a>
+
+        <!-- Schedule (Highlighted Pill with LIVE Badge) -->
+        <a href="schedule.html" class="nav-pill-schedule flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-fest-orange to-fest-red text-white font-body text-xs sm:text-[13px] font-bold shadow-md shadow-fest-orange/30 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+          <span>Schedule</span>
+          <span class="bg-fest-gold text-fest-dark text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider ml-0.5">LIVE</span>
+        </a>
+
+        <!-- Tracks -->
+        <a href="#thematic-tracks" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95">
+          <span class="material-symbols-outlined text-[18px]">palette</span>
+          <span>Tracks</span>
+        </a>
+
+        <!-- VIP Pass -->
+        <button type="button" id="pill-pass-btn" class="nav-pill-item flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-all font-body text-xs sm:text-[13px] font-semibold active:scale-95 cursor-pointer">
+          <span class="material-symbols-outlined text-[18px]">confirmation_number</span>
+          <span>VIP Pass</span>
+        </button>
+      </nav>
+
+      <!-- Right Action Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button aria-label="Notifications" id="notif-btn" class="relative w-10 h-10 rounded-full flex items-center justify-center text-white/80 hover:text-fest-gold hover:bg-white/10 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[22px]">notifications</span>
+          <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-fest-gold"></span>
+        </button>
+        <button aria-label="Tickets and Passes" id="header-pass-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-white/80 hover:text-fest-gold hover:bg-white/10 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[22px]">confirmation_number</span>
+        </button>
+        <a href="login.html" aria-label="Portal Sign In" title="Sign In • Festival Portal" class="hidden sm:flex w-10 h-10 rounded-full items-center justify-center text-white/80 hover:text-fest-gold hover:bg-white/10 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[22px]">login</span>
+        </a>
+        <!-- Universal Menu Bar Toggle Button (Hamburger) -->
+        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white active:scale-95 transition-all" title="Navigation Menu">
+          <span class="material-symbols-outlined text-[24px]">menu</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Marquee Ticker Bar (Driven by Festival Command Center Settings) -->
+    <div id="live-ticker-container" class="hidden bg-black/25 border-t border-fest-gold/20 text-fest-cream py-1 px-4 overflow-hidden">
+      <div class="flex items-center gap-2 max-w-7xl mx-auto text-xs font-body">
+        <span class="inline-flex items-center gap-1 bg-fest-gold text-fest-dark text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wider">
+          <span class="w-1.5 h-1.5 rounded-full bg-fest-red animate-pulse"></span>
+          Bulletin
+        </span>
+        <marquee id="live-ticker-content" class="text-[12px] font-medium tracking-wide">
+          ✨ Welcome to Al Murafaqa 5th Edition • Live Cultural Gathering
+        </marquee>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= SLIDE-OUT MOBILE NAVIGATION DRAWER ================= -->
+  <div id="mobile-menu-overlay" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300"></div>
+
+  <div id="mobile-menu-drawer" class="fixed top-0 right-0 bottom-0 w-[300px] max-w-[85vw] z-50 bg-[#1f0b08]/95 backdrop-blur-2xl border-l border-fest-gold/30 shadow-2xl flex flex-col justify-between p-6 transition-transform duration-300 translate-x-full">
+    <div class="flex flex-col gap-6">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-md">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA" alt="Logo" class="w-full h-full object-contain">
+          </div>
+          <div class="flex flex-col">
+            <span class="font-headline text-lg font-bold text-white leading-tight">Al Murafaqa</span>
+            <span class="font-body text-[10px] text-fest-gold font-bold tracking-widest uppercase">Quinta Edición</span>
+          </div>
+        </div>
+        <button id="close-mobile-menu" aria-label="Close menu" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Drawer Nav Links -->
+      <nav class="flex flex-col gap-1.5 font-body">
+        <a href="index.html" class="drawer-link flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">auto_awesome</span>
+          <span>Welcome &amp; Theme Overview</span>
+        </a>
+        <a href="#explore-section" class="drawer-link flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">explore</span>
+          <span>Explore &amp; Theme</span>
+        </a>
+        <a href="schedule.html" class="flex items-center justify-between px-3.5 py-3 rounded-xl bg-gradient-to-r from-fest-orange/20 to-fest-red/20 border border-fest-orange/30 text-white font-bold transition-colors">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-fest-orange text-[22px]">calendar_month</span>
+            <span>Festival Schedule</span>
+          </div>
+          <span class="text-[10px] bg-fest-orange text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Day 3</span>
+        </a>
+        <a href="#video-en-vivo" class="drawer-link flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">live_tv</span>
+          <span>Main Stage Live</span>
+        </a>
+        <a href="#thematic-tracks" class="drawer-link flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">palette</span>
+          <span>Thematic Tracks</span>
+        </a>
+        <button id="drawer-pass-btn" type="button" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium text-left w-full">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">local_activity</span>
+          <span>My Digital Pass</span>
+        </button>
+        <a href="login.html" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">school</span>
+          <span>Competitor Portal</span>
+        </a>
+        <a href="admin.html" class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-white/90 hover:bg-white/10 transition-colors font-medium">
+          <span class="material-symbols-outlined text-fest-gold text-[22px]">admin_panel_settings</span>
+          <span>Fest Command Center (Admin)</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="pt-6 border-t border-white/10 flex flex-col gap-2.5">
+      <a href="login.html" class="w-full py-2.5 px-4 rounded-xl bg-fest-red hover:bg-fest-red-light text-white font-bold text-center text-sm shadow-md transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">login</span>
+        <span>Sign In to Portal</span>
+      </a>
+      <span class="text-center font-body text-[11px] text-fest-cream/60">
+        Al Murafaqa • 5th Edition • Live Gathering
+      </span>
+    </div>
+  </div>
+
+  <!-- Emergency Maintenance Mode Overlay -->
+  <div id="maintenance-overlay" class="hidden fixed inset-0 z-50 bg-fest-dark/95 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-center text-white">
+    <div class="w-16 h-16 rounded-2xl bg-fest-red/20 border border-fest-red text-fest-orange flex items-center justify-center mb-4 shadow-lg">
+      <span class="material-symbols-outlined text-[36px]">construction</span>
+    </div>
+    <h2 class="font-headline text-2xl font-bold text-fest-cream">Festival Maintenance In Progress</h2>
+    <p class="font-body text-sm text-fest-cream/80 max-w-md mt-2 mb-6">
+      The Al Murafaqa portal is undergoing scheduled maintenance or stage system calibration. Live broadcasts and updates will resume shortly.
+    </p>
+    <a href="login.html" class="px-5 py-2.5 rounded-xl bg-fest-orange hover:bg-fest-orange-warm text-white font-body text-xs font-bold transition-all shadow-md">
+      Staff &amp; Delegate Gateway
+    </a>
+  </div>
+
+  <!-- Main View Container -->
+  <main id="explore-section" class="flex flex-col relative w-full pb-12 z-10 min-h-screen pt-20">
+    <div class="flex flex-col w-full">
+
+      <!-- ================= HERO & BRANDING SECTION ================= -->
+      <section class="relative w-full pt-4 flex flex-col gap-4">
+        <!-- Status pill and pass button row -->
+        <div class="reveal-slide-up flex items-center justify-between gap-3 w-full px-5">
+          <div class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 backdrop-blur-md px-4 py-1.5 rounded-full shadow-inner">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-fest-gold opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-fest-orange"></span>
+            </span>
+            <span class="font-body text-[11px] text-white font-bold tracking-wider uppercase">LIVE FESTIVAL • DAY 3</span>
+          </div>
+          <button class="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 px-4 py-1.5 rounded-full text-white transition-all active:scale-95 shadow-sm" id="open-pass-btn">
+            <span class="material-symbols-outlined text-[17px] text-fest-gold">qr_code_2</span>
+            <span class="font-body text-[12px] font-semibold text-white">My Pass</span>
+          </button>
+        </div>
+
+        <!-- Hero Card with Logo Prominently Displayed -->
+        <div class="relative w-full bg-black/20 border-y border-white/10 backdrop-blur-md shadow-2xl px-3 sm:px-5 py-4">
+          <div class="relative w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Left Column on Desktop / 2nd on Mobile: Featured 'Pallidars: The Primal Source of Knowledge' -->
+            <div class="reveal-slide-left relative z-10 flex flex-col justify-between rounded-2xl p-6 sm:p-8 overflow-hidden w-full h-full order-2 md:order-1">
+              <div class="flex flex-col gap-3 relative z-10">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="inline-flex items-center gap-1.5 bg-fest-gold/25 border border-fest-gold/40 text-fest-gold px-3 py-1 rounded-full font-body text-[11px] font-bold tracking-wider uppercase shadow-sm">
+                    <span class="material-symbols-outlined text-[14px]">auto_awesome</span>Central Theme
+                  </span>
+                  <span class="inline-flex items-center gap-1 bg-white/10 border border-fest-gold/30 text-fest-gold px-2.5 py-0.5 rounded-lg text-[11px] font-body font-semibold">Heritage 2025</span>
+                </div>
+                <div class="flex flex-col gap-1.5 mt-1">
+                  <h1 class="font-headline text-[32px] sm:text-[40px] text-fest-cream font-extrabold tracking-tight leading-tight drop-shadow-sm">Pallidars: The Primal Source of Knowledge</h1>
+                  <p class="font-body text-[15px] sm:text-[18px] text-fest-cream/90 leading-relaxed font-normal mt-2">
+                    Honoring Islamic historic mosque-based study circles as the foundational wellspring of wisdom, scholarship, literature, and enduring moral philosophy.
+                  </p>
+                </div>
+              </div>
+              <!-- Key Pillars Tags -->
+              <div class="flex flex-wrap items-center gap-2 pt-4 mt-4 border-t border-white/10 relative z-10">
+                <span class="inline-flex items-center gap-1 text-[11px] font-body text-fest-gold bg-white/10 border border-fest-gold/30 px-3 py-1.5 rounded-lg font-semibold"><span>🕌</span> Historic Mosque Circles</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-body text-fest-gold bg-white/10 border border-fest-gold/30 px-3 py-1.5 rounded-lg font-semibold"><span>📜</span> Andalusian Manuscripts</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-body text-fest-gold bg-white/10 border border-fest-gold/30 px-3 py-1.5 rounded-lg font-semibold"><span>💡</span> Epistemology &amp; Ethics</span>
+              </div>
+            </div>
+
+            <!-- Right Column on Desktop / 1st on Mobile (TOP): Official Festival Logo Card -->
+            <div class="reveal-slide-right relative z-10 flex flex-col items-center justify-center bg-white/95 border border-fest-gold/40 rounded-2xl p-6 sm:p-8 shadow-xl shadow-black/20 overflow-hidden w-full h-full order-1 md:order-2">
+              <div class="animate-orb-1 absolute -right-10 -bottom-10 w-44 h-44 bg-fest-orange/20 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="relative z-10 w-full flex flex-col items-center justify-center text-center gap-4">
+                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEUgqqMijBU659pch1x20UFOZf6e22KnsXGAJ5Vgf44CQYjH03CDyfJiaZFVmYu6sPVRl_Xuw1hyML4G_P3zhDiqckCY5yKwUfWxSqmGU_Jzwoqt5KgSJ4a_KA7xD-bYwbHLLuArxdAjUMhD1aWz3CAxrtiTthpR0vAZtyZj7RTeQ8bhxtwECREFp-Kw8WQLXo-RBtZUA-7DELIt4Fcn8t7PWVc1prPORHW4_1DaS_szoQ7DriH9yD1A" alt="Al Murafaqa Quinta Edición" class="w-full max-h-56 sm:max-h-64 object-contain filter drop-shadow-md transition-transform duration-500 hover:scale-105">
+                <div class="flex items-center gap-2 pt-2 border-t border-neutral-200/80 w-full justify-center">
+                  <span class="inline-flex items-center gap-1.5 bg-fest-red/10 text-fest-red border border-fest-red/20 px-3 py-1 rounded-full font-body text-[11px] font-bold uppercase tracking-wider">
+                    <span class="material-symbols-outlined text-[13px]">verified</span>Official Gathering
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 bg-fest-orange/15 text-[#4a2118] border border-fest-orange/30 px-3 py-1 rounded-full font-body text-[11px] font-bold uppercase tracking-wider">5th Edition</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= THEMATIC TRACKS ================= -->
+      <section id="thematic-tracks" class="reveal-slide-up w-full mt-6">
+        <div class="px-5 flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-fest-gold"></span>
+            <h2 class="font-headline text-[18px] text-white font-bold">Thematic Tracks</h2>
+          </div>
+          <span class="font-body text-[12px] text-fest-cream/80 font-medium">5 Disciplines</span>
+        </div>
+
+        <!-- Infinite Left Marquee Carousel (Seamless 3x repeating buffer prevents any empty gap on any screen) -->
+        <div class="w-full overflow-hidden tracks-mask pb-2">
+          <div class="animate-tracks-marquee flex items-center">
+
+            <!-- Set 1: 15 Cards (5 Disciplines x 3) -->
+            <div class="flex items-center gap-3 pr-3 shrink-0">
+              <!-- Block 1 -->
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Calligraphy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Ink &amp; Qalam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-orange flex items-center justify-center text-fest-dark shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Poetry</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Diwan Recital</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-red-light to-fest-orange flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">music_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Music</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Oud &amp; Maqam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mosque</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Architecture</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Andalusian Arches</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange-warm to-fest-red-dark flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">psychology</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Philosophy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Hikmah &amp; Cosmos</span>
+                </div>
+              </div>
+
+              <!-- Block 2 -->
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Calligraphy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Ink &amp; Qalam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-orange flex items-center justify-center text-fest-dark shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Poetry</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Diwan Recital</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-red-light to-fest-orange flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">music_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Music</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Oud &amp; Maqam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mosque</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Architecture</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Andalusian Arches</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange-warm to-fest-red-dark flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">psychology</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Philosophy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Hikmah &amp; Cosmos</span>
+                </div>
+              </div>
+
+              <!-- Block 3 -->
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Calligraphy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Ink &amp; Qalam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-orange flex items-center justify-center text-fest-dark shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Poetry</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Diwan Recital</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-red-light to-fest-orange flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">music_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Music</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Oud &amp; Maqam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mosque</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Architecture</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Andalusian Arches</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange-warm to-fest-red-dark flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">psychology</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Philosophy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Hikmah &amp; Cosmos</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Set 2: Identical Clone of 15 Cards for Seamless Infinite Loop -->
+            <div class="flex items-center gap-3 pr-3 shrink-0" aria-hidden="true">
+              <!-- Block 1 -->
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Calligraphy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Ink &amp; Qalam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-orange flex items-center justify-center text-fest-dark shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Poetry</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Diwan Recital</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-red-light to-fest-orange flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">music_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Music</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Oud &amp; Maqam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mosque</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Architecture</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Andalusian Arches</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange-warm to-fest-red-dark flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">psychology</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Philosophy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Hikmah &amp; Cosmos</span>
+                </div>
+              </div>
+
+              <!-- Block 2 -->
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Calligraphy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Ink &amp; Qalam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-orange flex items-center justify-center text-fest-dark shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Poetry</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Diwan Recital</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-red-light to-fest-orange flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">music_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Music</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Oud &amp; Maqam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mosque</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Architecture</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Andalusian Arches</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange-warm to-fest-red-dark flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">psychology</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Philosophy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Hikmah &amp; Cosmos</span>
+                </div>
+              </div>
+
+              <!-- Block 3 -->
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Calligraphy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Ink &amp; Qalam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-orange flex items-center justify-center text-fest-dark shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Poetry</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Diwan Recital</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-red-light to-fest-orange flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">music_note</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Music</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Oud &amp; Maqam</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-gold to-fest-red flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">mosque</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Architecture</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Andalusian Arches</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5 bg-fest-red-dark/85 border border-fest-orange/20 hover:border-fest-gold/50 px-3.5 py-2.5 rounded-xl transition-all duration-300 cursor-pointer shadow-md min-w-[200px]">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-fest-orange-warm to-fest-red-dark flex items-center justify-center text-white shadow-sm shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">psychology</span>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-body text-[13px] text-white font-bold truncate">Philosophy</span>
+                  <span class="font-body text-[10px] text-fest-cream/70 truncate">Hikmah &amp; Cosmos</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LIVE VIDEO STREAM SHOWCASE ================= -->
+      <section class="reveal-slide-up w-full max-w-2xl sm:max-w-3xl mx-auto px-4 sm:px-6 mt-6 flex flex-col gap-3" id="video-en-vivo">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-fest-orange-warm text-[22px]">sensors</span>
+            <h2 class="font-headline text-[18px] sm:text-[20px] text-white font-bold" id="video-section-heading">Main Stage Broadcast</h2>
+          </div>
+          <span id="video-live-badge" class="font-body text-[11px] text-fest-gold bg-fest-gold/20 border border-fest-gold/30 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5">
+            <span id="video-live-dot" class="w-1.5 h-1.5 rounded-full bg-fest-gold animate-pulse"></span>
+            <span id="video-viewer-count-top">4.8k live</span>
+          </span>
+        </div>
+
+        <!-- Video Player Card (Sized smaller than screen with responsive limits) -->
+        <div id="video-player-card" class="relative w-full rounded-2xl overflow-hidden bg-fest-dark border border-fest-orange/25 shadow-2xl flex flex-col transition-all">
+          <div id="video-media-container" class="relative w-full aspect-video max-h-[320px] sm:max-h-[380px] bg-cover bg-center overflow-hidden flex items-center justify-center group" style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuBI4u7wM1OZBhGT-FXa7reqYfBd_iL47KqTEKkVKg_Idm8vRlJmbdWzUsd9leeBo8C1iT-u8DngFM0FXGt4ts66akMHNMMhJLX5H6lI38Ip4TNgcxyWt6W6jrtfl8IL1YkL1-zJsck5U9-dkM5NH5LH6IELBONbt9z8WvfI5KOrGwxcxGylyHzbQlrAkuV1nBWBiuu2E9UOdxa5D3h9k-8p5XBeRoQS0gaQ6sVBMXJb&quot;);">
+            <div id="video-backdrop-overlay" class="absolute inset-0 bg-gradient-to-t from-fest-dark via-fest-dark/30 to-black/60 pointer-events-none"></div>
+
+            <!-- Live Streaming Top Overlay Badges -->
+            <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-auto">
+              <div class="flex items-center gap-2">
+                <span id="video-overlay-live-pill" class="flex items-center gap-1.5 bg-fest-red/90 text-white font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                  <span id="video-overlay-live-dot" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                  <span id="video-overlay-live-text">LIVE</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button aria-label="Change quality" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white hover:text-fest-gold transition-colors">
+                  <span class="material-symbols-outlined text-[18px]">hd</span>
+                </button>
+                <button id="fullscreen-btn" aria-label="Fullscreen" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white hover:text-fest-gold active:scale-95 transition-all">
+                  <span class="material-symbols-outlined text-[18px]">fullscreen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Central Play / Pause Button with Orange Glow -->
+            <button aria-label="Play or pause stream" class="relative z-10 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-fest-orange-warm to-fest-orange text-white flex items-center justify-center shadow-[0_0_24px_rgba(227,90,36,0.65)] hover:scale-105 active:scale-90 transition-all pointer-events-auto" id="toggle-stream">
+              <span class="material-symbols-outlined text-[30px] sm:text-[34px] ml-0.5" id="play-icon">play_arrow</span>
+            </button>
+
+            <!-- Soundwave indicators -->
+            <div class="absolute bottom-3 right-3 z-10 flex items-end gap-1 h-5 px-2 py-1 rounded-md bg-black/60 backdrop-blur-md pointer-events-none">
+              <span class="w-1 bg-fest-gold rounded-full h-2.5 animate-pulse"></span>
+              <span class="w-1 bg-fest-gold rounded-full h-4 animate-bounce"></span>
+              <span class="w-1 bg-fest-gold rounded-full h-1.5 animate-pulse"></span>
+              <span class="w-1 bg-fest-gold rounded-full h-3.5 animate-bounce"></span>
+            </div>
+          </div>
+
+          <!-- Video Details Strip -->
+          <div class="p-3.5 sm:p-4 flex flex-col gap-1.5 bg-[#250B0A] border-t border-fest-orange/20">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex flex-col min-w-0">
+                <span id="video-venue-label" class="font-body text-[10px] sm:text-[11px] text-fest-gold font-bold tracking-wider uppercase">GRAND ANDALUSIAN DOME</span>
+                <h3 id="video-title" class="font-headline text-[15px] sm:text-[16px] text-white truncate font-bold">
+                  Mystic Poetry Recital &amp; Qurtuba Ensemble
+                </h3>
+                <p id="video-description" class="font-body text-[11px] sm:text-[12px] text-fest-cream/70 mt-0.5 truncate">
+                  Live Cultural Stage &amp; Ensemble Performances
+                </p>
+              </div>
+              <button aria-label="Share stream" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-fest-orange flex items-center justify-center text-white shrink-0 active:scale-95 transition-all" id="share-stream">
+                <span class="material-symbols-outlined text-[16px] sm:text-[18px]">share</span>
+              </button>
+            </div>
+
+            <!-- Interactivity Strip -->
+            <div class="flex items-center justify-between pt-2 border-t border-white/10 mt-1.5">
+              <div class="flex items-center gap-2">
+                <span class="font-body text-[11px] sm:text-[12px] text-fest-cream/80 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[15px] text-fest-orange">visibility</span>
+                  <span id="video-viewers-bottom-text">4.8k viewers</span>
+                </span>
+              </div>
+              <span class="font-body text-[11px] sm:text-[12px] text-fest-cream/80 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px] text-fest-gold">schedule</span>
+                <span id="video-duration-text">42 mins remaining</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PALLIDARS: THE PRIMAL SOURCE OF KNOWLEDGE SECTION ================= -->
+      <section class="reveal-slide-up w-full px-3 sm:px-5 mt-8 flex flex-col gap-4">
+        <div class="flex items-center justify-between px-2">
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-fest-red text-[24px]">auto_awesome</span>
+            <h2 class="font-headline text-[20px] sm:text-[24px] text-neutral-900 font-extrabold tracking-tight">Pallidars: The Primal Source of Knowledge</h2>
+          </div>
+          <span class="font-body text-[11px] sm:text-[12px] text-[#4a2118] bg-fest-gold/25 border border-fest-orange/30 px-3 py-1 rounded-full font-bold uppercase tracking-wider shrink-0">
+            Heritage Guide
+          </span>
+        </div>
+
+        <div class="relative w-full rounded-3xl bg-neutral-50/90 border border-neutral-200/90 p-6 sm:p-10 lg:p-12 flex flex-col gap-8 shadow-xl shadow-black/5">
+          <!-- Top Section: Al Murafaqa Title & Narrative -->
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <h3 class="font-headline text-[38px] sm:text-[56px] font-extrabold text-[#4a2118] tracking-tight leading-none drop-shadow-sm">Al Murafaqa</h3>
+              <span class="text-[13px] sm:text-[14px] font-bold uppercase tracking-wider text-[#4a2118] bg-fest-orange/15 px-4 py-1.5 rounded-full border border-fest-orange/30 shadow-sm">Quinta Edición</span>
+            </div>
+            <p class="font-body text-[16px] sm:text-[20px] text-neutral-800 leading-relaxed font-normal mt-1">
+              The Al Murafaqa (Quinta Edición) logo embodies companionship, cultural heritage, and creative expression through refined traditional Andalusian aesthetics and contemporary geometry.
+            </p>
+          </div>
+
+          <!-- Motifs & Core Symbolism Pills in a Single Line -->
+          <div class="pt-6 border-t border-neutral-200/80 flex flex-col gap-3 min-w-0 w-full overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="font-headline text-[18px] sm:text-[21px] text-[#4a2118] font-bold tracking-tight">Emblem Motifs &amp; Core Symbolism</span>
+              <span class="text-[11px] font-semibold text-fest-orange uppercase tracking-wider flex items-center gap-1 sm:hidden">
+                Swipe <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </span>
+            </div>
+            <div class="relative w-full overflow-hidden">
+              <div class="flex items-center flex-nowrap overflow-x-auto gap-2.5 pb-2 scrollbar-none w-full" style="display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                <div class="inline-flex items-center gap-2 bg-fest-orange/15 hover:bg-fest-orange/25 border border-fest-orange/30 px-3.5 py-2 rounded-xl text-[13px] sm:text-[14px] font-body text-neutral-900 shadow-sm transition-colors whitespace-nowrap shrink-0 flex-nowrap">
+                  <span class="text-[19px]">🏺</span><span class="font-bold text-[#4a2118]">Vessel:</span><span>Warmth &amp; Unity</span>
+                </div>
+                <div class="inline-flex items-center gap-2 bg-fest-orange/15 hover:bg-fest-orange/25 border border-fest-orange/30 px-3.5 py-2 rounded-xl text-[13px] sm:text-[14px] font-body text-neutral-900 shadow-sm transition-colors whitespace-nowrap shrink-0 flex-nowrap">
+                  <span class="text-[19px]">✒️</span><span class="font-bold text-[#4a2118]">Pen Nib:</span><span>Artistic Expression</span>
+                </div>
+                <div class="inline-flex items-center gap-2 bg-fest-orange/15 hover:bg-fest-orange/25 border border-fest-orange/30 px-3.5 py-2 rounded-xl text-[13px] sm:text-[14px] font-body text-neutral-900 shadow-sm transition-colors whitespace-nowrap shrink-0 flex-nowrap">
+                  <span class="text-[19px]">📖</span><span class="font-bold text-[#4a2118]">Open Book:</span><span>Literature &amp; Exchange</span>
+                </div>
+                <div class="inline-flex items-center gap-2 bg-fest-orange/15 hover:bg-fest-orange/25 border border-fest-orange/30 px-3.5 py-2 rounded-xl text-[13px] sm:text-[14px] font-body text-neutral-900 shadow-sm transition-colors whitespace-nowrap shrink-0 flex-nowrap">
+                  <span class="text-[19px]">🪶</span><span class="font-bold text-[#4a2118]">Feather:</span><span>Poetry &amp; Thought</span>
+                </div>
+                <div class="inline-flex items-center gap-2 bg-fest-gold/25 hover:bg-fest-gold/35 border border-fest-gold/40 px-3.5 py-2 rounded-xl text-[13px] sm:text-[14px] font-body text-neutral-900 shadow-sm transition-colors whitespace-nowrap shrink-0 flex-nowrap">
+                  <span class="text-[19px]">✨</span><span class="font-bold text-[#4a2118]">Diamond:</span><span>Andalusian Heritage</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme Explanation Section with Logo on the Left -->
+          <div class="pt-6 border-t border-neutral-200/80 flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-fest-red"></span>
+              <span class="font-headline text-[15px] text-fest-red font-bold uppercase tracking-wider">THEME EXPLANATION</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center mt-1">
+              <!-- Logo on the left of Theme Explanation (With authentic black field) -->
+              <div class="md:col-span-4 lg:col-span-3 flex flex-col items-center justify-center">
+                <div class="relative w-full max-w-[220px] sm:max-w-[250px] aspect-square rounded-2xl bg-black p-2.5 border border-fest-gold/40 shadow-xl shadow-black/25 overflow-hidden flex items-center justify-center group">
+                  <div class="absolute inset-0 bg-gradient-to-tr from-fest-red/20 via-transparent to-fest-gold/20 pointer-events-none"></div>
+                  <img src="logo-symbolism.jpg" alt="Al Murafaqa Theme Motif Diamond" class="w-full h-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105 relative z-10">
+                </div>
+              </div>
+
+              <!-- Theme Explanation Quote on the right -->
+              <div class="md:col-span-8 lg:col-span-9">
+                <blockquote class="relative p-6 sm:p-8 rounded-r-2xl rounded-l-md bg-fest-orange/15 border-l-4 border-fest-red shadow-sm overflow-hidden">
+                  <span aria-hidden="true" class="absolute top-1 left-2 font-headline text-[48px] sm:text-[56px] leading-none text-fest-red/25 select-none pointer-events-none">“</span>
+                  <p class="relative z-10 pl-5 font-body italic text-[15px] sm:text-[18px] text-[#4a2118] leading-relaxed font-medium">
+                    Pallidars: The Primal Source of Knowledge honors the Islamic historic mosque-based learning centers as the original wellspring of wisdom, scholarship, and moral character. Before modern institutions emerged, these traditional study circles nurtured generations of thinkers in theology, literature, and philosophy; serving as the foundational bedrock of our community's enduring intellectual and cultural heritage.
+                  </p>
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FESTIVAL METRICS ================= -->
+      <section class="reveal-slide-up w-full max-w-2xl sm:max-w-3xl mx-auto px-4 sm:px-6 mt-6 mb-2">
+        <div class="grid grid-cols-3 gap-3 w-full">
+          <div class="flex flex-col items-center justify-between p-4 rounded-2xl bg-white border border-neutral-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-fest-orange/50 transition-all duration-300 text-center h-full">
+            <div class="w-9 h-9 rounded-full bg-fest-orange/15 text-fest-orange flex items-center justify-center mb-2 mx-auto shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[19px]">groups</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="font-headline text-[24px] sm:text-[28px] font-extrabold text-[#210e0b] tracking-tight leading-none mb-1.5">3</span>
+              <span class="font-body text-[10px] sm:text-[12px] font-bold text-neutral-500 uppercase tracking-wider text-center">TOTAL TEAMS</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center justify-between p-4 rounded-2xl bg-white border border-neutral-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-fest-gold/50 transition-all duration-300 text-center h-full">
+            <div class="w-9 h-9 rounded-full bg-fest-gold/25 text-[#4a2118] flex items-center justify-center mb-2 mx-auto shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[19px]">school</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="font-headline text-[24px] sm:text-[28px] font-extrabold text-[#210e0b] tracking-tight leading-none mb-1.5">50+</span>
+              <span class="font-body text-[10px] sm:text-[12px] font-bold text-neutral-500 uppercase tracking-wider text-center">STUDENTS</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center justify-between p-4 rounded-2xl bg-white border border-neutral-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-fest-red/40 transition-all duration-300 text-center h-full">
+            <div class="w-9 h-9 rounded-full bg-fest-red/10 text-fest-red flex items-center justify-center mb-2 mx-auto shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[19px]">event_note</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="font-headline text-[24px] sm:text-[28px] font-extrabold text-[#210e0b] tracking-tight leading-none mb-1.5">100+</span>
+              <span class="font-body text-[10px] sm:text-[12px] font-bold text-neutral-500 uppercase tracking-wider text-center">PROGRAMMES</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LOWER SECTION: SCHEDULE SHOWCASE & DIGITAL PASS ================= -->
+      <div id="schedule-section" class="w-full bg-[#fdfbf9] mt-8 pt-8 pb-4 rounded-t-[36px] shadow-[0_-12px_36px_rgba(20,5,5,0.06)] border-t border-neutral-200/60 flex flex-col gap-8">
+
+        <!-- ================= FESTIVAL SCHEDULE SHOWCASE BANNER ================= -->
+        <section class="reveal-slide-up w-full px-4 sm:px-6">
+          <div class="relative w-full rounded-3xl bg-gradient-to-br from-[#1f0b08] via-[#2c120e] to-[#170807] border border-fest-gold/30 p-6 sm:p-10 shadow-2xl overflow-hidden text-white flex flex-col gap-6">
+            <div class="animate-orb-1 absolute -right-20 -top-20 w-64 h-64 bg-fest-orange/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="animate-orb-2 absolute -left-20 -bottom-20 w-64 h-64 bg-fest-gold/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div class="flex flex-col gap-2 max-w-2xl">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-fest-orange animate-ping"></span>
+                  <span class="font-body text-xs text-fest-gold font-extrabold uppercase tracking-widest">Official Festival Guide • 3 Days</span>
+                </div>
+                <h3 class="font-headline text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                  Festival Programmes &amp; Schedule
+                </h3>
+                <p class="font-body text-sm sm:text-base text-fest-cream/80 leading-relaxed mt-1">
+                  Explore all 100+ gatherings, Thuluth calligraphy masterclasses, Andalusian oud sessions, and inter-team tournaments happening across the grounds.
+                </p>
+              </div>
+
+              <a href="schedule.html" class="inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-gradient-to-r from-fest-orange to-fest-red hover:from-fest-orange-warm hover:to-fest-red-light text-white font-bold text-sm sm:text-base shadow-xl shadow-fest-red/35 active:scale-95 transition-all shrink-0 group">
+                <span class="material-symbols-outlined text-[22px]">calendar_month</span>
+                <span>Open Full Schedule</span>
+                <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </a>
+            </div>
+
+            <!-- 3 Days Itinerary Quick Cards -->
+            <div class="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+              <a href="schedule.html" class="rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-fest-gold/40 p-4 transition-all flex flex-col gap-2 group cursor-pointer">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-fest-gold uppercase tracking-wider">Day 1 • Oct 24</span>
+                  <span class="text-[11px] text-white/50">Completed</span>
+                </div>
+                <span class="font-headline text-[15px] font-bold text-white group-hover:text-fest-gold transition-colors">Historic Mosque Halaqat</span>
+                <span class="font-body text-xs text-fest-cream/70 leading-relaxed">Inaugural circles &amp; epistemology foundations</span>
+              </a>
+
+              <a href="schedule.html" class="rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-fest-gold/40 p-4 transition-all flex flex-col gap-2 group cursor-pointer">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-fest-gold uppercase tracking-wider">Day 2 • Oct 25</span>
+                  <span class="text-[11px] text-white/50">Completed</span>
+                </div>
+                <span class="font-headline text-[15px] font-bold text-white group-hover:text-fest-gold transition-colors">Andalusian Dialogues</span>
+                <span class="font-body text-xs text-fest-cream/70 leading-relaxed">Muqarnas geometry &amp; codices recitals</span>
+              </a>
+
+              <a href="schedule.html" class="rounded-2xl bg-gradient-to-br from-fest-red/35 via-fest-red-dark/40 to-fest-orange/25 border border-fest-orange/50 hover:border-fest-gold p-4 transition-all flex flex-col gap-2 group cursor-pointer shadow-lg shadow-black/30">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-fest-orange uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-fest-orange animate-pulse"></span>
+                    Day 3 (Today)
+                  </span>
+                  <span class="text-[10px] bg-fest-gold text-fest-dark px-2 py-0.5 rounded-full font-extrabold uppercase">Live Now</span>
+                </div>
+                <span class="font-headline text-[15px] font-bold text-white group-hover:text-fest-gold transition-colors">Grand Stage Finale</span>
+                <span class="font-body text-xs text-fest-cream/90 font-medium leading-relaxed">Chordophone dialogues, Thuluth masterclasses &amp; debates</span>
+              </a>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================= DIGITAL PASS CARD ================= -->
+        <section id="pass-section" class="reveal-slide-up w-full px-5">
+          <div class="relative w-full rounded-2xl overflow-hidden bg-gradient-to-r from-fest-red to-[#721514] p-4 sm:p-5 shadow-xl text-white flex items-center justify-between gap-3 border border-fest-orange/30">
+            <div class="animate-orb-2 absolute right-0 top-0 bottom-0 w-36 bg-fest-orange/25 blur-xl pointer-events-none"></div>
+            <div class="flex items-center gap-3.5 min-w-0">
+              <!-- QR Thumbnail box -->
+              <div class="w-14 h-14 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-md">
+                <svg class="w-full h-full text-fest-dark fill-current" viewBox="0 0 100 100">
+                  <rect height="30" width="30" x="0" y="0"></rect>
+                  <rect fill="white" height="18" width="18" x="6" y="6"></rect>
+                  <rect height="10" width="10" x="10" y="10"></rect>
+                  <rect height="30" width="30" x="70" y="0"></rect>
+                  <rect fill="white" height="18" width="18" x="76" y="6"></rect>
+                  <rect height="10" width="10" x="80" y="10"></rect>
+                  <rect height="30" width="30" x="0" y="70"></rect>
+                  <rect fill="white" height="18" width="18" x="6" y="76"></rect>
+                  <rect height="10" width="10" x="10" y="80"></rect>
+                  <rect height="10" width="15" x="40" y="10"></rect>
+                  <rect height="10" width="20" x="45" y="30"></rect>
+                  <rect height="20" width="10" x="35" y="50"></rect>
+                  <rect height="15" width="20" x="55" y="55"></rect>
+                  <rect height="15" width="15" x="80" y="45"></rect>
+                  <rect height="10" width="25" x="40" y="80"></rect>
+                  <rect height="15" width="15" x="75" y="75"></rect>
+                </svg>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-fest-gold"></span>
+                  <span class="font-body text-[11px] text-fest-gold font-bold uppercase tracking-wider">5-DAY ALL-ACCESS PASS</span>
+                </div>
+                <h4 class="font-headline text-[16px] text-white font-bold truncate">Festival Pass • VIP</h4>
+                <span id="pass-holder-label" class="font-body text-[12px] text-fest-cream/80 truncate">Passholder: Guest / Delegate</span>
+              </div>
+            </div>
+            <button aria-label="View Full Pass" class="w-10 h-10 rounded-xl bg-white/15 hover:bg-fest-orange text-white flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-sm" id="show-full-qr">
+              <span class="material-symbols-outlined text-[20px]">fullscreen</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ================= BOTTOM SECTION 1: VENUE & FESTIVAL ESSENTIALS ================= -->
+        <section class="reveal-slide-up w-full px-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-fest-orange"></span>
+              <h2 class="font-headline text-[19px] text-neutral-900 font-bold">Gathering Grounds &amp; Info</h2>
+            </div>
+            <span class="font-body text-[11px] text-fest-red font-bold uppercase tracking-wider">Campus Map</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- Venue Location Card -->
+            <div class="rounded-2xl bg-neutral-50 border border-neutral-200/80 p-4 flex items-start gap-3 hover:border-fest-orange/40 transition-all">
+              <div class="w-10 h-10 rounded-xl bg-fest-red/10 text-fest-red flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">location_on</span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="font-headline text-[14px] font-bold text-neutral-900">Grand Andalusian Pavilion</span>
+                <span class="font-body text-[12px] text-neutral-600 mt-0.5 leading-snug">North Courtyard, Gate 2 • Open 09:00 – 23:30</span>
+              </div>
+            </div>
+
+            <!-- Festival Program & Schedule Card -->
+            <a href="schedule.html" class="rounded-2xl bg-neutral-50 border border-neutral-200/80 p-4 flex items-start gap-3 hover:border-fest-orange/40 hover:bg-fest-gold/5 transition-all text-left">
+              <div class="w-10 h-10 rounded-xl bg-fest-gold/25 text-[#4a2118] flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">emoji_events</span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="font-headline text-[14px] font-bold text-neutral-900 flex items-center gap-1.5">
+                  Programmes &amp; Schedule
+                  <span class="material-symbols-outlined text-[16px] text-fest-orange">arrow_forward</span>
+                </span>
+                <span class="font-body text-[12px] text-neutral-600 mt-0.5 leading-snug">3 Teams Competing • 100+ Programmes</span>
+              </div>
+            </a>
+
+            <!-- Helpdesk & Hospitality Card -->
+            <div class="rounded-2xl bg-neutral-50 border border-neutral-200/80 p-4 flex items-start gap-3 hover:border-fest-orange/40 transition-all">
+              <div class="w-10 h-10 rounded-xl bg-fest-orange/15 text-fest-orange flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[20px]">support_agent</span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="font-headline text-[14px] font-bold text-neutral-900">Hospitality Desk</span>
+                <span class="font-body text-[12px] text-neutral-600 mt-0.5 leading-snug">Delegate Lounge &amp; Prayer Hall • West Wing</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= BOTTOM SECTION 2: FESTIVAL FOOTER ================= -->
+        <footer class="reveal-slide-up w-full px-5 pt-2 pb-4">
+          <div class="rounded-3xl bg-fest-dark text-fest-cream p-6 sm:p-8 border border-fest-orange/25 relative overflow-hidden">
+            <div class="animate-orb-1 absolute -right-12 -bottom-12 w-48 h-48 rounded-full bg-fest-red/40 blur-2xl pointer-events-none"></div>
+            <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-white/10">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0">
+                  <img alt="Al Murafaqa Emblem" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+                </div>
+                <div>
+                  <h3 class="font-headline text-[18px] font-extrabold text-white tracking-tight">Al Murafaqa • 5th Edition</h3>
+                  <p class="font-body text-[12px] text-fest-gold font-semibold">Pallidars: The Primal Source of Knowledge</p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <a href="#explore-section" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Theme</a>
+                <a href="#video-en-vivo" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Main Stage</a>
+                <a href="schedule.html" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Schedule</a>
+                <button id="footer-pass-btn" class="px-3 py-1.5 rounded-lg bg-fest-gold text-fest-dark hover:bg-fest-gold/90 text-[12px] font-bold transition-colors">VIP Pass</button>
+                <a href="login.html" class="px-3 py-1.5 rounded-lg bg-fest-red hover:bg-fest-red-light text-[12px] font-bold text-white transition-colors flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[15px]">login</span> Sign In
+                </a>
+              </div>
+            </div>
+
+            <div class="relative z-10 pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-fest-cream/65 font-body">
+              <span>© 2025 Al Murafaqa Cultural &amp; Literary Gathering. All rights reserved.</span>
+              <span class="text-fest-gold/90 font-semibold">Quinta Edición • Live Cultural Portal</span>
+            </div>
+          </div>
+        </footer>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Pass Modal Overlay with Highlighted Logo -->
+  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex-col items-center justify-center p-5" id="pass-modal">
+    <div class="modal-animate relative w-full max-w-sm rounded-3xl bg-white p-6 flex flex-col items-center gap-4 shadow-2xl border border-neutral-200">
+      <button class="absolute top-4 right-4 w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-700 transition-colors" id="close-pass-modal">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+
+      <!-- Prominent Festival Logo in Modal -->
+      <div class="w-48 py-2 px-3 rounded-2xl bg-neutral-50 flex items-center justify-center border border-neutral-100">
+        <img alt="Al Murafaqa Emblem" class="w-full h-auto object-contain max-h-24" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+      </div>
+
+      <div class="text-center">
+        <span class="font-body text-[11px] text-fest-red uppercase font-bold tracking-widest">Official Pass 5th Edition</span>
+        <h3 class="font-headline text-[22px] text-neutral-900 font-bold mt-0.5">VIP All-Access Pass</h3>
+        <p class="font-body text-[12px] text-neutral-600">Concerts, symposiums, workshops, and 4K live streaming</p>
+      </div>
+
+      <!-- High-res simulated QR Code -->
+      <div class="w-52 h-52 rounded-2xl bg-neutral-50 p-4 border border-neutral-200 shadow-inner flex items-center justify-center">
+        <svg class="w-full h-full text-neutral-900 fill-current" viewBox="0 0 100 100">
+          <rect height="30" width="30" x="0" y="0"></rect>
+          <rect fill="white" height="18" width="18" x="6" y="6"></rect>
+          <rect height="10" width="10" x="10" y="10"></rect>
+          <rect height="30" width="30" x="70" y="0"></rect>
+          <rect fill="white" height="18" width="18" x="76" y="6"></rect>
+          <rect height="10" width="10" x="80" y="10"></rect>
+          <rect height="30" width="30" x="0" y="70"></rect>
+          <rect fill="white" height="18" width="18" x="6" y="76"></rect>
+          <rect height="10" width="10" x="10" y="80"></rect>
+          <rect height="10" width="15" x="40" y="10"></rect>
+          <rect height="10" width="20" x="45" y="30"></rect>
+          <rect height="20" width="10" x="35" y="50"></rect>
+          <rect height="15" width="20" x="55" y="55"></rect>
+          <rect height="15" width="15" x="80" y="45"></rect>
+          <rect height="10" width="25" x="40" y="80"></rect>
+          <rect height="15" width="15" x="75" y="75"></rect>
+        </svg>
+      </div>
+
+      <div class="flex flex-col items-center text-center">
+        <span id="modal-pass-holder-label" class="font-body text-[12px] text-neutral-800 font-mono font-bold tracking-wider">Passholder: Guest / Delegate</span>
+        <span class="font-body text-[11px] text-fest-orange font-semibold mt-1">Maximum screen brightness recommended</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Pill -->
+  <div id="toast-banner" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-fest-dark text-white border border-fest-gold/40 px-4 py-2.5 rounded-full shadow-2xl font-body text-[12px] font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 translate-y-3">
+    <span class="material-symbols-outlined text-fest-gold text-[18px]">check_circle</span>
+    <span id="toast-text">Action completed</span>
+  </div>
+
+  <!-- Interactive Scripts -->
+  <script>
+    // Toast Helper
+    const toastBanner = document.getElementById('toast-banner');
+    const toastText = document.getElementById('toast-text');
+    let toastTimeout;
+
+    function showToast(message) {
+      if (!toastBanner || !toastText) return;
+      toastText.textContent = message;
+      toastBanner.classList.remove('opacity-0', 'translate-y-3');
+      toastBanner.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toastBanner.classList.add('opacity-0', 'translate-y-3');
+        toastBanner.classList.remove('opacity-100', 'translate-y-0');
+      }, 2800);
+    }
+
+    // Scroll-Reveal Slide Effects using IntersectionObserver
+    const revealElements = document.querySelectorAll('.reveal-slide-up, .reveal-slide-left, .reveal-slide-right');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+    revealElements.forEach((el) => revealObserver.observe(el));
+
+    // Subtle Parallax on Background Emblem during Scroll
+    const parallaxEmblem = document.getElementById('parallax-emblem');
+    window.addEventListener('scroll', () => {
+      if (!parallaxEmblem) return;
+      const scrollY = window.scrollY;
+      if (scrollY < 900) {
+        parallaxEmblem.style.transform = `translateY(${scrollY * 0.18}px)`;
+      }
+    }, { passive: true });
+
+    // Stream Play/Pause Toggle
+    const toggleBtn = document.getElementById('toggle-stream');
+    const playIcon = document.getElementById('play-icon');
+    let isPlaying = false;
+
+    if (toggleBtn && playIcon) {
+      toggleBtn.addEventListener('click', () => {
+        if (window.launchStreamPlayback && window.launchStreamPlayback()) {
+          return;
+        }
+        isPlaying = !isPlaying;
+        playIcon.textContent = isPlaying ? 'pause' : 'play_arrow';
+        toggleBtn.classList.toggle('scale-105', isPlaying);
+        showToast(isPlaying ? 'Live stream playing in HD' : 'Live stream paused');
+      });
+    }
+
+    // Share Stream Button
+    const shareStreamBtn = document.getElementById('share-stream');
+    if (shareStreamBtn) {
+      shareStreamBtn.addEventListener('click', async () => {
+        const title = document.getElementById('video-title')?.textContent || 'Al Murafaqa Live Stage Broadcast';
+        const url = window.location.href.split('#')[0] + '#video-en-vivo';
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, text: `Watch ${title} live on Al Murafaqa`, url });
+          } catch (e) {}
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(url);
+          showToast('Live stream link copied to clipboard!');
+        }
+      });
+    }
+
+    // Fullscreen Toggle
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const videoCard = document.getElementById('video-player-card');
+    if (fullscreenBtn && videoCard) {
+      fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          const request = videoCard.requestFullscreen || videoCard.webkitRequestFullscreen;
+          if (request) {
+            Promise.resolve(request.call(videoCard)).catch(() => showToast('Fullscreen is unavailable in this browser'));
+          }
+        } else {
+          const exit = document.exitFullscreen || document.webkitExitFullscreen;
+          if (exit) Promise.resolve(exit.call(document)).catch(() => showToast('Could not exit fullscreen'));
+        }
+      });
+    }
+
+    // Filter Chips selection with smooth card slide-in & filtering
+    const chips = document.querySelectorAll('.filter-chip');
+    const scheduleCards = document.querySelectorAll('.schedule-card');
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach((c) => {
+          c.classList.remove('active-chip', 'bg-fest-red', 'text-white', 'shadow-md', 'shadow-fest-red/25');
+          c.classList.add('bg-neutral-100', 'text-neutral-700');
+        });
+        chip.classList.add('active-chip', 'bg-fest-red', 'text-white', 'shadow-md', 'shadow-fest-red/25');
+        chip.classList.remove('bg-neutral-100', 'text-neutral-700');
+
+        const filter = chip.getAttribute('data-filter');
+        scheduleCards.forEach((card) => {
+          const categories = card.getAttribute('data-category') || '';
+          card.classList.remove('card-slide-enter');
+          void card.offsetWidth; // trigger reflow for slide animation
+
+          if (filter === 'all' || categories.includes(filter)) {
+            card.classList.remove('hidden');
+            card.classList.add('card-slide-enter');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+      });
+    });
+
+    // Remind Me & Book Workshop Buttons
+    document.querySelectorAll('.remind-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-[15px] text-fest-red">notifications_active</span> Reminder Set';
+        showToast('Reminder scheduled 15 mins before session');
+      });
+    });
+
+    document.querySelectorAll('.book-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.textContent = 'Seat Reserved ✓';
+        btn.classList.remove('bg-fest-orange', 'hover:bg-fest-orange-warm');
+        btn.classList.add('bg-fest-red');
+        showToast('Workshop seat reserved successfully');
+      });
+    });
+
+    // Pass Modal Handlers
+    const passModal = document.getElementById('pass-modal');
+    const openPassTriggers = [
+      document.getElementById('open-pass-btn'),
+      document.getElementById('header-pass-btn'),
+      document.getElementById('drawer-pass-btn'),
+      document.getElementById('pill-pass-btn'),
+      document.getElementById('mobile-pill-pass-btn'),
+      document.getElementById('show-full-qr'),
+      document.getElementById('footer-pass-btn')
+    ];
+
+    // Open pass if arriving with #open-pass or #pass-modal hash
+    if (window.location.hash === '#open-pass' || window.location.hash === '#pass-modal') {
+      setTimeout(() => { if (typeof openModal === 'function') openModal(); }, 150);
+    }
+    const closePassModal = document.getElementById('close-pass-modal');
+
+    const openModal = () => {
+      if (passModal) {
+        passModal.classList.remove('hidden');
+        passModal.classList.add('flex');
+      }
+    };
+
+    const closeModal = () => {
+      if (passModal) {
+        passModal.classList.add('hidden');
+        passModal.classList.remove('flex');
+      }
+    };
+
+    openPassTriggers.forEach((btn) => {
+      if (btn) btn.addEventListener('click', () => {
+        closeDrawer();
+        openModal();
+      });
+    });
+    if (closePassModal) closePassModal.addEventListener('click', closeModal);
+    if (passModal) {
+      passModal.addEventListener('click', (e) => {
+        if (e.target === passModal) closeModal();
+      });
+    }
+
+    // Header Notification Button
+    const notifBtn = document.getElementById('notif-btn');
+    if (notifBtn) {
+      notifBtn.addEventListener('click', () => {
+        showToast('Live Now: Qalam & Chordophone Dialogues at Grand Dome');
+      });
+    }
+
+    // Mobile Navigation Drawer Toggle
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+    const mobileMenuDrawer = document.getElementById('mobile-menu-drawer');
+    const closeMobileMenu = document.getElementById('close-mobile-menu');
+
+    function openDrawer() {
+      if (!mobileMenuOverlay || !mobileMenuDrawer) return;
+      mobileMenuOverlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        mobileMenuOverlay.classList.remove('opacity-0');
+        mobileMenuDrawer.classList.remove('translate-x-full');
+      });
+    }
+
+    function closeDrawer() {
+      if (!mobileMenuOverlay || !mobileMenuDrawer) return;
+      mobileMenuOverlay.classList.add('opacity-0');
+      mobileMenuDrawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        mobileMenuOverlay.classList.add('hidden');
+      }, 300);
+    }
+
+    if (mobileMenuToggle) mobileMenuToggle.addEventListener('click', openDrawer);
+    if (closeMobileMenu) closeMobileMenu.addEventListener('click', closeDrawer);
+    if (mobileMenuOverlay) mobileMenuOverlay.addEventListener('click', closeDrawer);
+
+    // Close drawer when any drawer link is clicked
+    document.querySelectorAll('.drawer-link').forEach((link) => {
+      link.addEventListener('click', closeDrawer);
+    });
+
+    // Share simulation
+    const shareBtn = document.getElementById('share-stream');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', () => {
+        if (navigator.share) {
+          navigator.share({
+            title: 'Al Murafaqa - 5th Edition',
+            text: 'Live from the Al Murafaqa Cultural Gathering',
+            url: window.location.href,
+          }).catch((err) => {
+            if (err.name !== 'AbortError') showToast('Unable to share this stream right now');
+          });
+        } else if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(window.location.href)
+            .then(() => showToast('Stream link copied to clipboard'))
+            .catch(() => showToast('Copy the stream link from your browser address bar'));
+        } else {
+          showToast('Copy the stream link from your browser address bar');
+        }
+      });
+    }
+  </script>
+
+  <script type="module">
+    import { db } from './supabase-config.js';
+
+    let activeVideoSettings = null;
+
+    function getEmbedUrl(rawUrl) {
+      if (!rawUrl) return null;
+      const url = rawUrl.trim();
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([\w-]{11})/);
+      if (ytMatch && ytMatch[1]) {
+        return {
+          type: 'youtube',
+          src: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0&modestbranding=1`,
+        };
+      }
+      const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+      if (vimeoMatch && vimeoMatch[1]) {
+        return {
+          type: 'vimeo',
+          src: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`,
+        };
+      }
+      if (url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('.mp4?') || url.includes('.m3u8')) {
+        return {
+          type: 'video',
+          src: url,
+        };
+      }
+      if (url.startsWith('http')) {
+        return {
+          type: 'iframe',
+          src: url,
+        };
+      }
+      return null;
+    }
+
+    function hydrateVideoSection(settings) {
+      activeVideoSettings = settings;
+      if (!settings) return;
+
+      const heading = document.getElementById('video-section-heading');
+      if (heading && settings.video_heading) heading.textContent = settings.video_heading;
+
+      const title = document.getElementById('video-title');
+      if (title && settings.video_title) title.textContent = settings.video_title;
+
+      const desc = document.getElementById('video-description');
+      if (desc && settings.video_description) desc.textContent = settings.video_description;
+
+      const venue = document.getElementById('video-venue-label');
+      if (venue && settings.video_venue) venue.textContent = settings.video_venue.toUpperCase();
+
+      const viewTop = document.getElementById('video-viewer-count-top');
+      const viewBtm = document.getElementById('video-viewers-bottom-text');
+      if (viewTop && settings.video_viewer_count) viewTop.textContent = settings.video_viewer_count;
+      if (viewBtm && settings.video_viewer_count) viewBtm.textContent = settings.video_viewer_count;
+
+      const durText = document.getElementById('video-duration-text');
+      if (durText && settings.video_duration_note) durText.textContent = settings.video_duration_note;
+
+      const mediaBox = document.getElementById('video-media-container');
+      if (mediaBox && settings.video_poster_url && !mediaBox.querySelector('iframe, video')) {
+        mediaBox.style.backgroundImage = `url("${settings.video_poster_url}")`;
+      }
+
+      // Live status pill
+      const livePill = document.getElementById('video-overlay-live-pill');
+      const liveText = document.getElementById('video-overlay-live-text');
+      const liveDot = document.getElementById('video-live-dot');
+      const isLive = settings.video_is_live !== false;
+
+      if (isLive) {
+        if (livePill) livePill.className = 'flex items-center gap-1.5 bg-fest-red/90 text-white font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
+        if (liveText) liveText.textContent = 'LIVE';
+        if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-fest-gold animate-pulse';
+      } else {
+        if (livePill) livePill.className = 'flex items-center gap-1.5 bg-neutral-800/90 text-neutral-300 font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
+        if (liveText) liveText.textContent = 'OFFLINE';
+        if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+      }
+    }
+
+    window.launchStreamPlayback = function() {
+      const mediaBox = document.getElementById('video-media-container');
+      if (!mediaBox) return false;
+
+      const rawUrl = activeVideoSettings?.video_url;
+      const embed = getEmbedUrl(rawUrl);
+
+      if (embed) {
+        if (embed.type === 'video') {
+          mediaBox.innerHTML = `
+            <video class="w-full h-full aspect-video rounded-2xl object-cover" src="${embed.src}" controls autoplay playsinline></video>
+          `;
+        } else {
+          mediaBox.innerHTML = `
+            <iframe class="w-full h-full aspect-video rounded-2xl" src="${embed.src}" title="${activeVideoSettings?.video_title || 'Main Stage Broadcast'}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          `;
+        }
+        if (window.showToast) window.showToast('Now streaming main stage video broadcast');
+        return true;
+      }
+      return false;
+    };
+
+    // Hydrate active settings (Video Section, Ticker & Maintenance Mode)
+    try {
+      const settings = await db.getSettings();
+      if (settings) {
+        hydrateVideoSection(settings);
+
+        if (settings.maintenance_mode) {
+          const maint = document.getElementById('maintenance-overlay');
+          if (maint) maint.classList.remove('hidden');
+        }
+        if (settings.live_ticker_enabled && settings.live_ticker_text) {
+          const tickerBox = document.getElementById('live-ticker-container');
+          const tickerContent = document.getElementById('live-ticker-content');
+          if (tickerBox && tickerContent) {
+            tickerContent.textContent = settings.live_ticker_text;
+            tickerBox.classList.remove('hidden');
+            const mainView = document.getElementById('explore-section');
+            if (mainView) {
+              mainView.classList.remove('pt-20');
+              mainView.classList.add('pt-28');
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load settings:', err);
+    }
+
+    // Hydrate saved delegate pass
+    try {
+      const rawPass = localStorage.getItem('almurafaqa_delegate_pass');
+      const passLabel = document.getElementById('pass-holder-label');
+      const modalLabel = document.getElementById('modal-pass-holder-label');
+      if (rawPass) {
+        const pass = JSON.parse(rawPass);
+        const name = pass.leader_name || pass.full_name || 'Delegate';
+        const code = pass.ticket_code || '---';
+        if (passLabel) passLabel.textContent = `Passholder: ${name} (ID: ${code})`;
+        if (modalLabel) modalLabel.textContent = `Passholder: ${name} (ID: ${code})`;
+      } else {
+        if (passLabel) passLabel.textContent = 'Passholder: No Pass Claimed';
+        if (modalLabel) modalLabel.textContent = 'Passholder: No Pass Claimed';
+      }
+    } catch (err) {
+      console.warn('Could not parse delegate pass:', err);
+    }
+  </script>
+  <!-- Floating Mobile Bottom Navigation Dock (Matching User Menu Bar) -->
+  <aside aria-label="Mobile Navigation Bar" class="md:hidden fixed bottom-4 inset-x-0 z-40 flex justify-center px-3 pointer-events-none">
+    <nav class="pointer-events-auto inline-flex items-center gap-1 p-1.5 rounded-full bg-[#4F0E0E]/95 border border-fest-gold/40 backdrop-blur-xl shadow-2xl shadow-black/70 max-w-full overflow-x-auto scrollbar-none">
+      <a href="#explore-section" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0">
+        <span class="material-symbols-outlined text-[16px]">explore</span>
+        <span>Explore</span>
+      </a>
+      <a href="#video-en-vivo" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0">
+        <span class="material-symbols-outlined text-[16px]">live_tv</span>
+        <span>Live Stage</span>
+      </a>
+      <a href="schedule.html" class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-fest-orange to-fest-red text-white font-body text-[11px] font-bold shadow-md shrink-0">
+        <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+        <span>Schedule</span>
+        <span class="bg-fest-gold text-fest-dark text-[8px] font-extrabold px-1 py-0.2 rounded-full uppercase">LIVE</span>
+      </a>
+      <a href="#thematic-tracks" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0">
+        <span class="material-symbols-outlined text-[16px]">palette</span>
+        <span>Tracks</span>
+      </a>
+      <button type="button" id="mobile-pill-pass-btn" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-body text-[11px] font-semibold shrink-0 cursor-pointer">
+        <span class="material-symbols-outlined text-[16px]">confirmation_number</span>
+        <span>VIP Pass</span>
+      </button>
+    </nav>
+  </aside>
+</body>
+</html>

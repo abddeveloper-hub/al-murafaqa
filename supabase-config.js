@@ -58,6 +58,16 @@ const DEFAULT_SETTINGS = {
   live_ticker_text: '',
   upi_id: '',
   support_phone: '',
+  // Main Page Video Section Controls
+  video_heading: 'Main Stage Broadcast',
+  video_title: 'Mystic Poetry Recital & Qurtuba Ensemble',
+  video_description: 'Live Cultural Stage & Ensemble Performances',
+  video_venue: 'GRAND ANDALUSIAN DOME',
+  video_url: '',
+  video_poster_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBI4u7wM1OZBhGT-FXa7reqYfBd_iL47KqTEKkVKg_Idm8vRlJmbdWzUsd9leeBo8C1iT-u8DngFM0FXGt4ts66akMHNMMhJLX5H6lI38Ip4TNgcxyWt6W6jrtfl8IL1YkL1-zJsck5U9-dkM5NH5LH6IELBONbt9z8WvfI5KOrGwxcxGylyHzbQlrAkuV1nBWBiuu2E9UOdxa5D3h9k-8p5XBeRoQS0gaQ6sVBMXJb',
+  video_is_live: true,
+  video_viewer_count: '4.8k live',
+  video_duration_note: '42 mins remaining',
   updated_at: new Date().toISOString(),
 };
 
@@ -241,15 +251,30 @@ export const db = {
 
   async updateSettings(updates) {
     updates.updated_at = new Date().toISOString();
+    let cloudData = null;
     if (this.isLive()) {
-      const { data, error } = await supabase.from('fest_settings').update(updates).eq('id', 1).select().single();
-      if (error) throw error;
-      if (!data) throw new Error('Festival settings were not returned by Supabase.');
-      localStorage.setItem('almurafaqa_settings', JSON.stringify(data));
-      return data;
+      try {
+        const { data, error } = await supabase.from('fest_settings').update(updates).eq('id', 1).select().single();
+        if (!error && data) {
+          cloudData = data;
+        } else if (error) {
+          console.warn('[Supabase updateSettings]', error.message);
+          // If remote table doesn't have custom columns yet, update core columns
+          const coreFields = ['fest_name', 'registrations_open', 'maintenance_mode', 'live_ticker_enabled', 'live_ticker_text', 'upi_id', 'support_phone', 'updated_at'];
+          const corePayload = {};
+          coreFields.forEach((k) => {
+            if (k in updates) corePayload[k] = updates[k];
+          });
+          if (Object.keys(corePayload).length > 0) {
+            await supabase.from('fest_settings').update(corePayload).eq('id', 1);
+          }
+        }
+      } catch (cloudErr) {
+        console.warn('[Supabase updateSettings catch]', cloudErr);
+      }
     }
     const current = await this.getSettings();
-    const updated = { ...current, ...updates };
+    const updated = { ...current, ...updates, ...(cloudData || {}) };
     localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
     return updated;
   },

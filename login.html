@@ -177,7 +177,7 @@
     <header class="sticky top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-b border-surface-variant/20 pt-safe">
       <div class="h-16 px-margin flex items-center justify-between">
         <div class="flex items-center gap-space-sm">
-          <a href="index.html" aria-label="Return to Festival Home" class="w-11 h-11 flex items-center justify-center rounded-full text-surface-container-lowest hover:bg-surface-variant/20 active:scale-95 transition-all">
+          <a href="home.html" aria-label="Return to Festival Home" class="w-11 h-11 flex items-center justify-center rounded-full text-surface-container-lowest hover:bg-surface-variant/20 active:scale-95 transition-all">
             <span class="material-symbols-outlined text-headline-sm">arrow_back</span>
           </a>
           <div class="flex flex-col">
@@ -186,7 +186,7 @@
           </div>
         </div>
         <div class="flex items-center gap-space-sm">
-          <a href="index.html" aria-label="Support and Help" class="w-11 h-11 flex items-center justify-center rounded-full text-surface-bright hover:text-surface-container-lowest hover:bg-surface-variant/20 active:scale-95 transition-all" title="View Main Gathering">
+          <a href="home.html" aria-label="Support and Help" class="w-11 h-11 flex items-center justify-center rounded-full text-surface-bright hover:text-surface-container-lowest hover:bg-surface-variant/20 active:scale-95 transition-all" title="View Main Gathering">
             <span class="material-symbols-outlined text-headline-sm">help_outline</span>
           </a>
           <div class="p-0.5 rounded-full ring-2 ring-primary-container/40">
@@ -303,7 +303,7 @@
         <!-- Registration Invitation Card -->
         <div class="mt-2 p-3 rounded-lg bg-white border border-surface-variant/25 text-center flex items-center justify-between shadow-sm px-3.5">
           <p class="font-body-sm text-body-sm text-surface-container-high font-medium">Don't have a pass?</p>
-          <a class="font-label-sm text-label-sm text-secondary-container hover:underline flex items-center gap-1 font-bold" href="index.html#schedule-section">
+          <a class="font-label-sm text-label-sm text-secondary-container hover:underline flex items-center gap-1 font-bold" href="schedule.html">
             <span>Register &amp; Claim</span>
             <span class="material-symbols-outlined text-label-sm">arrow_outward</span>
           </a>
@@ -398,7 +398,7 @@
 
             if (found) {
               localStorage.setItem('almurafaqa_delegate_pass', JSON.stringify(found));
-              window.location.href = 'index.html#pass-section';
+              window.location.href = 'home.html#open-pass';
               return;
             } else {
               alert(`Delegate ticket code "${identifier}" was not found. Please verify your ticket code or register at the festival desk.`);
@@ -427,7 +427,7 @@
             db.grantAdminAccess({ email: identifier || 'admin@almurafaqa.com' });
             window.location.href = 'admin.html';
           } else {
-            window.location.href = 'index.html#pass-section';
+            window.location.href = 'home.html#open-pass';
           }
         } catch (err) {
           alert(err.message || 'Sign-in failed. Check your details or contact the festival desk.');
