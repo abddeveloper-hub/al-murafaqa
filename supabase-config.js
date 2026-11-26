@@ -377,6 +377,47 @@ export const db = {
         .single();
 
       if (error) {
+        // If the database is missing newer columns (e.g. video_description, video_url, etc. from schema cache)
+        const isMissingCol =
+          (error.message && (error.message.includes('column') || error.message.includes('schema cache'))) ||
+          error.code === 'PGRST204';
+
+        if (isMissingCol) {
+          console.warn('[Supabase updateSettings] Missing column(s) in remote fest_settings table:', error.message);
+          console.warn('[Supabase updateSettings] Storing settings locally and updating existing base columns in cloud.');
+
+          // Filter to columns present in original base schema
+          const baseCols = new Set([
+            'fest_name',
+            'registrations_open',
+            'maintenance_mode',
+            'live_ticker_enabled',
+            'live_ticker_text',
+            'upi_id',
+            'support_phone',
+            'updated_at',
+          ]);
+          const basePayload = {};
+          for (const key of Object.keys(payload)) {
+            if (baseCols.has(key)) {
+              basePayload[key] = payload[key];
+            }
+          }
+
+          if (Object.keys(basePayload).length > 1) {
+            try {
+              await supabase.from('fest_settings').update(basePayload).eq('id', 1);
+            } catch (retryErr) {
+              console.warn('[Supabase updateSettings base fallback]', retryErr.message);
+            }
+          }
+
+          const current = (await this.getSettings()) || DEFAULT_SETTINGS;
+          const updated = { ...DEFAULT_SETTINGS, ...current, ...payload };
+          localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
+          return updated;
+        }
+
         console.error('[Supabase updateSettings]', error);
         throw error;
       }
