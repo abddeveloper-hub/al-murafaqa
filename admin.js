@@ -3136,3 +3136,347 @@ async function handleJsonRestore() {
 
   reader.readAsText(file);
 }
+
+// ==============================================================================
+// 16. INTERACTIVE HUD, COMMAND PALETTE (CTRL+K) & VISUAL MISSION CONTROL
+// ==============================================================================
+
+let globalAudioMuted = false;
+let audioVisualizerInterval = null;
+
+function setupCommandPalette() {
+  const triggerBtn = document.getElementById('btn-trigger-cmd-palette');
+  const modal = document.getElementById('modal-command-palette');
+  const input = document.getElementById('cmd-palette-input');
+  const resultsContainer = document.getElementById('cmd-palette-results');
+
+  if (!modal || !input) return;
+
+  // Open with Click
+  if (triggerBtn) {
+    triggerBtn.addEventListener('click', () => openCommandPalette());
+  }
+
+  // Global Keyboard Shortcut: Ctrl + K or Cmd + K
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (modal.classList.contains('show')) {
+        closeCommandPalette();
+      } else {
+        openCommandPalette();
+      }
+    } else if (e.key === 'Escape' && modal.classList.contains('show')) {
+      closeCommandPalette();
+    }
+  });
+
+  // Filter Input Listener
+  input.addEventListener('input', () => {
+    filterCommandPalette(input.value);
+  });
+
+  // Global Audio Toggle
+  const btnAudio = document.getElementById('btn-global-audio-toggle');
+  const iconAudio = document.getElementById('icon-global-audio');
+  if (btnAudio) {
+    btnAudio.addEventListener('click', () => {
+      globalAudioMuted = !globalAudioMuted;
+      if (iconAudio) {
+        iconAudio.textContent = globalAudioMuted ? 'volume_off' : 'volume_up';
+      }
+      playTactileClick();
+      showToast(globalAudioMuted ? 'Console audio muted' : 'Console audio active', 'info');
+    });
+  }
+
+  // Lighting Presets in Stage Control Room
+  document.querySelectorAll('.btn-lighting-preset').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-lighting-preset').forEach((b) => {
+        b.classList.remove('active', 'bg-amber-500/20', 'text-amber-300', 'border-amber-400/40');
+        b.classList.add('bg-white/5', 'text-slate-300', 'border-white/10');
+      });
+      btn.classList.add('active', 'bg-amber-500/20', 'text-amber-300', 'border-amber-400/40');
+      btn.classList.remove('bg-white/5', 'text-slate-300', 'border-white/10');
+      
+      const preset = btn.getAttribute('data-preset');
+      playTactileClick();
+      logAudit('LIGHTING_PRESET_CHANGED', `Auditorium lighting ambience set to ${preset.toUpperCase()}`);
+      showToast(`Auditorium lighting preset set to ${btn.textContent.trim()}`, 'info');
+    });
+  });
+
+  // Start continuous audio wave simulator
+  startAudioWaveSimulator();
+}
+
+function openCommandPalette() {
+  const modal = document.getElementById('modal-command-palette');
+  const input = document.getElementById('cmd-palette-input');
+  if (!modal || !input) return;
+
+  modal.classList.add('show');
+  input.value = '';
+  filterCommandPalette('');
+  setTimeout(() => input.focus(), 80);
+  playTactileClick();
+}
+
+function closeCommandPalette() {
+  const modal = document.getElementById('modal-command-palette');
+  if (modal) modal.classList.remove('show');
+}
+
+function filterCommandPalette(query) {
+  const container = document.getElementById('cmd-palette-results');
+  if (!container) return;
+
+  const q = (query || '').toLowerCase().trim();
+
+  // Core System Actions List
+  const actions = [
+    { title: 'Launch Live Camera Scanner', desc: 'Scan delegate QR pass with webcam', icon: 'photo_camera', action: () => { closeCommandPalette(); switchTab('checkin'); startLiveCameraScanner(); } },
+    { title: 'Deploy Performer to Stage', desc: 'Open stage control room & call next team', icon: 'theater_comedy', action: () => { closeCommandPalette(); switchTab('stageops'); } },
+    { title: 'Stage Schedule Delay +15 Mins', desc: 'Bump active stage schedule buffer by 15 mins', icon: 'fast_forward', action: () => { closeCommandPalette(); switchTab('stageops'); handleStageDelay(15); } },
+    { title: 'Jury Adjudication & Evaluation', desc: 'Score active competitor with rubric', icon: 'gavel', action: () => { closeCommandPalette(); switchTab('scoring'); } },
+    { title: 'Push Scored Laureates to Podium', desc: 'Auto-publish top 3 scored teams to frontpage', icon: 'publish', action: () => { closeCommandPalette(); switchTab('scoring'); pushLeaderboardToPodium(); } },
+    { title: 'Championship Trophy Standings', desc: 'View institutional points leaderboard', icon: 'military_tech', action: () => { closeCommandPalette(); switchTab('analytics'); } },
+    { title: 'Download Full JSON Cloud Snapshot', desc: 'Export complete festival state archive', icon: 'cloud_download', action: () => { closeCommandPalette(); downloadJsonBackup(); } },
+    { title: 'Broadcast Live Stage Alert', desc: 'Send urgent message to public ticker', icon: 'podium', action: () => { closeCommandPalette(); switchTab('announcements'); } },
+    { title: 'Switch to Executive Admin', desc: 'Full console privileges view', icon: 'shield_person', action: () => { closeCommandPalette(); setActiveRole('superadmin'); } },
+    { title: 'Switch to Jury Adjudicator View', desc: 'Filter console for evaluation desk', icon: 'gavel', action: () => { closeCommandPalette(); setActiveRole('jury'); } },
+    { title: 'Switch to Accreditation Officer', desc: 'Filter console for gate check-in desk', icon: 'qr_code_scanner', action: () => { closeCommandPalette(); setActiveRole('marshal'); } },
+  ];
+
+  // Match Actions
+  const matchedActions = actions.filter((a) => !q || a.title.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q));
+
+  // Match Registered Attendees
+  const regs = cachedRegistrations || [];
+  const matchedRegs = q ? regs.filter((r) => 
+    r.ticket_code?.toLowerCase().includes(q) || 
+    r.leader_name?.toLowerCase().includes(q) || 
+    r.college_name?.toLowerCase().includes(q) ||
+    r.team_name?.toLowerCase().includes(q)
+  ).slice(0, 5) : [];
+
+  let html = '';
+
+  if (matchedActions.length > 0) {
+    html += '<div class="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Quick Operations</div>';
+    html += matchedActions.map((item, idx) => `
+      <div class="cmd-item p-2.5 rounded-xl hover:bg-red-50 hover:border-red-200 border border-transparent cursor-pointer flex items-center justify-between text-slate-800 transition-colors" data-idx="${idx}">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+            <span class="material-symbols-outlined text-[18px]">${item.icon}</span>
+          </div>
+          <div>
+            <span class="font-bold block text-slate-900">${escapeHtml(item.title)}</span>
+            <span class="text-[11px] text-slate-500">${escapeHtml(item.desc)}</span>
+          </div>
+        </div>
+        <span class="text-[10px] font-mono font-semibold text-slate-400 uppercase">Action ↵</span>
+      </div>
+    `).join('');
+  }
+
+  if (matchedRegs.length > 0) {
+    html += '<div class="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-slate-100 mt-2">Delegation Matches</div>';
+    html += matchedRegs.map((reg) => `
+      <div class="cmd-reg-item p-2.5 rounded-xl hover:bg-slate-100 cursor-pointer flex items-center justify-between transition-colors" data-code="${escapeHtml(reg.ticket_code)}">
+        <div class="flex items-center gap-2.5">
+          <span class="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-slate-200 text-slate-800">${escapeHtml(reg.ticket_code)}</span>
+          <div>
+            <strong class="text-slate-900 block text-xs">${escapeHtml(reg.leader_name)}</strong>
+            <span class="text-[10px] text-slate-500">${escapeHtml(reg.college_name)}</span>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold text-emerald-700">${reg.checked_in ? 'CHECKED IN' : 'PENDING'}</span>
+      </div>
+    `).join('');
+  }
+
+  if (matchedActions.length === 0 && matchedRegs.length === 0) {
+    html = '<div class="text-center py-8 text-xs text-slate-400">No commands or attendees matching "' + escapeHtml(q) + '"</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Click listeners for actions
+  container.querySelectorAll('.cmd-item').forEach((el) => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.getAttribute('data-idx') || '0', 10);
+      playTactileClick();
+      matchedActions[idx].action();
+    });
+  });
+
+  // Click listeners for attendee matches
+  container.querySelectorAll('.cmd-reg-item').forEach((el) => {
+    el.addEventListener('click', () => {
+      const code = el.getAttribute('data-code');
+      closeCommandPalette();
+      switchTab('checkin');
+      const ticketInput = document.getElementById('checkin-ticket-input');
+      if (ticketInput) {
+        ticketInput.value = code;
+        const searchForm = document.getElementById('checkin-search-form');
+        if (searchForm) searchForm.dispatchEvent(new Event('submit'));
+      }
+    });
+  });
+}
+
+function playTactileClick() {
+  if (globalAudioMuted) return;
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.04);
+
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  } catch (e) {}
+}
+
+function startAudioWaveSimulator() {
+  if (audioVisualizerInterval) clearInterval(audioVisualizerInterval);
+
+  audioVisualizerInterval = setInterval(() => {
+    const barsContainer = document.getElementById('stage-audio-bars');
+    const dbEl = document.getElementById('stage-audio-db');
+    if (!barsContainer) return;
+
+    const bars = barsContainer.querySelectorAll('.sound-bar');
+    bars.forEach((bar) => {
+      const scale = (0.2 + Math.random() * 0.8).toFixed(2);
+      bar.style.transform = `scaleY(${scale})`;
+    });
+
+    if (dbEl) {
+      const db = (-12.0 - Math.random() * 8.5).toFixed(1);
+      dbEl.textContent = `${db} dB`;
+    }
+  }, 180);
+}
+
+// Enhance Podium Rendering in renderAnalyticsTab
+function updateVisualPodium(rankedColleges) {
+  const p1Col = document.getElementById('podium-1-college');
+  const p1Pts = document.getElementById('podium-1-pts');
+  const p2Col = document.getElementById('podium-2-college');
+  const p2Pts = document.getElementById('podium-2-pts');
+  const p3Col = document.getElementById('podium-3-college');
+  const p3Pts = document.getElementById('podium-3-pts');
+
+  if (rankedColleges && rankedColleges.length > 0) {
+    if (p1Col && rankedColleges[0]) {
+      p1Col.textContent = rankedColleges[0].name;
+      if (p1Pts) p1Pts.textContent = `${rankedColleges[0].points} Pts`;
+    }
+    if (p2Col && rankedColleges[1]) {
+      p2Col.textContent = rankedColleges[1].name;
+      if (p2Pts) p2Pts.textContent = `${rankedColleges[1].points} Pts`;
+    } else if (p2Col) {
+      p2Col.textContent = 'Awaiting 2nd Place';
+      if (p2Pts) p2Pts.textContent = '0 Pts';
+    }
+    if (p3Col && rankedColleges[2]) {
+      p3Col.textContent = rankedColleges[2].name;
+      if (p3Pts) p3Pts.textContent = `${rankedColleges[2].points} Pts`;
+    } else if (p3Col) {
+      p3Col.textContent = 'Awaiting 3rd Place';
+      if (p3Pts) p3Pts.textContent = '0 Pts';
+    }
+  } else {
+    if (p1Col) p1Col.textContent = 'Awaiting Championship Results';
+    if (p1Pts) p1Pts.textContent = '0 Pts';
+    if (p2Col) p2Col.textContent = 'Awaiting Silver Contender';
+    if (p2Pts) p2Pts.textContent = '0 Pts';
+    if (p3Col) p3Col.textContent = 'Awaiting Bronze Contender';
+    if (p3Pts) p3Pts.textContent = '0 Pts';
+  }
+}
+
+// Enhance updateFinalScoreCalculation with Dynamic Radial SVG Ring & Tier
+const originalUpdateFinalScoreCalculation = updateFinalScoreCalculation;
+updateFinalScoreCalculation = function() {
+  originalUpdateFinalScoreCalculation();
+
+  const totalEl = document.getElementById('score-final-total');
+  const ringCircle = document.getElementById('score-ring-circle');
+  const tierEl = document.getElementById('score-honors-tier');
+
+  const total = parseInt(totalEl?.textContent || '0', 10);
+
+  // Total circumference for r=30 is ~188.5
+  const circumference = 188.5;
+  const offset = Math.max(0, circumference - (circumference * total) / 100);
+
+  if (ringCircle) {
+    ringCircle.style.strokeDashoffset = offset;
+    if (total >= 90) {
+      ringCircle.style.stroke = '#C88A3C'; // Gold
+    } else if (total >= 80) {
+      ringCircle.style.stroke = '#2563EB'; // Royal Blue
+    } else if (total >= 70) {
+      ringCircle.style.stroke = '#059669'; // Emerald
+    } else {
+      ringCircle.style.stroke = '#7F011F'; // Andalusian Maroon
+    }
+  }
+
+  if (tierEl) {
+    if (total >= 90) {
+      tierEl.textContent = 'Grand Laureate of the Highest Academic Distinction';
+      tierEl.className = 'px-3 py-1 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 font-headline font-bold text-xs tracking-tight shadow-sm';
+    } else if (total >= 80) {
+      tierEl.textContent = 'First Class Distinction & High Commendation';
+      tierEl.className = 'px-3 py-1 rounded-xl bg-slate-100 text-slate-900 border border-slate-300 font-headline font-bold text-xs tracking-tight shadow-sm';
+    } else if (total >= 70) {
+      tierEl.textContent = 'Certificate of Merit & Academic Honor';
+      tierEl.className = 'px-3 py-1 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-300 font-headline font-bold text-xs tracking-tight shadow-sm';
+    } else {
+      tierEl.textContent = 'Official Certificate of Participation';
+      tierEl.className = 'px-3 py-1 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 font-headline font-bold text-xs tracking-tight';
+    }
+  }
+};
+
+// Hook renderAnalyticsTab to update visual 3D podium
+const originalRenderAnalyticsTab = renderAnalyticsTab;
+renderAnalyticsTab = async function() {
+  await originalRenderAnalyticsTab();
+
+  const winners = cachedWinners || [];
+  const colleges = {};
+
+  winners.forEach((w) => {
+    const col = (w.college_name || 'Autonomous Scholar').trim();
+    if (!colleges[col]) {
+      colleges[col] = { name: col, gold: 0, silver: 0, bronze: 0, points: 0 };
+    }
+    if (w.position === 1) colleges[col].points += 10;
+    else if (w.position === 2) colleges[col].points += 7;
+    else if (w.position === 3) colleges[col].points += 5;
+  });
+
+  const rankedColleges = Object.values(colleges).sort((a, b) => b.points - a.points);
+  updateVisualPodium(rankedColleges);
+};
+
+// Auto-initialize Command Palette on load
+document.addEventListener('DOMContentLoaded', () => {
+  setupCommandPalette();
+});

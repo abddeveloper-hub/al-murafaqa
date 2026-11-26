@@ -170,6 +170,51 @@
     }
   </style>
 
+
+  <style>
+    /* Laser Scan Sweep Animation */
+    @keyframes laserSweep {
+      0% { top: 0%; opacity: 0.8; }
+      50% { top: 96%; opacity: 1; }
+      100% { top: 0%; opacity: 0.8; }
+    }
+    .laser-line {
+      position: absolute;
+      left: 4%;
+      right: 4%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #ef4444, #f59e0b, #ef4444, transparent);
+      box-shadow: 0 0 16px 3px rgba(239, 68, 68, 0.7);
+      animation: laserSweep 2.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* Soundwave Audio Bars */
+    @keyframes soundBarPulse {
+      0%, 100% { transform: scaleY(0.2); }
+      50% { transform: scaleY(1); }
+    }
+    .sound-bar {
+      transform-origin: bottom;
+      animation: soundBarPulse 1.2s ease-in-out infinite;
+    }
+
+    /* Podium Pedestal Shimmer */
+    @keyframes goldShimmer {
+      0% { box-shadow: 0 0 15px rgba(200, 138, 60, 0.3); }
+      50% { box-shadow: 0 0 35px rgba(200, 138, 60, 0.65), 0 0 10px rgba(255, 250, 237, 0.5); }
+      100% { box-shadow: 0 0 15px rgba(200, 138, 60, 0.3); }
+    }
+    .gold-pedestal-glow {
+      animation: goldShimmer 3s ease-in-out infinite;
+    }
+
+    /* Score Ring Transition */
+    #score-ring-circle {
+      transition: stroke-dashoffset 0.35s ease, stroke 0.35s ease;
+    }
+  </style>
+
 </head>
 <body class="bg-white font-body-md text-slate-900 antialiased selection:bg-red-500 selection:text-white">
 
@@ -357,9 +402,13 @@
           <button id="mobile-menu-toggle" class="md:hidden w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
             <span class="material-symbols-outlined text-[24px]">menu</span>
           </button>
-          <div class="relative flex-1 flex items-center">
+                    <!-- Search with Command Palette Hotkey Trigger -->
+          <div class="relative flex-1 flex items-center cursor-pointer" id="btn-trigger-cmd-palette">
             <span class="material-symbols-outlined absolute left-space-md text-slate-400 pointer-events-none text-[20px]">search</span>
-            <input id="global-search-input" class="w-full h-11 pl-11 pr-space-md bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 font-body-md text-body-md rounded-xl focus:outline-none focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all" placeholder="Search artists, panels, stages, passes..." type="text"/>
+            <input id="global-search-input" class="w-full h-11 pl-11 pr-20 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 font-body-md text-body-md rounded-xl focus:outline-none focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all cursor-pointer" placeholder="Search or press ⌘K for instant commands..." type="text" readonly/>
+            <div class="absolute right-3 flex items-center gap-1 pointer-events-none">
+              <kbd class="px-1.5 py-0.5 rounded bg-slate-200 border border-slate-300 text-[10px] font-mono font-bold text-slate-600 shadow-xs">⌘K</kbd>
+            </div>
           </div>
         </div>
 
@@ -385,6 +434,10 @@
               <span class="hidden sm:inline">Live Site</span>
             </a>
 
+                        <!-- Global Console Audio Mute/Unmute -->
+            <button id="btn-global-audio-toggle" class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors" title="Toggle Console Sound Effects" type="button">
+              <span class="material-symbols-outlined text-[19px]" id="icon-global-audio">volume_up</span>
+            </button>
             <button aria-label="Festival Status Alerts" class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors relative" type="button" onclick="window.switchTab('announcements')">
               <span class="material-symbols-outlined text-[20px]">notifications</span>
               <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-600 ring-2 ring-white"></span>
@@ -1073,6 +1126,49 @@
                     </span>
                   </div>
 
+                  <!-- Real-Time Audio Frequency Waveform Visualizer -->
+                  <div class="p-3 bg-black/50 border border-white/10 rounded-xl flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span class="text-[11px] font-mono font-semibold uppercase text-emerald-400">Stage Audio Ingress</span>
+                    </div>
+
+                    <!-- Dynamic SVG Audio Visualizer Bars -->
+                    <div class="flex items-end gap-1 h-6 px-2 overflow-hidden" id="stage-audio-bars">
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.1s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.3s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.2s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.5s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.15s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.4s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.25s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.35s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.1s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.45s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.3s;"></span>
+                      <span class="sound-bar w-1 bg-gradient-to-t from-red-600 to-amber-400 rounded-t h-full" style="animation-delay: 0.2s;"></span>
+                    </div>
+
+                    <span class="text-[10px] font-mono text-slate-400 font-bold" id="stage-audio-db">-14.2 dB</span>
+                  </div>
+
+                  <!-- Auditorium Atmosphere & Lighting Presets -->
+                  <div class="pt-2 flex flex-wrap items-center gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Lighting Preset:</span>
+                    <button type="button" class="btn-lighting-preset active px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/40 transition-all" data-preset="lantern">
+                      Warm Lantern Glow
+                    </button>
+                    <button type="button" class="btn-lighting-preset px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-all" data-preset="spotlight">
+                      Qalam Spotlight
+                    </button>
+                    <button type="button" class="btn-lighting-preset px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-all" data-preset="grand">
+                      Grand Auditorium
+                    </button>
+                    <button type="button" class="btn-lighting-preset px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-all" data-preset="dim">
+                      Intermission Dim
+                    </button>
+                  </div>
+
                   <!-- Live Performance Stopwatch & Controls -->
                   <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
@@ -1692,15 +1788,31 @@
                   <input type="text" id="score-penalty-reason" class="w-full h-8 px-2.5 bg-white border border-red-200 rounded-lg text-xs text-slate-700 placeholder:text-slate-400" placeholder="Penalty note / reason (optional)">
                 </div>
 
-                <!-- Score Total Card & Submit Button -->
+                <!-- Dynamic Honors Tier & Interactive Score Ring Meter -->
                 <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div class="flex items-center gap-3">
-                    <div class="w-14 h-14 rounded-2xl bg-slate-900 text-amber-400 font-extrabold flex items-center justify-center font-mono text-2xl shadow-inner border border-slate-700">
-                      <span id="score-final-total">86</span>
+                  
+                  <div class="flex items-center gap-4">
+                    <!-- SVG Circular Radial Speedometer Gauge -->
+                    <div class="relative w-18 h-18 flex items-center justify-center">
+                      <svg class="w-18 h-18 transform -rotate-90" viewBox="0 0 72 72">
+                        <circle cx="36" cy="36" r="30" stroke="#E2E8F0" stroke-width="6" fill="transparent"/>
+                        <circle id="score-ring-circle" cx="36" cy="36" r="30" stroke="#7F011F" stroke-width="6" stroke-linecap="round" fill="transparent" stroke-dasharray="188.5" stroke-dashoffset="26"/>
+                      </svg>
+                      <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span id="score-final-total" class="font-mono text-2xl font-extrabold text-slate-900 leading-none">86</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">/ 100</span>
+                      </div>
                     </div>
-                    <div>
-                      <span class="text-xs font-bold text-slate-800 uppercase block">Total Final Mark</span>
-                      <span class="text-[11px] text-slate-500">Calculated sum with deductions</span>
+
+                    <!-- Dynamic Honors Tier Classification -->
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Award Classification</span>
+                      </div>
+                      <div id="score-honors-tier" class="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/15 via-red-600/10 to-amber-500/15 border border-amber-300 text-amber-900 font-headline font-bold text-xs tracking-tight shadow-xs">
+                        First Class Laureate Distinction
+                      </div>
+                      <span class="text-[10px] text-slate-500 block">Weighted average of 4 criteria &amp; rule penalties</span>
                     </div>
                   </div>
 
@@ -1870,6 +1982,70 @@
               </button>
             </div>
           </div>
+
+          
+          <!-- Interactive 3D Visual Championship Podium Pedestal -->
+          <div class="bg-gradient-to-b from-slate-900 via-neutral-900 to-[#1F0712] p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#C88A3C]/20 via-transparent to-transparent pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 mb-8 relative z-10 gap-3">
+              <div>
+                <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-400 font-bold block mb-1">
+                  OFFICIAL FESTIVAL TROPHY ARENA
+                </span>
+                <h3 class="font-headline text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                  Grand Championship Podium Stage
+                </h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                  Live Recalculating
+                </span>
+              </div>
+            </div>
+
+            <!-- 3 Architectural Illuminated Pedestals -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-6 items-end max-w-2xl mx-auto pt-6 pb-2 relative z-10 text-center">
+              
+              <!-- 2nd Place Silver Pedestal (Left, Medium Height) -->
+              <div class="flex flex-col items-center">
+                <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-slate-200 border-2 border-white text-slate-800 flex items-center justify-center font-bold font-mono text-sm sm:text-lg shadow-lg mb-3">
+                  2ND
+                </div>
+                <strong id="podium-2-college" class="text-white text-xs sm:text-sm font-bold block truncate max-w-full px-1">Silver Contender</strong>
+                <span id="podium-2-pts" class="text-slate-400 font-mono text-xs font-semibold mt-0.5 block">0 Pts</span>
+                <div class="w-full h-28 sm:h-36 bg-gradient-to-t from-slate-800 to-slate-700/80 rounded-t-2xl border-t-2 border-slate-400 shadow-xl mt-3 flex flex-col justify-end pb-3 text-slate-300 font-mono text-xs">
+                  <span class="font-bold text-slate-200">SILVER</span>
+                </div>
+              </div>
+
+              <!-- 1st Place Gold Pedestal (Center, Tallest, Glowing) -->
+              <div class="flex flex-col items-center">
+                <div class="w-14 h-14 sm:w-18 sm:h-18 rounded-3xl bg-gradient-to-br from-amber-300 via-amber-400 to-[#C88A3C] border-2 border-white text-[#2D101A] flex items-center justify-center font-extrabold font-mono text-lg sm:text-2xl shadow-2xl mb-3 gold-pedestal-glow">
+                  1ST
+                </div>
+                <strong id="podium-1-college" class="text-amber-300 text-sm sm:text-base font-extrabold block truncate max-w-full px-1 drop-shadow-sm">Grand Champion</strong>
+                <span id="podium-1-pts" class="text-amber-400/90 font-mono text-xs sm:text-sm font-bold mt-0.5 block">0 Pts</span>
+                <div class="w-full h-36 sm:h-48 bg-gradient-to-t from-[#4A0E1F] via-[#7F011F] to-[#C88A3C]/70 rounded-t-2xl border-t-4 border-amber-300 shadow-2xl mt-3 flex flex-col justify-end pb-4 text-white font-mono text-xs sm:text-sm">
+                  <span class="font-extrabold tracking-wider text-amber-200 uppercase">CHAMPION</span>
+                </div>
+              </div>
+
+              <!-- 3rd Place Bronze Pedestal (Right, Lower Height) -->
+              <div class="flex flex-col items-center">
+                <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-amber-900/80 border-2 border-amber-600/60 text-amber-200 flex items-center justify-center font-bold font-mono text-sm sm:text-lg shadow-lg mb-3">
+                  3RD
+                </div>
+                <strong id="podium-3-college" class="text-white text-xs sm:text-sm font-bold block truncate max-w-full px-1">Bronze Contender</strong>
+                <span id="podium-3-pts" class="text-slate-400 font-mono text-xs font-semibold mt-0.5 block">0 Pts</span>
+                <div class="w-full h-20 sm:h-28 bg-gradient-to-t from-neutral-900 to-[#3F1B0B] rounded-t-2xl border-t-2 border-amber-700 shadow-xl mt-3 flex flex-col justify-end pb-3 text-amber-400/80 font-mono text-xs">
+                  <span class="font-bold text-amber-500">BRONZE</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
 
           <!-- Top Analytics KPI Cards -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2251,10 +2427,24 @@
         <button type="button" class="btn-close-modal btn-icon">&times;</button>
       </div>
       <div class="modal-body space-y-4 text-center">
-        <!-- Camera Viewport Container -->
-        <div class="relative w-full aspect-square max-w-[360px] mx-auto rounded-2xl overflow-hidden bg-black border-2 border-red-600 shadow-xl flex items-center justify-center">
+        <!-- High-Tech Camera HUD Viewport with Animated Laser Sweep -->
+        <div class="relative w-full aspect-square max-w-[360px] mx-auto rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl flex items-center justify-center">
           <div id="qr-camera-viewport" class="w-full h-full"></div>
-          <div class="absolute inset-0 border-2 border-dashed border-red-500/60 pointer-events-none m-8 rounded-xl"></div>
+          
+          <!-- Animated Laser Sweep Beam -->
+          <div class="laser-line"></div>
+
+          <!-- 4 Ornate Targeting Reticles on Corners -->
+          <div class="absolute top-4 left-4 w-6 h-6 border-t-3 border-l-3 border-amber-400 pointer-events-none"></div>
+          <div class="absolute top-4 right-4 w-6 h-6 border-t-3 border-r-3 border-amber-400 pointer-events-none"></div>
+          <div class="absolute bottom-4 left-4 w-6 h-6 border-b-3 border-l-3 border-amber-400 pointer-events-none"></div>
+          <div class="absolute bottom-4 right-4 w-6 h-6 border-b-3 border-r-3 border-amber-400 pointer-events-none"></div>
+          
+          <div class="absolute bottom-3 inset-x-0 mx-auto text-center pointer-events-none">
+            <span class="px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-[10px] font-mono text-amber-300 font-bold uppercase tracking-wider border border-white/10">
+              Align Pass QR Code Within Brackets
+            </span>
+          </div>
         </div>
 
         <div class="flex items-center justify-between text-xs text-slate-500 px-2">
@@ -2396,6 +2586,35 @@
           <span>Print All Badges</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  
+  <!-- ================= SPOTLIGHT COMMAND PALETTE (CTRL + K) ================= -->
+  <div id="modal-command-palette" class="modal-backdrop">
+    <div class="modal-box max-w-xl p-0 bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-2xl rounded-2xl overflow-hidden animate-scale-up">
+      
+      <!-- Search Input Header -->
+      <div class="p-4 border-b border-slate-200 flex items-center gap-3 bg-slate-50/50">
+        <span class="material-symbols-outlined text-slate-400 text-[24px]">terminal</span>
+        <input type="text" id="cmd-palette-input" class="w-full bg-transparent border-0 text-base font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none" placeholder="Type a command or search attendee, ticket code, action..." autofocus>
+        <kbd class="px-2 py-0.5 rounded bg-slate-200 border border-slate-300 text-[10px] font-mono font-bold text-slate-600">ESC</kbd>
+      </div>
+
+      <!-- Command Quick Actions & Search Results List -->
+      <div id="cmd-palette-results" class="max-h-[380px] overflow-y-auto p-2 space-y-1 text-xs">
+        <!-- Dynamically rendered commands and search matches -->
+      </div>
+
+      <!-- Footer Hints -->
+      <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <span>Navigate with <kbd class="px-1 bg-white border border-slate-300 rounded text-[9px] font-mono">↑</kbd> <kbd class="px-1 bg-white border border-slate-300 rounded text-[9px] font-mono">↓</kbd></span>
+          <span>Select with <kbd class="px-1 bg-white border border-slate-300 rounded text-[9px] font-mono">↵</kbd></span>
+        </span>
+        <span class="font-mono text-slate-400">Al Murafaqa Executive CLI</span>
+      </div>
+
     </div>
   </div>
 
