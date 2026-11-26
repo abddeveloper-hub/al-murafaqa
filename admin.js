@@ -270,26 +270,6 @@ function setupEventListeners() {
     btnQuickExport.addEventListener('click', exportRegistrationsCSV);
   }
 
-  // Overview Camera Feed & Fullscreen Controls
-  const btnCamSwitch = document.getElementById('btn-cam-switch');
-  if (btnCamSwitch) {
-    btnCamSwitch.addEventListener('click', () => {
-      showToast('Switched to Cam 2: Wide Crane stage perspective', 'info');
-    });
-  }
-
-  const btnFullscreen = document.getElementById('btn-overview-fullscreen');
-  if (btnFullscreen) {
-    btnFullscreen.addEventListener('click', () => {
-      const container = document.getElementById('overview-video-container') || document.documentElement;
-      if (!document.fullscreenElement) {
-        container.requestFullscreen?.().catch(() => showToast('Fullscreen mode activated', 'info'));
-      } else {
-        document.exitFullscreen?.();
-      }
-    });
-  }
-
   // Global Search Input
   const globalSearch = document.getElementById('global-search-input');
   if (globalSearch) {
@@ -528,20 +508,6 @@ function renderOverview() {
   renderCapacityGauges();
   renderOverviewProgrammes();
   renderOverviewTelemetry();
-
-  // Sync Overview Stage Video Widget
-  if (cachedSettings) {
-    const elVenue = document.getElementById('overview-video-venue');
-    const elTitle = document.getElementById('overview-video-title');
-    const elDesc = document.getElementById('overview-video-desc');
-    const elViewers = document.getElementById('overview-video-viewers');
-    const elStatus = document.getElementById('overview-video-status');
-    if (elVenue) elVenue.textContent = cachedSettings.video_venue || 'LIVE TRANSMISSION STREAM';
-    if (elTitle) elTitle.textContent = cachedSettings.video_title || 'Main Cultural Stage Broadcast';
-    if (elDesc) elDesc.textContent = cachedSettings.video_description || 'Live Auditorium Cam 01';
-    if (elViewers) elViewers.textContent = cachedSettings.video_viewer_count || 'Stage Feed Active';
-    if (elStatus) elStatus.textContent = cachedSettings.video_is_live ? 'Broadcasting Live' : 'Feed Standby';
-  }
 }
 
 function renderOverviewTelemetry() {
