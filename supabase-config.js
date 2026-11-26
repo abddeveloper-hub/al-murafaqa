@@ -110,7 +110,7 @@ if (isConfigured) {
 // ------------------------------------------------------------------------------
 const DEFAULT_SETTINGS = {
   id: 1,
-  fest_name: 'Al Murafaqa • 5th Edition',
+  fest_name: 'Al Murafaqa • QUINTA EDICION',
   registrations_open: true,
   maintenance_mode: false,
   live_ticker_enabled: false,
@@ -881,7 +881,7 @@ export const db = {
     return {
       version: '5.0',
       export_date: new Date().toISOString(),
-      fest_name: 'Al Murafaqa • 5th Edition',
+      fest_name: 'Al Murafaqa • QUINTA EDICION',
       collections: {
         settings,
         events,

@@ -1,5 +1,5 @@
 // ==============================================================================
-// AL MURAFAQA • 5TH EDITION — TEAM LEADER PORTAL CONTROLLER (leader.js)
+// AL MURAFAQA • QUINTA EDICION — TEAM LEADER PORTAL CONTROLLER (leader.js)
 // Vanilla ES Module with Token Access, Student Roster & Programme Allocation Desk
 // ==============================================================================
 
