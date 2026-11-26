@@ -830,10 +830,11 @@
               <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
+                    <th class="py-3.5 px-4 w-28">Code</th>
                     <th class="py-3.5 px-6">Competition Title</th>
-                    <th class="py-3.5 px-4">Category</th>
-                    <th class="py-3.5 px-4">Schedule &amp; Venue</th>
-                    <th class="py-3.5 px-4">Capacity Gauge</th>
+                    <th class="py-3.5 px-4">Team Quota</th>
+                    <th class="py-3.5 px-4">Schedule &amp; Stage</th>
+                    <th class="py-3.5 px-4">Capacity</th>
                     <th class="py-3.5 px-4 text-center">Featured</th>
                     <th class="py-3.5 px-4">Status</th>
                     <th class="py-3.5 px-6 text-right">Actions</th>
@@ -1235,6 +1236,10 @@
                 <span class="material-symbols-outlined text-[18px]">open_in_new</span>
                 <span>Open Leader Portal</span>
               </a>
+              <button type="button" id="btn-open-team-leader-add-programme" onclick="window.openAddProgrammeModal()" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                <span>+ Add Programme</span>
+              </button>
               <button type="button" id="btn-open-team-leader-add-team" onclick="window.openAddTeamModal()" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all active:scale-[0.98]">
                 <span class="material-symbols-outlined text-[18px]">group_add</span>
                 <span>+ Register New Team</span>
@@ -2413,99 +2418,242 @@
 
   <!-- ================= 5. POPUP MODALS ================= -->
 
-  <!-- Add/Edit Event Modal -->
+  <!-- ================= MODAL: ADD / EDIT COMPETITION PROGRAMME ================= -->
   <div id="modal-event" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 id="modal-event-title">Add New Competition Event</h3>
-        <button type="button" class="btn-close-modal btn-icon">&times;</button>
+    <div class="modal-box max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="modal-header bg-slate-900 text-white p-4.5 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[20px]">event_note</span>
+          </div>
+          <div>
+            <h3 id="modal-event-title" class="text-white font-bold text-base">Add New Competition Programme</h3>
+            <p class="text-xs text-slate-400">Configure code, team size rules, date/time schedule, and guidelines</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-white hover:text-red-400">&times;</button>
       </div>
-      <form id="form-event-editor">
+
+      <form id="form-event-editor" class="flex-1 overflow-y-auto custom-scroll flex flex-col min-h-0">
         <input type="hidden" id="event-edit-id">
-        <div class="modal-body space-y-3.5">
+        <div class="p-5 sm:p-6 space-y-4 text-xs">
+          
+          <!-- SECTION 1: PROGRAMME CODE & ESSENTIAL DETAILS -->
+          <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[15px] text-red-600">tag</span>
+              <span>Programme Identification &amp; Category</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="evt-code" class="block font-bold text-slate-700">Programme Code *</label>
+                  <button type="button" id="btn-gen-event-code" class="text-[10px] text-red-600 hover:text-red-800 font-bold flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-[12px]">refresh</span>
+                    <span>Generate</span>
+                  </button>
+                </div>
+                <input type="text" id="evt-code" required placeholder="e.g. PRG-101" class="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl font-mono font-bold text-slate-900 text-xs uppercase focus:outline-none focus:border-red-600">
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="evt-title" class="block font-bold text-slate-700 mb-1">Programme / Competition Title *</label>
+                <input type="text" id="evt-title" required placeholder="e.g. Grand Andalusian Debate Championship" class="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-red-600">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="evt-category" class="block font-bold text-slate-700 mb-1">Category / Section *</label>
+                <select id="evt-category" class="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-red-600">
+                  <option value="Senior">Senior</option>
+                  <option value="Junior">Junior</option>
+                  <option value="Sub-Junior">Sub-Junior</option>
+                  <option value="General">General / Open</option>
+                  <option value="Oratory">Oratory &amp; Elocution</option>
+                  <option value="Arts">Traditional Arts &amp; Calligraphy</option>
+                  <option value="Literature">Literary &amp; Poetry</option>
+                  <option value="Music">Vocal &amp; Ensemble</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="evt-participation-type" class="block font-bold text-slate-700 mb-1">Participation Mode *</label>
+                <select id="evt-participation-type" class="w-full h-10 px-3 bg-white border border-slate-300 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-red-600">
+                  <option value="individual">Individual (Solo Participant)</option>
+                  <option value="team">Team / Squad Competition</option>
+                  <option value="both">Both Solo &amp; Team Allowed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: TEAM LIMITS & QUOTA (Assign of how many can join from a team) -->
+          <div class="p-3.5 bg-purple-50/60 border border-purple-200 rounded-xl space-y-3">
+            <div class="text-[11px] font-bold text-purple-900 uppercase tracking-wider flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px] text-purple-700">groups</span>
+                <span>Team Size &amp; Delegation Quotas</span>
+              </span>
+              <span class="text-[10px] text-purple-700 font-normal">Controls how many join from each delegation</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label for="evt-team-min" class="block font-bold text-slate-700 mb-1">Min Per Team *</label>
+                <input type="number" id="evt-team-min" value="1" min="1" max="50" required class="w-full h-10 px-3 bg-white border border-purple-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-purple-600">
+                <span class="text-[10px] text-slate-500">Min squad size</span>
+              </div>
+
+              <div>
+                <label for="evt-team-max" class="block font-bold text-slate-700 mb-1">Max Per Team *</label>
+                <input type="number" id="evt-team-max" value="1" min="1" max="50" required class="w-full h-10 px-3 bg-white border border-purple-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-purple-600">
+                <span class="text-[10px] text-slate-500">Max squad size</span>
+              </div>
+
+              <div>
+                <label for="evt-max-teams-per-inst" class="block font-bold text-slate-700 mb-1">Max Entries / Inst *</label>
+                <input type="number" id="evt-max-teams-per-inst" value="1" min="1" max="20" required class="w-full h-10 px-3 bg-white border border-purple-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-purple-600">
+                <span class="text-[10px] text-slate-500">Teams per college</span>
+              </div>
+
+              <div>
+                <label for="evt-capacity" class="block font-bold text-slate-700 mb-1">Total Capacity *</label>
+                <input type="number" id="evt-capacity" value="30" min="1" max="500" required class="w-full h-10 px-3 bg-white border border-purple-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:border-purple-600">
+                <span class="text-[10px] text-slate-500">Overall hall slots</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: TIME SCHEDULE & VENUE -->
+          <div class="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl space-y-3">
+            <div class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px] text-amber-700">schedule</span>
+                <span>Time Schedule &amp; Stage Location</span>
+              </span>
+              <span class="text-[10px] text-amber-700 font-semibold" id="schedule-preview-pill">Day 1</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label for="evt-day" class="block font-bold text-slate-700 mb-1">Festival Day *</label>
+                <select id="evt-day" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-amber-600">
+                  <option value="1">Day 1 • Ingress &amp; Inaugural</option>
+                  <option value="2">Day 2 • Preliminary Tracks</option>
+                  <option value="3">Day 3 • Championship Finals</option>
+                  <option value="4">Day 4 • Special Tracks</option>
+                  <option value="5">Day 5 • Grand Valedictory</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="evt-date" class="block font-bold text-slate-700 mb-1">Schedule Date</label>
+                <input type="date" id="evt-date" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-600">
+              </div>
+
+              <div>
+                <label for="evt-venue" class="block font-bold text-slate-700 mb-1">Venue / Stage *</label>
+                <input type="text" id="evt-venue" required placeholder="e.g. Grand Dome / Stage 02" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-600">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label for="evt-start-time" class="block font-bold text-slate-700 mb-1">Start Time</label>
+                <input type="text" id="evt-start-time" placeholder="10:00 AM" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-600">
+              </div>
+
+              <div>
+                <label for="evt-end-time" class="block font-bold text-slate-700 mb-1">End Time</label>
+                <input type="text" id="evt-end-time" placeholder="12:00 PM" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-600">
+              </div>
+
+              <div>
+                <label for="evt-reporting-time" class="block font-bold text-slate-700 mb-1">Reporting Time</label>
+                <input type="text" id="evt-reporting-time" placeholder="09:30 AM (Call)" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-600">
+              </div>
+            </div>
+
+            <div>
+              <label for="evt-time" class="block font-bold text-slate-700 mb-1">Formatted Time Slot Display *</label>
+              <input type="text" id="evt-time" required placeholder="e.g. 10:00 AM - 12:00 PM" class="w-full h-10 px-3 bg-white border border-amber-300 rounded-xl font-mono text-slate-900 text-xs focus:outline-none focus:border-amber-600">
+            </div>
+          </div>
+
+          <!-- SECTION 4: SCORING POINTS & COORDINATION -->
+          <div class="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-3">
+            <div class="text-[11px] font-bold text-emerald-900 uppercase tracking-wider flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px] text-emerald-700">military_tech</span>
+                <span>Championship Points &amp; Stage In-Charge</span>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label for="evt-points-first" class="block font-bold text-slate-700 mb-1">1st Place Pts</label>
+                <input type="number" id="evt-points-first" value="10" min="0" class="w-full h-10 px-3 bg-white border border-emerald-300 rounded-xl font-bold text-emerald-800 text-xs focus:outline-none">
+              </div>
+              <div>
+                <label for="evt-points-second" class="block font-bold text-slate-700 mb-1">2nd Place Pts</label>
+                <input type="number" id="evt-points-second" value="5" min="0" class="w-full h-10 px-3 bg-white border border-emerald-300 rounded-xl font-bold text-emerald-800 text-xs focus:outline-none">
+              </div>
+              <div>
+                <label for="evt-points-third" class="block font-bold text-slate-700 mb-1">3rd Place Pts</label>
+                <input type="number" id="evt-points-third" value="3" min="0" class="w-full h-10 px-3 bg-white border border-emerald-300 rounded-xl font-bold text-emerald-800 text-xs focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="evt-coordinator-name" class="block font-bold text-slate-700 mb-1">Stage Coordinator Name</label>
+                <input type="text" id="evt-coordinator-name" placeholder="e.g. Dr. Haris Bilal" class="w-full h-10 px-3 bg-white border border-emerald-300 rounded-xl text-slate-900 text-xs focus:outline-none">
+              </div>
+              <div>
+                <label for="evt-coordinator-phone" class="block font-bold text-slate-700 mb-1">Coordinator Phone / WhatsApp</label>
+                <input type="text" id="evt-coordinator-phone" placeholder="+91 98..." class="w-full h-10 px-3 bg-white border border-emerald-300 rounded-xl text-slate-900 text-xs focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 5: GUIDELINES & STATUS -->
           <div>
-            <label for="evt-title" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Event Title</label>
-            <input type="text" id="evt-title" class="form-input" placeholder="e.g. Diwan Poetry Recital" required>
+            <label for="evt-rules" class="block font-bold text-slate-700 mb-1">Competition Rules, Criteria &amp; Time Limits</label>
+            <textarea id="evt-rules" rows="2.5" placeholder="e.g. 5 minutes per speaker, topic announced 1 hr prior, no electronic aids..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-red-600 focus:bg-white"></textarea>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="evt-category" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Category</label>
-              <input type="text" id="evt-category" class="form-input" placeholder="e.g. Poetry, Music, Calligraphy" required>
-            </div>
-            <div>
-              <label for="evt-venue" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Venue</label>
-              <input type="text" id="evt-venue" class="form-input" placeholder="e.g. Gran Domo Andalusí" required>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label for="evt-capacity" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Max Capacity</label>
-              <input type="number" id="evt-capacity" class="form-input" placeholder="30" min="1" required>
-            </div>
-            <div>
-              <label for="evt-team-min" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Min Team</label>
-              <input type="number" id="evt-team-min" class="form-input" value="1" min="1" required>
-            </div>
-            <div>
-              <label for="evt-team-max" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Max Team</label>
-              <input type="number" id="evt-team-max" class="form-input" value="1" min="1" required>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <label for="evt-day" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Day</label>
-              <select id="evt-day" class="form-input">
-                <option value="1">Day 1</option>
-                <option value="2">Day 2</option>
-                <option value="3">Day 3</option>
-                <option value="4">Day 4</option>
-                <option value="5">Day 5</option>
-              </select>
-            </div>
-            <div class="col-span-2">
-              <label for="evt-time" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Time Slot</label>
-              <input type="text" id="evt-time" class="form-input" placeholder="20:30 - 22:00" required>
-            </div>
-          </div>
-
-          <div>
-            <label for="evt-rules" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Rules &amp; Guidelines</label>
-            <textarea id="evt-rules" class="form-input" rows="3" placeholder="Competition criteria and rules..."></textarea>
-          </div>
-
-          <div class="flex items-center justify-between pt-1">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
             <div class="flex items-center gap-2">
               <input type="checkbox" id="evt-featured" class="w-4 h-4 text-red-600 rounded">
-              <label for="evt-featured" class="text-xs font-bold text-slate-700 cursor-pointer">Feature on Front Page</label>
+              <label for="evt-featured" class="text-xs font-bold text-slate-700 cursor-pointer">Feature on Public Schedule &amp; Homepage</label>
             </div>
             <div class="flex items-center gap-2">
-              <label for="evt-status" class="text-xs font-bold text-slate-700">Status:</label>
-              <select id="evt-status" class="form-input" style="padding: 4px 8px; width: auto;">
-                <option value="open">Open</option>
+              <label for="evt-status" class="text-xs font-bold text-slate-700">Programme Status:</label>
+              <select id="evt-status" class="h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-red-600">
+                <option value="open">Open (Accepting Nominations)</option>
                 <option value="closing_soon">Closing Soon</option>
-                <option value="full">Full</option>
+                <option value="full">Full (Capacity Reached)</option>
                 <option value="closed">Closed</option>
               </select>
             </div>
           </div>
-        
-          <!-- Operational Restrictions & Eligibility Control -->
+
+          <!-- SECTION 6: ADMINISTRATIVE EMBARGO & RESTRICTIONS -->
           <div class="p-3.5 bg-red-50/60 border border-red-200 rounded-xl space-y-2.5">
             <div class="flex items-center justify-between">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" id="evt-is-restricted" class="w-4 h-4 text-red-600 rounded">
-                <span class="text-xs font-bold text-red-800">Impose Administrative Restrictions on this Event</span>
+                <span class="text-xs font-bold text-red-800">Impose Administrative Restrictions on this Programme</span>
               </label>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800">COMPETITION EMBARGO</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800">EMBARGO DESK</span>
             </div>
 
             <div id="evt-restriction-fields" class="space-y-2 pt-1">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
-                  <label for="evt-restriction-type" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Restriction Type</label>
+                  <label for="evt-restriction-type" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Restriction Directive</label>
                   <select id="evt-restriction-type" class="form-input text-xs">
                     <option value="REGISTRATION_FROZEN">Registration Frozen (No New Entries)</option>
                     <option value="SCORING_LOCKED">Scoring Locked (Jury Embargo)</option>
@@ -2516,14 +2664,14 @@
                 </div>
                 <div>
                   <label for="evt-restriction-reason" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Directive / Reason Notice</label>
-                  <input type="text" id="evt-restriction-reason" class="form-input text-xs" placeholder="e.g. Quota closed by jury directive">
+                  <input type="text" id="evt-restriction-reason" class="form-input text-xs" placeholder="e.g. Quota closed by festival directive">
                 </div>
               </div>
 
               <div class="flex items-center gap-4 pt-1">
                 <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
                   <input type="checkbox" id="evt-freeze-reg" class="w-3.5 h-3.5 text-red-600 rounded">
-                  <span>Freeze Public Registrations</span>
+                  <span>Freeze Delegation Registrations</span>
                 </label>
                 <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
                   <input type="checkbox" id="evt-lock-scoring" class="w-3.5 h-3.5 text-red-600 rounded">
@@ -2532,11 +2680,15 @@
               </div>
             </div>
           </div>
+
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
-          <button type="submit" class="btn-primary">Save Event</button>
+        <div class="modal-footer flex items-center justify-end gap-2 p-4 bg-slate-50 border-t border-slate-200 shrink-0">
+          <button type="button" class="btn-close-modal btn-secondary px-4 py-2 rounded-xl text-xs font-semibold">Cancel</button>
+          <button type="submit" id="btn-save-event" class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all">
+            <span class="material-symbols-outlined text-[16px]">save</span>
+            <span>Save Programme</span>
+          </button>
         </div>
       </form>
     </div>

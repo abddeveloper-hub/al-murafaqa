@@ -1097,6 +1097,106 @@ window.deleteAnnouncement = async function (id) {
 // 6. TAB 3: EVENTS & SCHEDULE MANAGER
 // ==============================================================================
 
+// Programme Code Generator helper
+function generateProgrammeCode(category = 'Senior') {
+  const cat = (category || 'Senior').toUpperCase();
+  let prefix = 'PRG';
+  if (cat.includes('SENIOR')) prefix = 'PRG-SEN';
+  else if (cat.includes('SUB')) prefix = 'PRG-SUB';
+  else if (cat.includes('JUN')) prefix = 'PRG-JUN';
+  else if (cat.includes('ORA')) prefix = 'PRG-ORA';
+  else if (cat.includes('ART')) prefix = 'PRG-ART';
+  else if (cat.includes('LIT')) prefix = 'PRG-LIT';
+  else if (cat.includes('MUS')) prefix = 'PRG-MUS';
+  else if (cat.includes('GEN')) prefix = 'PRG-GEN';
+  else prefix = `PRG-${cat.replace(/[^A-Z]/g, '').slice(0, 3) || 'GEN'}`;
+
+  // Find next sequential number for this prefix
+  const existingCodes = (cachedEvents || [])
+    .map(e => e.code || '')
+    .filter(c => c.startsWith(prefix));
+  
+  let nextNum = 101;
+  if (existingCodes.length > 0) {
+    const nums = existingCodes.map(c => {
+      const match = c.match(/(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    }).filter(n => !isNaN(n) && n > 0);
+    if (nums.length > 0) {
+      nextNum = Math.max(...nums) + 1;
+    } else {
+      nextNum = 100 + existingCodes.length + 1;
+    }
+  }
+  return `${prefix}-${String(nextNum).padStart(3, '0')}`;
+}
+
+window.openAddProgrammeModal = function () {
+  const form = document.getElementById('form-event-editor');
+  if (form) form.reset();
+  
+  const editId = document.getElementById('event-edit-id');
+  if (editId) editId.value = '';
+
+  const catVal = document.getElementById('evt-category')?.value || 'Senior';
+  const codeEl = document.getElementById('evt-code');
+  if (codeEl) codeEl.value = generateProgrammeCode(catVal);
+
+  // Set defaults
+  const partType = document.getElementById('evt-participation-type');
+  if (partType) partType.value = 'individual';
+
+  const teamMin = document.getElementById('evt-team-min');
+  if (teamMin) teamMin.value = '1';
+
+  const teamMax = document.getElementById('evt-team-max');
+  if (teamMax) teamMax.value = '1';
+
+  const maxInst = document.getElementById('evt-max-teams-per-inst');
+  if (maxInst) maxInst.value = '1';
+
+  const cap = document.getElementById('evt-capacity');
+  if (cap) cap.value = '30';
+
+  const dayEl = document.getElementById('evt-day');
+  if (dayEl) dayEl.value = '1';
+
+  const startTime = document.getElementById('evt-start-time');
+  if (startTime) startTime.value = '10:00 AM';
+
+  const endTime = document.getElementById('evt-end-time');
+  if (endTime) endTime.value = '12:00 PM';
+
+  const repTime = document.getElementById('evt-reporting-time');
+  if (repTime) repTime.value = '09:30 AM (Call)';
+
+  const timeSlot = document.getElementById('evt-time');
+  if (timeSlot) timeSlot.value = '10:00 AM - 12:00 PM';
+
+  const p1 = document.getElementById('evt-points-first');
+  if (p1) p1.value = '10';
+  const p2 = document.getElementById('evt-points-second');
+  if (p2) p2.value = '5';
+  const p3 = document.getElementById('evt-points-third');
+  if (p3) p3.value = '3';
+
+  const statusEl = document.getElementById('evt-status');
+  if (statusEl) statusEl.value = 'open';
+
+  const featEl = document.getElementById('evt-featured');
+  if (featEl) featEl.checked = false;
+
+  const restrEl = document.getElementById('evt-is-restricted');
+  if (restrEl) restrEl.checked = false;
+
+  const modalTitle = document.getElementById('modal-event-title');
+  if (modalTitle) modalTitle.textContent = 'Add New Competition Programme';
+
+  document.getElementById('modal-event')?.classList.add('show');
+};
+
+window.openAddEventModal = window.openAddProgrammeModal;
+
 function renderEventsTab() {
   const tbody = document.getElementById('events-table-body');
   if (!tbody) return;
@@ -1106,6 +1206,7 @@ function renderEventsTab() {
 
   const filtered = cachedEvents.filter((evt) => {
     const matchesSearch =
+      (evt.code && evt.code.toLowerCase().includes(searchVal)) ||
       evt.title.toLowerCase().includes(searchVal) ||
       evt.category.toLowerCase().includes(searchVal) ||
       evt.venue.toLowerCase().includes(searchVal);
@@ -1114,56 +1215,100 @@ function renderEventsTab() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 24px;">No competitions match criteria.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-500 py-8">No competition programmes match criteria.</td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered
     .map((evt) => {
       const regCount = cachedRegistrations.filter((r) => r.event_id === evt.id).length;
+      const progCode = evt.code || ('PRG-' + String(evt.id || '').slice(0, 4).toUpperCase());
+      const isTeam = (evt.team_size_max || 1) > 1 || evt.participation_type === 'team';
+
       return `
-      <tr>
-        <td>
-          <strong>${escapeHtml(evt.title)}</strong>
-          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(evt.rules || 'No rules defined')}</span>
-        </td>
-        <td>
-          <span class="badge" style="background: rgba(227, 90, 36, 0.1); color: var(--fest-orange);">
-            ${escapeHtml(evt.category)}
+      <tr class="hover:bg-slate-50/80 transition-colors">
+        <!-- 1. Code & Mode -->
+        <td class="py-3.5 px-4 whitespace-nowrap">
+          <span class="inline-flex items-center px-2 py-0.5 rounded font-mono text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
+            ${escapeHtml(progCode)}
+          </span>
+          <span class="block text-[10px] text-slate-500 font-semibold mt-0.5 capitalize">
+            ${escapeHtml(evt.participation_type || (isTeam ? 'team squad' : 'individual'))}
           </span>
         </td>
-        <td>
-          <strong>Day ${evt.day_number}</strong> • ${escapeHtml(evt.time_slot)}
-          <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(evt.venue)}</span>
-        </td>
-        <td>
-          <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">${regCount} / ${evt.max_capacity}</div>
-          <div class="progress-track" style="width: 100px; height: 6px;">
-            <div class="progress-fill" style="width: ${Math.min(100, Math.round((regCount / evt.max_capacity) * 100))}%;"></div>
+
+        <!-- 2. Title & Category -->
+        <td class="py-3.5 px-6">
+          <div class="font-bold text-slate-900">${escapeHtml(evt.title)}</div>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="px-2 py-0.2 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+              ${escapeHtml(evt.category)}
+            </span>
+            <span class="text-[11px] text-slate-500 line-clamp-1 max-w-[280px]">
+              ${escapeHtml(evt.rules || 'No rules defined')}
+            </span>
           </div>
         </td>
-        <td>
-          <input type="checkbox" ${evt.is_featured ? 'checked' : ''} onchange="window.toggleEventFeatured('${evt.id}', this.checked)" style="width: 18px; height: 18px; accent-color: var(--fest-orange); cursor: pointer;">
+
+        <!-- 3. Team Quota -->
+        <td class="py-3.5 px-4 whitespace-nowrap">
+          <div class="text-xs font-bold text-purple-950 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px] text-purple-700">groups</span>
+            <span>${evt.team_size_min || 1} - ${evt.team_size_max || 1} Members</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-0.5">
+            Max <strong>${evt.max_teams_per_institution || 1}</strong> entry/inst
+          </div>
         </td>
-        <td>
-          <select class="form-input" style="padding: 4px 8px; font-size: 0.8rem; width: auto;" onchange="window.updateEventStatus('${evt.id}', this.value)">
+
+        <!-- 4. Schedule & Stage -->
+        <td class="py-3.5 px-4">
+          <div class="text-xs font-bold text-slate-800 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px] text-amber-600">schedule</span>
+            <span>Day ${evt.day_number || 1} • ${escapeHtml(evt.time_slot || 'TBA')}</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[13px] text-slate-400">location_on</span>
+            <span>${escapeHtml(evt.venue || 'Dome')}</span>
+            ${evt.reporting_time ? `<span class="text-amber-700 font-medium">(${escapeHtml(evt.reporting_time)})</span>` : ''}
+          </div>
+        </td>
+
+        <!-- 5. Capacity Progress -->
+        <td class="py-3.5 px-4 whitespace-nowrap">
+          <div class="text-xs font-bold text-slate-900 mb-1">${regCount} / ${evt.max_capacity}</div>
+          <div class="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-red-600 h-1.5 rounded-full" style="width: ${Math.min(100, Math.round((regCount / (evt.max_capacity || 1)) * 100))}%;"></div>
+          </div>
+        </td>
+
+        <!-- 6. Featured Toggle -->
+        <td class="py-3.5 px-4 text-center">
+          <input type="checkbox" ${evt.is_featured ? 'checked' : ''} onchange="window.toggleEventFeatured('${evt.id}', this.checked)" class="w-4 h-4 text-red-600 rounded cursor-pointer">
+        </td>
+
+        <!-- 7. Status & Embargo -->
+        <td class="py-3.5 px-4">
+          <select class="form-input text-xs py-1 px-2 w-auto bg-white border border-slate-200 rounded-lg font-semibold" onchange="window.updateEventStatus('${evt.id}', this.value)">
             <option value="open" ${evt.status === 'open' ? 'selected' : ''}>Open</option>
             <option value="closing_soon" ${evt.status === 'closing_soon' ? 'selected' : ''}>Closing Soon</option>
             <option value="full" ${evt.status === 'full' ? 'selected' : ''}>Full</option>
             <option value="closed" ${evt.status === 'closed' ? 'selected' : ''}>Closed</option>
           </select>
-          ${evt.is_restricted ? `<div style="margin-top: 4px;"><span class="badge" style="background: rgba(220, 38, 38, 0.15); color: #DC2626; border: 1px solid rgba(220, 38, 38, 0.3); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined text-[12px]">shield_lock</span>${escapeHtml(evt.restriction_type || 'RESTRICTED')}</span></div>` : ''}
+          ${evt.is_restricted ? `<div class="mt-1"><span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800"><span class="material-symbols-outlined text-[12px]">shield_lock</span>${escapeHtml(evt.restriction_type || 'RESTRICTED')}</span></div>` : ''}
         </td>
-        <td style="text-align: right;">
-          <div class="action-btn-group" style="justify-content: flex-end;">
-            <button class="btn-icon" style="color: ${evt.is_restricted ? '#DC2626' : '#64748B'}; border-color: ${evt.is_restricted ? '#FECACA' : 'var(--border-color)'};" title="Edit Competition Restrictions &amp; Embargo" onclick="window.openEventRestrictionsModal('${evt.id}')">
+
+        <!-- 8. Actions -->
+        <td class="py-3.5 px-6 text-right whitespace-nowrap">
+          <div class="inline-flex items-center gap-1.5 justify-end">
+            <button class="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center justify-center transition-colors" title="Edit Restrictions &amp; Embargo" onclick="window.openEventRestrictionsModal('${evt.id}')">
               <span class="material-symbols-outlined text-[16px]">shield_lock</span>
             </button>
-            <button class="btn-icon" title="Edit event" onclick="window.openEditEventModal('${evt.id}')">
-              <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
+            <button class="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-colors" title="Edit Programme" onclick="window.openEditEventModal('${evt.id}')">
+              <span class="material-symbols-outlined text-[16px]">edit</span>
             </button>
-            <button class="btn-icon reject" title="Delete event" onclick="window.deleteEvent('${evt.id}')">
-              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+            <button class="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors" title="Delete Programme" onclick="window.deleteEvent('${evt.id}')">
+              <span class="material-symbols-outlined text-[16px]">delete</span>
             </button>
           </div>
         </td>
@@ -1181,14 +1326,75 @@ function setupEventControls() {
   if (searchInput) searchInput.addEventListener('input', renderEventsTab);
   if (statusFilter) statusFilter.addEventListener('change', renderEventsTab);
 
-  // Add Event Button
+  // Add Programme Buttons (from events tab and team leaders tab)
   const btnAdd = document.getElementById('btn-open-add-event');
   if (btnAdd) {
-    btnAdd.addEventListener('click', () => {
-      document.getElementById('form-event-editor').reset();
-      document.getElementById('event-edit-id').value = '';
-      document.getElementById('modal-event-title').textContent = 'Add New Competition Event';
-      document.getElementById('modal-event').classList.add('show');
+    btnAdd.addEventListener('click', window.openAddProgrammeModal);
+  }
+  const btnAddLeader = document.getElementById('btn-open-team-leader-add-programme');
+  if (btnAddLeader) {
+    btnAddLeader.addEventListener('click', window.openAddProgrammeModal);
+  }
+
+  // Code generator button
+  const btnGenCode = document.getElementById('btn-gen-event-code');
+  if (btnGenCode) {
+    btnGenCode.addEventListener('click', () => {
+      const cat = document.getElementById('evt-category')?.value || 'Senior';
+      const codeEl = document.getElementById('evt-code');
+      if (codeEl) codeEl.value = generateProgrammeCode(cat);
+    });
+  }
+
+  // Category auto-code trigger for new programmes
+  const catSelect = document.getElementById('evt-category');
+  if (catSelect) {
+    catSelect.addEventListener('change', () => {
+      const id = document.getElementById('event-edit-id')?.value;
+      if (!id) {
+        const codeEl = document.getElementById('evt-code');
+        if (codeEl) codeEl.value = generateProgrammeCode(catSelect.value);
+      }
+    });
+  }
+
+  // Participation type auto-adjusts team size inputs
+  const partSelect = document.getElementById('evt-participation-type');
+  if (partSelect) {
+    partSelect.addEventListener('change', () => {
+      const val = partSelect.value;
+      const minEl = document.getElementById('evt-team-min');
+      const maxEl = document.getElementById('evt-team-max');
+      if (val === 'individual') {
+        if (minEl) minEl.value = '1';
+        if (maxEl) maxEl.value = '1';
+      } else if (val === 'team') {
+        if (minEl && Number(minEl.value) <= 1) minEl.value = '2';
+        if (maxEl && Number(maxEl.value) <= 1) maxEl.value = '5';
+      }
+    });
+  }
+
+  // Time Slot auto-sync from start and end time
+  const startTimeEl = document.getElementById('evt-start-time');
+  const endTimeEl = document.getElementById('evt-end-time');
+  const syncTime = () => {
+    const s = startTimeEl?.value.trim();
+    const e = endTimeEl?.value.trim();
+    const timeSlotEl = document.getElementById('evt-time');
+    if (timeSlotEl && s && e) {
+      timeSlotEl.value = `${s} - ${e}`;
+    }
+  };
+  if (startTimeEl) startTimeEl.addEventListener('input', syncTime);
+  if (endTimeEl) endTimeEl.addEventListener('input', syncTime);
+
+  // Day preview pill
+  const daySelect = document.getElementById('evt-day');
+  if (daySelect) {
+    daySelect.addEventListener('change', () => {
+      const pill = document.getElementById('schedule-preview-pill');
+      if (pill) pill.textContent = `Day ${daySelect.value}`;
     });
   }
 
@@ -1198,17 +1404,32 @@ function setupEventControls() {
     eventForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('event-edit-id').value;
+      const catVal = document.getElementById('evt-category')?.value.trim() || 'Senior';
+      const codeVal = (document.getElementById('evt-code')?.value || '').trim().toUpperCase() || generateProgrammeCode(catVal);
+
       const eventData = {
+        code: codeVal,
         title: document.getElementById('evt-title').value.trim(),
-        category: document.getElementById('evt-category').value.trim(),
+        category: catVal,
+        participation_type: document.getElementById('evt-participation-type')?.value || 'individual',
         venue: document.getElementById('evt-venue').value.trim(),
         fee: 0,
         prize_pool: 0,
-        max_capacity: Number(document.getElementById('evt-capacity').value),
-        team_size_min: Number(document.getElementById('evt-team-min').value),
-        team_size_max: Number(document.getElementById('evt-team-max').value),
-        day_number: Number(document.getElementById('evt-day').value),
+        max_capacity: Number(document.getElementById('evt-capacity').value) || 30,
+        team_size_min: Number(document.getElementById('evt-team-min').value) || 1,
+        team_size_max: Number(document.getElementById('evt-team-max').value) || 1,
+        max_teams_per_institution: Number(document.getElementById('evt-max-teams-per-inst')?.value) || 1,
+        day_number: Number(document.getElementById('evt-day').value) || 1,
+        event_date: document.getElementById('evt-date')?.value || null,
+        start_time: (document.getElementById('evt-start-time')?.value || '').trim(),
+        end_time: (document.getElementById('evt-end-time')?.value || '').trim(),
+        reporting_time: (document.getElementById('evt-reporting-time')?.value || '').trim(),
         time_slot: document.getElementById('evt-time').value.trim(),
+        points_first: Number(document.getElementById('evt-points-first')?.value) || 10,
+        points_second: Number(document.getElementById('evt-points-second')?.value) || 5,
+        points_third: Number(document.getElementById('evt-points-third')?.value) || 3,
+        coordinator_name: (document.getElementById('evt-coordinator-name')?.value || '').trim(),
+        coordinator_phone: (document.getElementById('evt-coordinator-phone')?.value || '').trim(),
         rules: document.getElementById('evt-rules').value.trim(),
         is_featured: document.getElementById('evt-featured').checked,
         status: document.getElementById('evt-status').value,
@@ -1228,9 +1449,9 @@ function setupEventControls() {
         renderOverview();
         renderRegistrationsTab();
         renderWinnersTab();
-        showToast(`Event ${id ? 'updated' : 'created'} successfully`, 'success');
+        showToast(`Programme ${eventData.code} - "${eventData.title}" saved successfully`, 'success');
       } catch (err) {
-        showToast('Error saving event: ' + err.message, 'error');
+        showToast('Error saving programme: ' + err.message, 'error');
       }
     });
   }
@@ -1241,14 +1462,48 @@ window.openEditEventModal = function (id) {
   if (!evt) return;
 
   document.getElementById('event-edit-id').value = evt.id;
+  document.getElementById('evt-code').value = evt.code || generateProgrammeCode(evt.category);
   document.getElementById('evt-title').value = evt.title;
   document.getElementById('evt-category').value = evt.category;
+  if (document.getElementById('evt-participation-type')) {
+    document.getElementById('evt-participation-type').value = evt.participation_type || ((evt.team_size_max || 1) > 1 ? 'team' : 'individual');
+  }
   document.getElementById('evt-venue').value = evt.venue;
-  document.getElementById('evt-capacity').value = evt.max_capacity;
+  document.getElementById('evt-capacity').value = evt.max_capacity || 30;
   document.getElementById('evt-team-min').value = evt.team_size_min || 1;
   document.getElementById('evt-team-max').value = evt.team_size_max || 1;
+  if (document.getElementById('evt-max-teams-per-inst')) {
+    document.getElementById('evt-max-teams-per-inst').value = evt.max_teams_per_institution || 1;
+  }
   document.getElementById('evt-day').value = evt.day_number || 1;
-  document.getElementById('evt-time').value = evt.time_slot;
+  if (document.getElementById('evt-date')) {
+    document.getElementById('evt-date').value = evt.event_date || '';
+  }
+  if (document.getElementById('evt-start-time')) {
+    document.getElementById('evt-start-time').value = evt.start_time || '';
+  }
+  if (document.getElementById('evt-end-time')) {
+    document.getElementById('evt-end-time').value = evt.end_time || '';
+  }
+  if (document.getElementById('evt-reporting-time')) {
+    document.getElementById('evt-reporting-time').value = evt.reporting_time || '';
+  }
+  document.getElementById('evt-time').value = evt.time_slot || '';
+  if (document.getElementById('evt-points-first')) {
+    document.getElementById('evt-points-first').value = evt.points_first ?? 10;
+  }
+  if (document.getElementById('evt-points-second')) {
+    document.getElementById('evt-points-second').value = evt.points_second ?? 5;
+  }
+  if (document.getElementById('evt-points-third')) {
+    document.getElementById('evt-points-third').value = evt.points_third ?? 3;
+  }
+  if (document.getElementById('evt-coordinator-name')) {
+    document.getElementById('evt-coordinator-name').value = evt.coordinator_name || '';
+  }
+  if (document.getElementById('evt-coordinator-phone')) {
+    document.getElementById('evt-coordinator-phone').value = evt.coordinator_phone || '';
+  }
   document.getElementById('evt-rules').value = evt.rules || '';
   document.getElementById('evt-featured').checked = evt.is_featured;
   document.getElementById('evt-status').value = evt.status;
@@ -1261,7 +1516,7 @@ window.openEditEventModal = function (id) {
     document.getElementById('evt-lock-scoring').checked = Boolean(evt.scoring_locked);
   }
 
-  document.getElementById('modal-event-title').textContent = 'Edit Competition Event';
+  document.getElementById('modal-event-title').textContent = 'Edit Competition Programme';
   document.getElementById('modal-event').classList.add('show');
 };
 

@@ -693,7 +693,8 @@ function renderProgrammesGrid() {
   filteredEvents.forEach((ev) => {
     const minSize = ev.team_size_min || 1;
     const maxSize = ev.team_size_max || 1;
-    const isTeam = maxSize > 1;
+    const isTeam = maxSize > 1 || ev.participation_type === 'team';
+    const progCode = ev.code || ('PRG-' + String(ev.id || '').slice(0, 4).toUpperCase());
 
     // Check if delegation has assigned students for this event
     const assignment = cachedAssignments.find((a) => a.event_id === ev.id);
@@ -711,22 +712,46 @@ function renderProgrammesGrid() {
     card.innerHTML = `
       <div>
         <div class="flex items-center justify-between gap-2 mb-2">
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-            isTeam ? 'bg-purple-100 text-purple-900' : 'bg-blue-100 text-blue-900'
-          }">
-            ${isTeam ? `Group Stage (${minSize}-${maxSize} Members)` : 'Individual Event (1 Slot)'}
-          </span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+              ${escapeHtml(progCode)}
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+              isTeam ? 'bg-purple-100 text-purple-900' : 'bg-blue-100 text-blue-900'
+            }">
+              ${isTeam ? `Group Squad (${minSize}-${maxSize} Members)` : 'Individual Solo (1 Slot)'}
+            </span>
+          </div>
           <span class="text-[11px] font-bold text-slate-500">Day ${ev.day_number || 1}</span>
         </div>
 
         <h3 class="font-bold text-sm text-slate-900">${escapeHtml(ev.title)}</h3>
-        <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+        <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
           <span class="material-symbols-outlined text-[14px]">schedule</span>
           <span>${escapeHtml(ev.time_slot || 'Time TBA')}</span>
+          ${ev.reporting_time ? `<span class="text-amber-700 font-medium">(${escapeHtml(ev.reporting_time)})</span>` : ''}
           <span>•</span>
           <span class="material-symbols-outlined text-[14px]">location_on</span>
           <span>${escapeHtml(ev.venue || 'Dome')}</span>
         </p>
+
+        <!-- Quota & Points Metadata -->
+        <div class="mt-2.5 flex items-center gap-2 flex-wrap">
+          <span class="inline-flex items-center gap-1 text-[11px] font-bold text-purple-900 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-lg">
+            <span class="material-symbols-outlined text-[13px]">domain</span>
+            <span>Max ${ev.max_teams_per_institution || 1} entry/college</span>
+          </span>
+          ${
+            ev.points_first
+              ? `
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
+                  <span class="material-symbols-outlined text-[13px]">military_tech</span>
+                  <span>1st: ${ev.points_first} pts</span>
+                </span>
+              `
+              : ''
+          }
+        </div>
 
         <!-- Current Delegation Representation -->
         <div class="mt-4 pt-3 border-t border-slate-100">
@@ -780,15 +805,17 @@ function openAllocationModal(eventId) {
 
   activeAllocEvent = event;
   document.getElementById('alloc-event-id').value = event.id;
-  document.getElementById('modal-alloc-event-title').textContent = event.title;
+  const progCode = event.code ? `[${event.code}] ` : '';
+  document.getElementById('modal-alloc-event-title').textContent = `${progCode}${event.title}`;
 
   const min = event.team_size_min || 1;
   const max = event.team_size_max || 1;
+  const maxInst = event.max_teams_per_institution || 1;
   document.getElementById('modal-alloc-event-rules').textContent = max > 1 
-    ? `Team Event: Must select between ${min} and ${max} participants.`
-    : 'Individual Competition: Select exactly 1 student participant.';
+    ? `Team Event: Must select between ${min} and ${max} participants. (Quota: max ${maxInst} entry per delegation).`
+    : `Individual Competition: Select exactly 1 student participant. (Quota: max ${maxInst} entry per delegation).`;
 
-  document.getElementById('alloc-rule-hint').textContent = max > 1 ? `Min: ${min} / Max: ${max}` : 'Required: 1';
+  document.getElementById('alloc-rule-hint').textContent = max > 1 ? `Min: ${min} / Max: ${max} (Max ${maxInst} entry/inst)` : `Required: 1 (Max ${maxInst} entry/inst)`;
 
   // Get currently assigned students for this event
   const assignment = cachedAssignments.find((a) => a.event_id === event.id);

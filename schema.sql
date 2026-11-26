@@ -48,8 +48,11 @@ ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_duration_note TE
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT,
     title TEXT NOT NULL,
     category TEXT NOT NULL,
+    participation_type TEXT DEFAULT 'individual',
+    max_teams_per_institution INT DEFAULT 1,
     fee NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     prize_pool NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     team_size_min INT NOT NULL DEFAULT 1,
@@ -57,9 +60,18 @@ CREATE TABLE IF NOT EXISTS public.events (
     max_capacity INT NOT NULL DEFAULT 50,
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closing_soon', 'full', 'closed')),
     day_number INT NOT NULL DEFAULT 1,
+    event_date DATE,
+    start_time TEXT DEFAULT '10:00',
+    end_time TEXT DEFAULT '12:00',
     time_slot TEXT NOT NULL DEFAULT '10:00 AM - 12:00 PM',
+    reporting_time TEXT DEFAULT '',
     venue TEXT NOT NULL DEFAULT 'Grand Andalusian Dome',
     rules TEXT DEFAULT '',
+    points_first INT DEFAULT 10,
+    points_second INT DEFAULT 5,
+    points_third INT DEFAULT 3,
+    coordinator_name TEXT DEFAULT '',
+    coordinator_phone TEXT DEFAULT '',
     is_featured BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
