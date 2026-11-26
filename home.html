@@ -1506,27 +1506,46 @@
     function getEmbedUrl(rawUrl) {
       if (!rawUrl) return null;
       const url = rawUrl.trim();
-      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([\w-]{11})/);
+
+      // 1. Google Drive Links (view, preview, sharing, open?id=, uc?id=)
+      const driveMatch = url.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=download&id=)|docs\.google\.com\/file\/d\/)([\w-]+)/i);
+      if (driveMatch && driveMatch[1]) {
+        const fileId = driveMatch[1];
+        return {
+          type: 'drive',
+          fileId: fileId,
+          src: `https://drive.google.com/file/d/${fileId}/preview`,
+        };
+      }
+
+      // 2. YouTube Links
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([\w-]{11})/i);
       if (ytMatch && ytMatch[1]) {
         return {
           type: 'youtube',
           src: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0&modestbranding=1`,
         };
       }
-      const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+
+      // 3. Vimeo Links
+      const vimeoMatch = url.match(/vimeo\.com\/(\d+)/i);
       if (vimeoMatch && vimeoMatch[1]) {
         return {
           type: 'vimeo',
           src: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`,
         };
       }
-      if (url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('.mp4?') || url.includes('.m3u8')) {
+
+      // 4. Direct video formats
+      if (url.match(/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i) || url.includes('.m3u8')) {
         return {
           type: 'video',
           src: url,
         };
       }
-      if (url.startsWith('http')) {
+
+      // 5. Generic HTTP / HTTPS iframe
+      if (url.startsWith('http://') || url.startsWith('https://')) {
         return {
           type: 'iframe',
           src: url,
@@ -1578,6 +1597,23 @@
         if (livePill) livePill.className = 'flex items-center gap-1.5 bg-neutral-800/90 text-neutral-300 font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
         if (liveText) liveText.textContent = 'OFFLINE';
         if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+      }
+
+      // If video_url is configured, embed and make video visible directly in that place
+      if (settings.video_url && mediaBox) {
+        const embed = getEmbedUrl(settings.video_url);
+        if (embed) {
+          mediaBox.style.backgroundImage = 'none';
+          if (embed.type === 'video') {
+            mediaBox.innerHTML = `
+              <video class="w-full h-full aspect-video rounded-2xl object-cover" src="${embed.src}" controls playsinline poster="${settings.video_poster_url || ''}"></video>
+            `;
+          } else {
+            mediaBox.innerHTML = `
+              <iframe class="w-full h-full aspect-video rounded-2xl" src="${embed.src}" title="${settings.video_title || 'Main Stage Broadcast'}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>
+            `;
+          }
+        }
       }
     }
 

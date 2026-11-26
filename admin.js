@@ -341,6 +341,11 @@ function setupEventListeners() {
   setupAnalyticsControls();
   setupCameraScanner();
   setupRestrictionsControls();
+  setupTeamControls();
+  setupEventRestrictionsControls();
+  setupStageRestrictionsControls();
+  setupDirectRestrictionSearch();
+  setupBroadcastVideoModalControls();
 
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
@@ -908,6 +913,59 @@ async function handleSettingsSubmit(e) {
   }
 }
 
+// Universal Video Stream Embed Helper (Google Drive, YouTube, Vimeo, MP4)
+function getEmbedUrl(rawUrl) {
+  if (!rawUrl) return null;
+  const url = rawUrl.trim();
+
+  // 1. Google Drive Links (view, preview, sharing, open?id=, uc?id=)
+  const driveMatch = url.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=download&id=)|docs\.google\.com\/file\/d\/)([\w-]+)/i);
+  if (driveMatch && driveMatch[1]) {
+    const fileId = driveMatch[1];
+    return {
+      type: 'drive',
+      fileId: fileId,
+      src: `https://drive.google.com/file/d/${fileId}/preview`,
+    };
+  }
+
+  // 2. YouTube Links
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([\w-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: 'youtube',
+      src: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0&modestbranding=1`,
+    };
+  }
+
+  // 3. Vimeo Links
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/i);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return {
+      type: 'vimeo',
+      src: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`,
+    };
+  }
+
+  // 4. Direct video formats
+  if (url.match(/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i) || url.includes('.m3u8')) {
+    return {
+      type: 'video',
+      src: url,
+    };
+  }
+
+  // 5. General HTTP / HTTPS iframe
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return {
+      type: 'iframe',
+      src: url,
+    };
+  }
+
+  return null;
+}
+
 function updateVideoPreview() {
   const pTitle = document.getElementById('preview-video-title');
   const pDesc = document.getElementById('preview-video-desc');
@@ -915,6 +973,7 @@ function updateVideoPreview() {
   const pStatus = document.getElementById('preview-video-status');
   const pViewers = document.getElementById('preview-video-viewers');
   const pDuration = document.getElementById('preview-video-duration');
+  const pPlayer = document.getElementById('admin-settings-video-preview-player');
 
   const titleVal = document.getElementById('setting-video-title')?.value || cachedSettings?.video_title || 'Main Stage Broadcast';
   const descVal = document.getElementById('setting-video-description')?.value || cachedSettings?.video_description || 'Performance Details';
@@ -922,6 +981,7 @@ function updateVideoPreview() {
   const isLive = document.getElementById('setting-video-live')?.checked ?? true;
   const viewersVal = document.getElementById('setting-video-viewers')?.value || '4.8k live';
   const durationVal = document.getElementById('setting-video-duration')?.value || '42 mins remaining';
+  const videoUrlVal = document.getElementById('setting-video-url')?.value.trim() || cachedSettings?.video_url || '';
 
   if (pTitle) pTitle.textContent = titleVal;
   if (pDesc) pDesc.textContent = descVal;
@@ -932,6 +992,25 @@ function updateVideoPreview() {
   }
   if (pViewers) pViewers.innerHTML = `<span class="material-symbols-outlined text-[14px] text-amber-500">visibility</span><span>${escapeHtml(viewersVal)}</span>`;
   if (pDuration) pDuration.innerHTML = `<span class="material-symbols-outlined text-[14px] text-amber-500">schedule</span><span>${escapeHtml(durationVal)}</span>`;
+
+  // Live video preview rendering in settings card
+  if (pPlayer) {
+    const embed = getEmbedUrl(videoUrlVal);
+    if (embed) {
+      if (embed.type === 'video') {
+        pPlayer.innerHTML = `<video class="w-full h-full aspect-video rounded-xl object-cover" src="${embed.src}" controls playsinline></video>`;
+      } else {
+        pPlayer.innerHTML = `<iframe class="w-full h-full aspect-video rounded-xl" src="${embed.src}" title="Broadcast Live Preview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>`;
+      }
+    } else {
+      pPlayer.innerHTML = `
+        <div class="text-center p-4 text-slate-500 text-xs flex flex-col items-center gap-1.5">
+          <span class="material-symbols-outlined text-[32px] text-slate-600">smart_display</span>
+          <span>Paste a Google Drive or YouTube link above to stream live preview</span>
+        </div>
+      `;
+    }
+  }
 }
 
 async function handleVideoStreamSubmit(e) {
@@ -1082,9 +1161,13 @@ function renderEventsTab() {
             <option value="full" ${evt.status === 'full' ? 'selected' : ''}>Full</option>
             <option value="closed" ${evt.status === 'closed' ? 'selected' : ''}>Closed</option>
           </select>
+          ${evt.is_restricted ? `<div style="margin-top: 4px;"><span class="badge" style="background: rgba(220, 38, 38, 0.15); color: #DC2626; border: 1px solid rgba(220, 38, 38, 0.3); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined text-[12px]">shield_lock</span>${escapeHtml(evt.restriction_type || 'RESTRICTED')}</span></div>` : ''}
         </td>
         <td style="text-align: right;">
           <div class="action-btn-group" style="justify-content: flex-end;">
+            <button class="btn-icon" style="color: ${evt.is_restricted ? '#DC2626' : '#64748B'}; border-color: ${evt.is_restricted ? '#FECACA' : 'var(--border-color)'};" title="Edit Competition Restrictions &amp; Embargo" onclick="window.openEventRestrictionsModal('${evt.id}')">
+              <span class="material-symbols-outlined text-[16px]">shield_lock</span>
+            </button>
             <button class="btn-icon" title="Edit event" onclick="window.openEditEventModal('${evt.id}')">
               <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
             </button>
@@ -1138,6 +1221,11 @@ function setupEventControls() {
         rules: document.getElementById('evt-rules').value.trim(),
         is_featured: document.getElementById('evt-featured').checked,
         status: document.getElementById('evt-status').value,
+        is_restricted: document.getElementById('evt-is-restricted')?.checked || false,
+        restriction_type: document.getElementById('evt-restriction-type')?.value || 'REGISTRATION_FROZEN',
+        restriction_reason: (document.getElementById('evt-restriction-reason')?.value || '').trim(),
+        registration_frozen: document.getElementById('evt-freeze-reg')?.checked || false,
+        scoring_locked: document.getElementById('evt-lock-scoring')?.checked || false,
       };
       if (id) eventData.id = id;
 
@@ -1173,6 +1261,14 @@ window.openEditEventModal = function (id) {
   document.getElementById('evt-rules').value = evt.rules || '';
   document.getElementById('evt-featured').checked = evt.is_featured;
   document.getElementById('evt-status').value = evt.status;
+
+  if (document.getElementById('evt-is-restricted')) {
+    document.getElementById('evt-is-restricted').checked = Boolean(evt.is_restricted);
+    document.getElementById('evt-restriction-type').value = evt.restriction_type || 'REGISTRATION_FROZEN';
+    document.getElementById('evt-restriction-reason').value = evt.restriction_reason || '';
+    document.getElementById('evt-freeze-reg').checked = Boolean(evt.registration_frozen);
+    document.getElementById('evt-lock-scoring').checked = Boolean(evt.scoring_locked);
+  }
 
   document.getElementById('modal-event-title').textContent = 'Edit Competition Event';
   document.getElementById('modal-event').classList.add('show');
@@ -1329,7 +1425,10 @@ function renderRegistrationsTab() {
             }
             ${
               r.is_restricted
-                ? `<button class="btn-icon" style="color: #059669; border-color: #A7F3D0; width: 32px; height: 32px;" title="Lift Restriction" onclick="window.liftRestriction('${r.id}', '${escapeHtml(r.leader_name)}')">
+                ? `<button class="btn-icon" style="color: #D97706; border-color: #FDE68A; width: 32px; height: 32px;" title="Edit Operational Restriction Directive" onclick="window.openRestrictModal('${r.id}')">
+                     <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                   </button>
+                   <button class="btn-icon" style="color: #059669; border-color: #A7F3D0; width: 32px; height: 32px;" title="Lift Restriction" onclick="window.liftRestriction('${r.id}', '${escapeHtml(r.team_name || r.leader_name)}')">
                      <span class="material-symbols-outlined text-[16px]">lock_open</span>
                    </button>`
                 : `<button class="btn-icon" style="color: #DC2626; border-color: #FECACA; width: 32px; height: 32px;" title="Impose Restriction / Blacklist" onclick="window.openRestrictModal('${r.id}')">
@@ -3261,6 +3360,9 @@ function filterCommandPalette(query) {
 
   // Core System Actions List
   const actions = [
+    { title: 'Register Team Delegation', desc: 'Add new team with multiple roster members', icon: 'group_add', action: () => { closeCommandPalette(); switchTab('registrations'); document.getElementById('btn-open-add-team-modal')?.click(); } },
+    { title: 'Edit Operational Restrictions', desc: 'Manage gate halts, blacklists & zone curfews', icon: 'shield', action: () => { closeCommandPalette(); switchTab('restrictions'); } },
+    { title: 'Impose / Edit Delegate Restriction', desc: 'Flag or update disciplinary restriction directive', icon: 'lock_person', action: () => { closeCommandPalette(); switchTab('restrictions'); document.getElementById('btn-open-direct-restrict-modal')?.click(); } },
     { title: 'Launch Live Camera Scanner', desc: 'Scan delegate QR pass with webcam', icon: 'photo_camera', action: () => { closeCommandPalette(); switchTab('checkin'); startLiveCameraScanner(); } },
     { title: 'Deploy Performer to Stage', desc: 'Open stage control room & call next team', icon: 'theater_comedy', action: () => { closeCommandPalette(); switchTab('stageops'); } },
     { title: 'Stage Schedule Delay +15 Mins', desc: 'Bump active stage schedule buffer by 15 mins', icon: 'fast_forward', action: () => { closeCommandPalette(); switchTab('stageops'); handleStageDelay(15); } },
@@ -3596,14 +3698,18 @@ function setupRestrictionsControls() {
       if (!targetId) return;
 
       try {
-        await db.setRegistrationRestriction(targetId, true, fullReason);
+        const severity = document.getElementById('restrict-severity-select')?.value || 'FULL_LOCKOUT';
+        const isEditing = Boolean(cachedRegistrations.find((r) => r.id === targetId)?.is_restricted);
+
+        await db.setRegistrationRestriction(targetId, true, fullReason, severity, reasonCategory);
         cachedRegistrations = await db.getRegistrations();
 
         const attendee = cachedRegistrations.find((r) => r.id === targetId);
         const name = attendee ? (attendee.team_name || attendee.leader_name) : 'Delegate';
 
-        logAudit('DELEGATE_RESTRICTION_IMPOSED', `Imposed restriction on ${name} (${attendee?.ticket_code}): ${fullReason}`);
-        showToast(`Restriction imposed on ${name}. Access blocked at all gates.`, 'error');
+        const actionTag = isEditing ? 'RESTRICTION_DIRECTIVE_UPDATED' : 'RESTRICTION_IMPOSED';
+        logAudit(actionTag, `Admin updated restriction on ${name} (${attendee?.ticket_code}) [${severity}]: ${fullReason}`);
+        showToast(`Operational restriction directive saved for ${name}.`, 'success');
 
         // Close modal
         document.getElementById('modal-restrict-delegate')?.classList.remove('show');
@@ -3612,7 +3718,7 @@ function setupRestrictionsControls() {
         renderRestrictionsTab();
         renderRegistrationsTab();
       } catch (err) {
-        showToast('Failed to impose restriction: ' + err.message, 'error');
+        showToast('Failed to save restriction directive: ' + err.message, 'error');
       }
     });
   }
@@ -3760,15 +3866,88 @@ function openRestrictModal(registrationId) {
   const codeEl = document.getElementById('restrict-target-code');
   const nameEl = document.getElementById('restrict-target-name');
   const colEl = document.getElementById('restrict-target-college');
+  const titleText = document.getElementById('modal-restrict-title-text');
+  const iconEl = document.getElementById('modal-restrict-icon');
+  const badgeEl = document.getElementById('restrict-current-badge');
+  const submitBtn = document.getElementById('btn-submit-restrict');
+  const liftBtn = document.getElementById('btn-modal-lift-action');
+  const reasonSelect = document.getElementById('restrict-reason-select');
+  const severitySelect = document.getElementById('restrict-severity-select');
+  const notesInput = document.getElementById('restrict-notes-input');
 
   if (targetIdInput) targetIdInput.value = attendee.id;
   if (codeEl) codeEl.textContent = attendee.ticket_code;
-  if (nameEl) nameEl.textContent = attendee.team_name || attendee.leader_name;
-  if (colEl) colEl.textContent = attendee.college_name;
+  if (nameEl) nameEl.textContent = (attendee.team_name ? `Team: ${attendee.team_name} (Lead: ${attendee.leader_name})` : attendee.leader_name);
+  if (colEl) colEl.textContent = attendee.college_name || 'Individual Delegate';
+
+  const isAlreadyRestricted = Boolean(attendee.is_restricted);
+
+  if (isAlreadyRestricted) {
+    if (titleText) titleText.textContent = 'Edit Operational Restriction Directive';
+    if (iconEl) {
+      iconEl.textContent = 'edit_note';
+      iconEl.className = 'material-symbols-outlined text-amber-500';
+    }
+    if (badgeEl) {
+      badgeEl.textContent = 'CURRENTLY RESTRICTED • EDITING';
+      badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white';
+    }
+    if (submitBtn) {
+      submitBtn.textContent = 'Update Restriction Directive';
+      submitBtn.className = 'px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition-all';
+    }
+    if (liftBtn) {
+      liftBtn.classList.remove('hidden');
+      liftBtn.onclick = () => {
+        liftRestriction(attendee.id, attendee.team_name || attendee.leader_name);
+        modal.classList.remove('show');
+      };
+    }
+
+    // Pre-populate category
+    if (reasonSelect && attendee.restriction_category) {
+      reasonSelect.value = attendee.restriction_category;
+    } else if (reasonSelect && attendee.restriction_reason) {
+      const cat = attendee.restriction_reason.split('—')[0]?.trim();
+      if (cat) reasonSelect.value = cat;
+    }
+
+    // Pre-populate severity
+    if (severitySelect) {
+      severitySelect.value = attendee.restriction_severity || 'FULL_LOCKOUT';
+    }
+
+    // Pre-populate notes
+    if (notesInput) {
+      if (attendee.restriction_reason && attendee.restriction_reason.includes('—')) {
+        notesInput.value = attendee.restriction_reason.split('—')[1]?.trim() || '';
+      } else {
+        notesInput.value = attendee.restriction_notes || '';
+      }
+    }
+  } else {
+    if (titleText) titleText.textContent = 'Impose Operational Restriction';
+    if (iconEl) {
+      iconEl.textContent = 'lock_person';
+      iconEl.className = 'material-symbols-outlined text-red-500';
+    }
+    if (badgeEl) {
+      badgeEl.textContent = 'SECURITY ACTION';
+      badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-900';
+    }
+    if (submitBtn) {
+      submitBtn.textContent = 'Save Restriction Directive';
+      submitBtn.className = 'px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all';
+    }
+    if (liftBtn) {
+      liftBtn.classList.add('hidden');
+    }
+    if (notesInput) notesInput.value = '';
+    if (severitySelect) severitySelect.value = 'FULL_LOCKOUT';
+  }
 
   modal.classList.add('show');
 }
-
 async function liftRestriction(registrationId, name = 'Delegate') {
   if (!confirm(`Are you sure you want to lift the operational restriction on ${name}? This will restore normal gate ingress and check-in privileges.`)) {
     return;
@@ -3871,3 +4050,457 @@ function playWarningBuzzer() {
 
 window.openRestrictModal = openRestrictModal;
 window.liftRestriction = liftRestriction;
+
+
+
+// ======================================================================
+// MODULE: TEAM DELEGATION REGISTRATION & ROSTER ENGINE
+// ======================================================================
+function setupTeamControls() {
+  const btnOpenAddTeam = document.getElementById('btn-open-add-team-modal');
+  const formAddTeam = document.getElementById('form-add-team');
+  const btnAddMemberRow = document.getElementById('btn-add-team-member-row');
+  const container = document.getElementById('team-roster-rows-container');
+  const toggleRestr = document.getElementById('team-impose-restriction');
+  const restrFields = document.getElementById('team-restriction-fields');
+
+  if (toggleRestr && restrFields) {
+    toggleRestr.addEventListener('change', () => {
+      if (toggleRestr.checked) {
+        restrFields.classList.remove('hidden');
+      } else {
+        restrFields.classList.add('hidden');
+      }
+    });
+  }
+
+  function addTeamRosterRow(name = '', role = 'Team Member', phone = '') {
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'team-roster-row flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl';
+    row.innerHTML = `
+      <input type="text" class="roster-name-input form-input text-xs flex-1" value="${escapeHtml(name)}" placeholder="Member Full Name" required>
+      <input type="text" class="roster-role-input form-input text-xs w-32" value="${escapeHtml(role)}" placeholder="Role (e.g. Speaker)">
+      <input type="text" class="roster-phone-input form-input text-xs w-28 hidden sm:block" value="${escapeHtml(phone)}" placeholder="Phone">
+      <button type="button" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors" title="Remove Member" onclick="this.closest('.team-roster-row').remove()">
+        <span class="material-symbols-outlined text-[16px]">delete</span>
+      </button>
+    `;
+    container.appendChild(row);
+  }
+
+  if (btnAddMemberRow) {
+    btnAddMemberRow.addEventListener('click', () => {
+      addTeamRosterRow();
+    });
+  }
+
+  if (btnOpenAddTeam) {
+    btnOpenAddTeam.addEventListener('click', () => {
+      if (cachedEvents.length === 0) {
+        showToast('Please create at least one event before registering a team delegation.', 'warning');
+        switchTab('events');
+        return;
+      }
+
+      // Populate events dropdown
+      const select = document.getElementById('team-event-select');
+      if (select) {
+        select.innerHTML = '';
+        cachedEvents.forEach((evt) => {
+          const opt = document.createElement('option');
+          opt.value = evt.id;
+          opt.textContent = `${evt.title} • Day ${evt.day_number} (${evt.category} • Team: ${evt.team_size_min || 1}-${evt.team_size_max || 10})`;
+          select.appendChild(opt);
+        });
+      }
+
+      // Reset form and populate 2 starter rows
+      if (formAddTeam) formAddTeam.reset();
+      if (container) {
+        container.innerHTML = '';
+        addTeamRosterRow('', 'Second Speaker');
+        addTeamRosterRow('', 'Research & Analysis Lead');
+      }
+      if (restrFields) restrFields.classList.add('hidden');
+
+      document.getElementById('modal-add-team')?.classList.add('show');
+    });
+  }
+
+  if (formAddTeam) {
+    formAddTeam.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const teamName = document.getElementById('team-name-input').value.trim();
+      const collegeName = document.getElementById('team-college-input').value.trim();
+      const eventId = document.getElementById('team-event-select').value;
+      const leaderName = document.getElementById('team-leader-name').value.trim();
+      const leaderEmail = document.getElementById('team-leader-email').value.trim();
+      const leaderPhone = document.getElementById('team-leader-phone').value.trim();
+
+      const members = [{ name: leaderName, role: 'Lead Contestant', phone: leaderPhone }];
+      const rows = document.querySelectorAll('#team-roster-rows-container .team-roster-row');
+      rows.forEach((row) => {
+        const name = row.querySelector('.roster-name-input')?.value.trim();
+        const role = row.querySelector('.roster-role-input')?.value.trim() || 'Team Member';
+        const phone = row.querySelector('.roster-phone-input')?.value.trim() || '';
+        if (name) {
+          members.push({ name, role, phone });
+        }
+      });
+
+      const autoCheckIn = document.getElementById('team-auto-checkin')?.checked;
+      const isRestricted = document.getElementById('team-impose-restriction')?.checked || false;
+      const restCategory = document.getElementById('team-restriction-category')?.value;
+      const restSeverity = document.getElementById('team-restriction-severity')?.value;
+      const restNotes = (document.getElementById('team-restriction-notes')?.value || '').trim();
+      const fullReason = restNotes ? `${restCategory} — ${restNotes}` : restCategory;
+
+      const ticketCode = 'ALM-TEAM-' + Math.floor(1000 + Math.random() * 9000);
+
+      const regData = {
+        event_id: eventId,
+        ticket_code: ticketCode,
+        leader_name: leaderName,
+        leader_email: leaderEmail,
+        leader_phone: leaderPhone,
+        college_name: collegeName,
+        team_name: teamName,
+        team_members: members,
+        payment_status: 'paid',
+        checked_in: Boolean(autoCheckIn),
+        checked_in_at: autoCheckIn ? new Date().toISOString() : null,
+        is_restricted: Boolean(isRestricted),
+        restriction_reason: isRestricted ? fullReason : '',
+        restriction_category: isRestricted ? restCategory : null,
+        restriction_severity: isRestricted ? restSeverity : null,
+        restricted_at: isRestricted ? new Date().toISOString() : null,
+      };
+
+      try {
+        await db.addRegistration(regData);
+        cachedRegistrations = await db.getRegistrations();
+
+        logAudit('TEAM_DELEGATION_REGISTERED', `Admin registered delegation: "${teamName}" (${members.length} members) from ${collegeName}`);
+        showToast(`Team "${teamName}" successfully registered with ${members.length} roster members!`, 'success');
+
+        document.getElementById('modal-add-team')?.classList.remove('show');
+        renderRegistrationsTab();
+        renderOverview();
+      } catch (err) {
+        showToast('Failed to register team delegation: ' + err.message, 'error');
+      }
+    });
+  }
+
+  // Setup roster modal controls
+  setupTeamRosterModalControls();
+}
+
+// ======================================================================
+// MODULE: QUICK EVENT RESTRICTIONS & EMBARGO CONTROLS
+// ======================================================================
+window.openEventRestrictionsModal = function (eventId) {
+  const evt = cachedEvents.find((e) => e.id === eventId);
+  if (!evt) return;
+
+  const modal = document.getElementById('modal-event-restrictions');
+  if (!modal) return;
+
+  document.getElementById('q-evt-id').value = evt.id;
+  document.getElementById('q-evt-title').textContent = evt.title;
+  document.getElementById('q-evt-meta').textContent = `Day ${evt.day_number} • ${evt.venue} (${evt.category})`;
+
+  const statusBadge = document.getElementById('q-evt-status-badge');
+  if (statusBadge) {
+    if (evt.is_restricted) {
+      statusBadge.textContent = 'RESTRICTED';
+      statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white';
+    } else {
+      statusBadge.textContent = 'ACTIVE / UNRESTRICTED';
+      statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800';
+    }
+  }
+
+  document.getElementById('q-evt-is-restricted').checked = Boolean(evt.is_restricted);
+  document.getElementById('q-evt-restriction-type').value = evt.restriction_type || 'REGISTRATION_FROZEN';
+  document.getElementById('q-evt-restriction-reason').value = evt.restriction_reason || '';
+  document.getElementById('q-evt-freeze-reg').checked = Boolean(evt.registration_frozen);
+  document.getElementById('q-evt-lock-scoring').checked = Boolean(evt.scoring_locked);
+
+  modal.classList.add('show');
+};
+
+function setupEventRestrictionsControls() {
+  const form = document.getElementById('form-quick-event-restrictions');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('q-evt-id').value;
+      const evt = cachedEvents.find((item) => item.id === id);
+      if (!evt) return;
+
+      evt.is_restricted = document.getElementById('q-evt-is-restricted').checked;
+      evt.restriction_type = document.getElementById('q-evt-restriction-type').value;
+      evt.restriction_reason = document.getElementById('q-evt-restriction-reason').value.trim();
+      evt.registration_frozen = document.getElementById('q-evt-freeze-reg').checked;
+      evt.scoring_locked = document.getElementById('q-evt-lock-scoring').checked;
+
+      try {
+        await db.saveEvent(evt);
+        cachedEvents = await db.getEvents();
+
+        logAudit('EVENT_RESTRICTION_UPDATED', `Admin updated restriction on competition "${evt.title}": is_restricted=${evt.is_restricted}, type=${evt.restriction_type}`);
+        showToast(`Restrictions updated for "${evt.title}"!`, 'success');
+
+        document.getElementById('modal-event-restrictions')?.classList.remove('show');
+        renderEventsTab();
+      } catch (err) {
+        showToast('Failed to update event restrictions: ' + err.message, 'error');
+      }
+    });
+  }
+}
+
+// ======================================================================
+// MODULE: STAGE OPERATIONAL RESTRICTIONS CONSOLE
+// ======================================================================
+function setupStageRestrictionsControls() {
+  const curfewToggle = document.getElementById('stage-curfew-toggle');
+  const greenRoomToggle = document.getElementById('stage-greenroom-restrict');
+  const avToggle = document.getElementById('stage-av-embargo');
+  const btnSaveDirective = document.getElementById('btn-save-stage-directive');
+  const statusEl = document.getElementById('stage-curfew-status');
+
+  function updateStatusDisplay() {
+    if (!statusEl) return;
+    if (curfewToggle?.checked) {
+      statusEl.textContent = 'STAGE HALTED • CURFEW ACTIVE';
+      statusEl.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-300';
+    } else {
+      statusEl.textContent = 'STAGE CLEAR • ADMITTING';
+      statusEl.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+    }
+  }
+
+  if (curfewToggle) {
+    curfewToggle.addEventListener('change', () => {
+      updateStatusDisplay();
+      logAudit('STAGE_CURFEW_TOGGLED', `Stage curfew toggled: ${curfewToggle.checked ? 'ACTIVE HALT' : 'CLEARED'}`);
+      showToast(`Stage Curfew: ${curfewToggle.checked ? 'HALTED' : 'CLEARED'}`, curfewToggle.checked ? 'error' : 'success');
+    });
+  }
+
+  if (greenRoomToggle) {
+    greenRoomToggle.addEventListener('change', () => {
+      logAudit('STAGE_GREENROOM_RESTRICTED', `Green room access restricted: ${greenRoomToggle.checked}`);
+      showToast(`Green Room Access: ${greenRoomToggle.checked ? 'RESTRICTED' : 'OPEN'}`, 'info');
+    });
+  }
+
+  if (avToggle) {
+    avToggle.addEventListener('change', () => {
+      logAudit('STAGE_AV_EMBARGO', `AV Stream Embargo: ${avToggle.checked}`);
+      showToast(`AV Stream Transmission: ${avToggle.checked ? 'EMBARGOED' : 'LIVE'}`, avToggle.checked ? 'warning' : 'success');
+    });
+  }
+
+  if (btnSaveDirective) {
+    btnSaveDirective.addEventListener('click', () => {
+      const note = (document.getElementById('stage-directive-note')?.value || '').trim();
+      logAudit('STAGE_DIRECTIVE_NOTE', `Stage directive banner updated: ${note || 'Cleared'}`);
+      showToast('Stage protocol directive updated successfully.', 'success');
+    });
+  }
+}
+
+// ======================================================================
+// MODULE: DIRECT RESTRICTION SEARCH & QUICK EDIT
+// ======================================================================
+function setupDirectRestrictionSearch() {
+  const searchInput = document.getElementById('restrictions-direct-search');
+  const findBtn = document.getElementById('btn-quick-find-restrict');
+
+  function executeFind() {
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    if (!query) {
+      showToast('Please enter a ticket code, delegate name, or team name to inspect.', 'info');
+      return;
+    }
+
+    const found = (cachedRegistrations || []).find((r) =>
+      r.ticket_code.toLowerCase().includes(query) ||
+      r.leader_name.toLowerCase().includes(query) ||
+      (r.team_name && r.team_name.toLowerCase().includes(query)) ||
+      (r.college_name && r.college_name.toLowerCase().includes(query))
+    );
+
+    if (found) {
+      openRestrictModal(found.id);
+    } else {
+      showToast(`No attendee or team matched query "${query}".`, 'error');
+    }
+  }
+
+  if (findBtn) findBtn.addEventListener('click', executeFind);
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        executeFind();
+      }
+    });
+  }
+}
+
+window.openEventRestrictionsModal = window.openEventRestrictionsModal || function () {};
+window.openRestrictModal = openRestrictModal;
+window.liftRestriction = liftRestriction;
+
+
+
+// ======================================================================
+// MODULE: DEDICATED BROADCAST VIDEO MODAL CONTROLLER
+// ======================================================================
+window.openBroadcastVideoModal = function () {
+  const modal = document.getElementById('modal-edit-video-broadcast');
+  if (!modal) return;
+
+  const s = cachedSettings || {};
+  const urlInput = document.getElementById('modal-video-url');
+  const headingInput = document.getElementById('modal-video-heading');
+  const venueInput = document.getElementById('modal-video-venue');
+  const titleInput = document.getElementById('modal-video-title');
+  const descInput = document.getElementById('modal-video-desc');
+  const liveCheck = document.getElementById('modal-video-live');
+  const viewersInput = document.getElementById('modal-video-viewers');
+  const durationInput = document.getElementById('modal-video-duration');
+
+  if (urlInput) urlInput.value = s.video_url || '';
+  if (headingInput) headingInput.value = s.video_heading || 'Main Stage Broadcast';
+  if (venueInput) venueInput.value = s.video_venue || 'GRAND ANDALUSIAN DOME';
+  if (titleInput) titleInput.value = s.video_title || 'Mystic Poetry Recital & Qurtuba Ensemble';
+  if (descInput) descInput.value = s.video_description || 'Live Cultural Stage & Ensemble Performances';
+  if (liveCheck) liveCheck.checked = s.video_is_live !== false;
+  if (viewersInput) viewersInput.value = s.video_viewer_count || '4.8k live';
+  if (durationInput) durationInput.value = s.video_duration_note || '42 mins remaining';
+
+  updateModalVideoPreview();
+  modal.classList.add('show');
+};
+
+function updateModalVideoPreview() {
+  const urlVal = (document.getElementById('modal-video-url')?.value || '').trim();
+  const titleVal = document.getElementById('modal-video-title')?.value || 'Main Stage Broadcast';
+  const descVal = document.getElementById('modal-video-desc')?.value || 'Live Cultural Stage';
+  const venueVal = document.getElementById('modal-video-venue')?.value || 'GRAND ANDALUSIAN DOME';
+  const isLive = document.getElementById('modal-video-live')?.checked ?? true;
+
+  const box = document.getElementById('modal-preview-video-box');
+  const statusEl = document.getElementById('modal-preview-video-status');
+  const titleEl = document.getElementById('modal-preview-video-title');
+  const descEl = document.getElementById('modal-preview-video-desc');
+  const venueEl = document.getElementById('modal-preview-video-venue');
+
+  if (titleEl) titleEl.textContent = titleVal;
+  if (descEl) descEl.textContent = descVal;
+  if (venueEl) venueEl.textContent = venueVal.toUpperCase();
+  if (statusEl) {
+    statusEl.textContent = isLive ? 'LIVE' : 'OFFLINE';
+    statusEl.className = `px-2 py-0.5 rounded-full ${isLive ? 'bg-red-600' : 'bg-slate-600'} text-white font-bold text-[10px]`;
+  }
+
+  if (box) {
+    const embed = getEmbedUrl(urlVal);
+    if (embed) {
+      if (embed.type === 'video') {
+        box.innerHTML = `<video class="w-full h-full aspect-video rounded-xl object-cover" src="${embed.src}" controls playsinline></video>`;
+      } else {
+        box.innerHTML = `<iframe class="w-full h-full aspect-video rounded-xl" src="${embed.src}" title="Broadcast Live Preview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>`;
+      }
+    } else {
+      box.innerHTML = `
+        <div class="text-center p-4 text-slate-500 text-xs flex flex-col items-center gap-1.5">
+          <span class="material-symbols-outlined text-[32px] text-slate-600">play_circle</span>
+          <span>Paste a Google Drive or YouTube link to preview video</span>
+        </div>
+      `;
+    }
+  }
+}
+
+function setupBroadcastVideoModalControls() {
+  const btnOpenStage = document.getElementById('btn-open-stage-video-modal');
+  if (btnOpenStage) {
+    btnOpenStage.addEventListener('click', () => {
+      window.openBroadcastVideoModal();
+    });
+  }
+
+  // Live input change listeners for instant modal video preview
+  ['modal-video-url', 'modal-video-title', 'modal-video-desc', 'modal-video-venue', 'modal-video-live'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateModalVideoPreview);
+      el.addEventListener('change', updateModalVideoPreview);
+    }
+  });
+
+  const formModal = document.getElementById('form-modal-video-stream');
+  if (formModal) {
+    formModal.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const video_url = (document.getElementById('modal-video-url')?.value || '').trim();
+      const video_heading = document.getElementById('modal-video-heading')?.value.trim();
+      const video_venue = document.getElementById('modal-video-venue')?.value.trim();
+      const video_title = document.getElementById('modal-video-title')?.value.trim();
+      const video_description = document.getElementById('modal-video-desc')?.value.trim();
+      const video_is_live = document.getElementById('modal-video-live')?.checked ?? true;
+      const video_viewer_count = document.getElementById('modal-video-viewers')?.value.trim();
+      const video_duration_note = document.getElementById('modal-video-duration')?.value.trim();
+
+      const btnSave = document.getElementById('btn-save-modal-video');
+      if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">sync</span><span>Publishing...</span>';
+      }
+
+      try {
+        cachedSettings = await db.updateSettings({
+          video_url,
+          video_heading,
+          video_venue,
+          video_title,
+          video_description,
+          video_is_live,
+          video_viewer_count,
+          video_duration_note,
+        });
+
+        // Also sync setting inputs in tab-settings
+        if (document.getElementById('setting-video-url')) document.getElementById('setting-video-url').value = video_url;
+        if (document.getElementById('setting-video-heading')) document.getElementById('setting-video-heading').value = video_heading;
+        if (document.getElementById('setting-video-venue')) document.getElementById('setting-video-venue').value = video_venue;
+        if (document.getElementById('setting-video-title')) document.getElementById('setting-video-title').value = video_title;
+        if (document.getElementById('setting-video-description')) document.getElementById('setting-video-description').value = video_description;
+        if (document.getElementById('setting-video-live')) document.getElementById('setting-video-live').checked = video_is_live;
+        if (document.getElementById('setting-video-viewers')) document.getElementById('setting-video-viewers').value = video_viewer_count;
+        if (document.getElementById('setting-video-duration')) document.getElementById('setting-video-duration').value = video_duration_note;
+
+        updateVideoPreview();
+        logAudit('VIDEO_BROADCAST_UPDATED', `Admin updated main stage video broadcast: "${video_title}" [${video_url ? 'Active Stream' : 'Ambient'}]`);
+        showToast('Main Stage video broadcast settings saved! Video is now live.', 'success');
+
+        document.getElementById('modal-edit-video-broadcast')?.classList.remove('show');
+      } catch (err) {
+        showToast('Failed to save broadcast video: ' + err.message, 'error');
+      } finally {
+        if (btnSave) {
+          btnSave.disabled = false;
+          btnSave.innerHTML = '<span class="material-symbols-outlined text-[16px]">save</span><span>Save &amp; Publish Video Broadcast</span>';
+        }
+      }
+    });
+  }
+}

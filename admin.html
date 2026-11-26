@@ -1079,6 +1079,13 @@
               <p class="text-sm text-slate-500 mt-1">Live performance timing, backstage green room queue, emergency schedule delay cascade, and AV cue sheets.</p>
             </div>
             
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-open-stage-video-modal" class="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">smart_display</span>
+                <span>Edit Broadcast Video (Drive Link)</span>
+              </button>
+            </div>
+            
             <!-- Stage Selector Pills -->
             <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto border border-slate-200">
               <button type="button" class="stage-pill-btn active px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition-all" data-stage="main">
@@ -1089,6 +1096,45 @@
               </button>
               <button type="button" class="stage-pill-btn px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all" data-stage="stage3">
                 Stage III: Diwan Pavilion
+              </button>
+            </div>
+          </div>
+          <!-- Stage Operational Restrictions Console -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-red-600 text-[20px]">shield</span>
+                <h3 class="font-headline-sm text-sm font-bold text-slate-900">Stage Access &amp; Operational Restrictions</h3>
+              </div>
+              <span id="stage-curfew-status" class="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">STAGE CLEAR • ADMITTING</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800">Stage Curfew / Emergency Halt</div>
+                  <div class="text-[10px] text-slate-500">Freezes stage timer &amp; halts entries</div>
+                </div>
+                <input type="checkbox" id="stage-curfew-toggle" class="w-4 h-4 text-red-600 rounded">
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800">Green Room Access Restrict</div>
+                  <div class="text-[10px] text-slate-500">Next 2 delegates only</div>
+                </div>
+                <input type="checkbox" id="stage-greenroom-restrict" class="w-4 h-4 text-red-600 rounded">
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800">AV Stream Embargo</div>
+                  <div class="text-[10px] text-slate-500">Mutes public stage transmission</div>
+                </div>
+                <input type="checkbox" id="stage-av-embargo" class="w-4 h-4 text-red-600 rounded">
+              </div>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <input type="text" id="stage-directive-note" class="form-input text-xs flex-1" placeholder="Stage directive note / banner (e.g. Stage calibration break until 14:30)...">
+              <button type="button" id="btn-save-stage-directive" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all">
+                Update Stage Protocol
               </button>
             </div>
           </div>
@@ -1330,7 +1376,11 @@
               <p class="text-sm text-slate-500 mt-0.5">Manage attendee credentials, inspect team rosters, and register walk-ins</p>
             </div>
             <div class="flex items-center gap-3">
-              <button id="btn-open-onspot-modal" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
+              <button id="btn-open-add-team-modal" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
+                <span class="material-symbols-outlined text-[18px]">group_add</span>
+                <span>+ Register Team Delegation</span>
+              </button>
+              <button id="btn-open-onspot-modal"  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm shadow-sm transition-all" type="button">
                 <span class="material-symbols-outlined text-[18px]">person_add</span>
                 <span>+ On-Spot Walk-In</span>
               </button>
@@ -1478,6 +1528,14 @@
                   <span class="uppercase tracking-wider font-bold">Front-Page Video Preview</span>
                   <span id="preview-video-status" class="px-2 py-0.5 rounded-full bg-red-600 text-white font-bold text-[10px]">LIVE</span>
                 </div>
+                <!-- Real Embedded Video Container in Admin Preview -->
+                <div id="admin-settings-video-preview-player" class="relative w-full aspect-video max-h-[260px] rounded-xl bg-black overflow-hidden border border-slate-700 my-2.5 flex items-center justify-center">
+                  <div class="text-center p-4 text-slate-500 text-xs flex flex-col items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[32px] text-slate-600">smart_display</span>
+                    <span>Enter a Google Drive or YouTube URL to stream video</span>
+                  </div>
+                </div>
+
                 <div class="border-t border-slate-800 pt-2 flex flex-col gap-1">
                   <span id="preview-video-venue" class="text-amber-400 text-[10px] font-bold tracking-wider uppercase">GRAND ANDALUSIAN DOME</span>
                   <h4 id="preview-video-title" class="font-headline-sm text-base font-bold text-white">Mystic Poetry Recital &amp; Qurtuba Ensemble</h4>
@@ -2272,6 +2330,17 @@
               </button>
             </div>
           </div>
+          <!-- Direct Search & Impose/Edit Bar -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+            <div class="relative flex-1 w-full">
+              <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+              <input type="text" id="restrictions-direct-search" class="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-red-500" placeholder="Quick find any attendee, team, or ticket code (ALM-...) to edit/impose restriction...">
+            </div>
+            <button type="button" id="btn-quick-find-restrict" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">manage_search</span>
+              <span>Find &amp; Edit Restriction</span>
+            </button>
+          </div>
 
           <!-- Master Operational Restriction Switches -->
           <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
@@ -2501,11 +2570,121 @@
               </select>
             </div>
           </div>
+        
+          <!-- Operational Restrictions & Eligibility Control -->
+          <div class="p-3.5 bg-red-50/60 border border-red-200 rounded-xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="evt-is-restricted" class="w-4 h-4 text-red-600 rounded">
+                <span class="text-xs font-bold text-red-800">Impose Administrative Restrictions on this Event</span>
+              </label>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800">COMPETITION EMBARGO</span>
+            </div>
+
+            <div id="evt-restriction-fields" class="space-y-2 pt-1">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <label for="evt-restriction-type" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Restriction Type</label>
+                  <select id="evt-restriction-type" class="form-input text-xs">
+                    <option value="REGISTRATION_FROZEN">Registration Frozen (No New Entries)</option>
+                    <option value="SCORING_LOCKED">Scoring Locked (Jury Embargo)</option>
+                    <option value="STAGE_POSTPONED">Stage Postponed / Rescheduled</option>
+                    <option value="CAPACITY_CAPPED">Hard Capacity Quota Reached</option>
+                    <option value="DISCIPLINARY_HOLD">Disciplinary Administrative Hold</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="evt-restriction-reason" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Directive / Reason Notice</label>
+                  <input type="text" id="evt-restriction-reason" class="form-input text-xs" placeholder="e.g. Quota closed by jury directive">
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4 pt-1">
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="evt-freeze-reg" class="w-3.5 h-3.5 text-red-600 rounded">
+                  <span>Freeze Public Registrations</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="evt-lock-scoring" class="w-3.5 h-3.5 text-red-600 rounded">
+                  <span>Embargo Score Submissions</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
           <button type="submit" class="btn-primary">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  
+  <!-- ================= DEDICATED QUICK EVENT RESTRICTIONS MODAL ================= -->
+  <div id="modal-event-restrictions" class="modal-backdrop">
+    <div class="modal-box max-w-lg bg-white rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <div class="modal-header bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-red-500">shield_lock</span>
+          <h3 class="text-white font-bold text-base">Edit Competition Restrictions</h3>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
+      </div>
+
+      <form id="form-quick-event-restrictions" class="p-6 space-y-4">
+        <input type="hidden" id="q-evt-id">
+
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+          <div class="flex items-center justify-between">
+            <h4 id="q-evt-title" class="text-xs font-bold text-slate-900">Competition Name</h4>
+            <span id="q-evt-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-800">ACTIVE</span>
+          </div>
+          <div id="q-evt-meta" class="text-[11px] text-slate-500">Day 1 • Gran Domo Andalusí</div>
+        </div>
+
+        <div class="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="q-evt-is-restricted" class="w-4 h-4 text-red-600 rounded">
+            <span class="text-xs font-bold text-red-800">Impose Operational Restriction on this Competition</span>
+          </label>
+
+          <div class="space-y-2 pt-1">
+            <div>
+              <label for="q-evt-restriction-type" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Restriction Category</label>
+              <select id="q-evt-restriction-type" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
+                <option value="REGISTRATION_FROZEN">Registration Frozen (No New Entries)</option>
+                <option value="SCORING_LOCKED">Scoring Locked (Jury Embargo)</option>
+                <option value="STAGE_POSTPONED">Stage Postponed / Rescheduled</option>
+                <option value="CAPACITY_CAPPED">Hard Capacity Quota Reached</option>
+                <option value="DISCIPLINARY_HOLD">Disciplinary Administrative Hold</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="q-evt-restriction-reason" class="block text-[10px] font-bold uppercase text-slate-600 mb-1">Administrative Directive / Notice</label>
+              <input type="text" id="q-evt-restriction-reason" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-800" placeholder="e.g. Closed by Grand Jury directive">
+            </div>
+
+            <div class="flex items-center gap-4 pt-1">
+              <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input type="checkbox" id="q-evt-freeze-reg" class="w-3.5 h-3.5 text-red-600 rounded">
+                <span>Freeze Registrations</span>
+              </label>
+              <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input type="checkbox" id="q-evt-lock-scoring" class="w-3.5 h-3.5 text-red-600 rounded">
+                <span>Lock Score Submissions</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer flex items-center justify-end gap-2 pt-2">
+          <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
+          <button type="submit" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all">
+            Update Event Restrictions
+          </button>
         </div>
       </form>
     </div>
@@ -2568,25 +2747,155 @@
     </div>
   </div>
 
+  <!-- ================= ADD TEAM DELEGATION MODAL ================= -->
+  <div id="modal-add-team" class="modal-backdrop">
+    <div class="modal-box max-w-2xl bg-white rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <div class="modal-header bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-orange-500">group_add</span>
+          <h3 class="text-white font-bold text-base">Register Team Delegation</h3>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
+      </div>
+
+      <form id="form-add-team" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <!-- Team & Institution Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="team-name-input" class="block text-xs font-bold uppercase text-slate-600 mb-1">Team Delegation Name *</label>
+            <input type="text" id="team-name-input" class="form-input" placeholder="e.g. Al-Andalus Rhetoric Circle" required>
+          </div>
+          <div>
+            <label for="team-college-input" class="block text-xs font-bold uppercase text-slate-600 mb-1">College / University / Institution *</label>
+            <input type="text" id="team-college-input" class="form-input" placeholder="e.g. Darul Huda Islamic University" required>
+          </div>
+        </div>
+
+        <!-- Competition Assignment -->
+        <div>
+          <label for="team-event-select" class="block text-xs font-bold uppercase text-slate-600 mb-1">Competition / Event Assignment *</label>
+          <select id="team-event-select" class="form-input" required></select>
+        </div>
+
+        <!-- Team Leader Info -->
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-slate-500">badge</span>
+            <span>Lead Contestant / Primary Contact</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label for="team-leader-name" class="block text-[11px] font-semibold text-slate-600 mb-1">Leader Full Name *</label>
+              <input type="text" id="team-leader-name" class="form-input" placeholder="Full Name" required>
+            </div>
+            <div>
+              <label for="team-leader-email" class="block text-[11px] font-semibold text-slate-600 mb-1">Email Address *</label>
+              <input type="email" id="team-leader-email" class="form-input" placeholder="leader@example.com" required>
+            </div>
+            <div>
+              <label for="team-leader-phone" class="block text-[11px] font-semibold text-slate-600 mb-1">Phone Number *</label>
+              <input type="tel" id="team-leader-phone" class="form-input" placeholder="+91 98765 00000" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Team Roster Builder -->
+        <div class="border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-xs font-bold uppercase text-slate-800 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-orange-500">groups</span>
+                <span>Team Roster Members</span>
+              </h4>
+              <p class="text-[11px] text-slate-500">Add co-participants, researchers, or stage performers.</p>
+            </div>
+            <button type="button" id="btn-add-team-member-row" class="px-2.5 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold rounded-lg border border-orange-200 flex items-center gap-1 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>+ Add Member</span>
+            </button>
+          </div>
+
+          <div id="team-roster-rows-container" class="space-y-2">
+            <!-- Dynamic rows will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Operational Flags & Immediate Restrictions -->
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="team-auto-checkin" class="w-4 h-4 text-orange-600 rounded" checked>
+            <label for="team-auto-checkin" class="text-xs font-bold text-slate-800 cursor-pointer">
+              Instant Accreditation &amp; Venue Check-In (Auto-Admit)
+            </label>
+          </div>
+
+          <div class="border-t border-slate-200 pt-2.5 space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="team-impose-restriction" class="w-4 h-4 text-red-600 rounded">
+              <span class="text-xs font-bold text-red-700">Impose Immediate Operational Restriction on Team</span>
+            </label>
+            <div id="team-restriction-fields" class="hidden pl-6 space-y-2">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <select id="team-restriction-category" class="form-input text-xs">
+                  <option value="Disciplinary Violation / Misconduct">Disciplinary Violation / Misconduct</option>
+                  <option value="Payment Default / Unverified Transaction">Payment Default / Unverified Transaction</option>
+                  <option value="Duplicate Credential / Ticket Scalping">Duplicate Credential / Ticket Scalping</option>
+                  <option value="Ineligible Category / Credential Tampering">Ineligible Category / Credential Tampering</option>
+                  <option value="Executive Security Directive">Executive Security Directive</option>
+                </select>
+                <select id="team-restriction-severity" class="form-input text-xs">
+                  <option value="FULL_LOCKOUT">Full Lockout (Gate &amp; Venue Ban)</option>
+                  <option value="STAGE_RESTRICTED">Stage Restricted (Performance Barred)</option>
+                  <option value="PROBATION_WARNING">Probationary Surveillance</option>
+                </select>
+              </div>
+              <input type="text" id="team-restriction-notes" class="form-input text-xs" placeholder="Administrative restriction directive notes...">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer flex items-center justify-end gap-3 pt-2">
+          <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #E35A24, #C2410C);">
+            Register Team Delegation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Team Members Inspection Modal -->
   <div id="modal-team" class="modal-backdrop">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 id="modal-team-title">Team Roster Details</h3>
-        <button type="button" class="btn-close-modal btn-icon">&times;</button>
+    <div class="modal-box max-w-xl bg-white rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <div class="modal-header bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-orange-500">groups</span>
+          <h3 id="modal-team-title" class="text-white font-bold text-base">Team Roster Details</h3>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body p-6 space-y-4 max-h-[75vh] overflow-y-auto">
         <div id="modal-team-content">
-          <!-- Populated dynamically -->
+          <!-- Populated dynamically with editable inputs -->
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-close-modal btn-secondary">Close</button>
+      <div class="modal-footer flex items-center justify-between bg-slate-50 p-4 border-t border-slate-200">
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-modal-restrict-team" class="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1 transition-all">
+            <span class="material-symbols-outlined text-[16px]">shield_person</span>
+            <span>Restrict Team</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="btn-close-modal btn-secondary">Close</button>
+          <button type="button" id="btn-save-team-roster" class="btn-primary" style="background: linear-gradient(135deg, #E35A24, #C2410C);">
+            Save Roster Changes
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  
   <!-- ================= POPUP MODALS FOR MODULES 1, 2 ================= -->
 
   <!-- Live Camera QR Scanner Modal -->
@@ -2792,13 +3101,111 @@
   </div>
 
   
+  
+  <!-- ================= EDIT MAIN STAGE BROADCAST VIDEO MODAL ================= -->
+  <div id="modal-edit-video-broadcast" class="modal-backdrop">
+    <div class="modal-box max-w-2xl bg-white rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <div class="modal-header bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-orange-500">smart_display</span>
+          <h3 class="text-white font-bold text-base">Main Stage Broadcast Video Settings</h3>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
+      </div>
+
+      <form id="form-modal-video-stream" class="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+        <!-- Video Stream URL -->
+        <div>
+          <label for="modal-video-url" class="block text-xs font-bold uppercase text-slate-700 mb-1">
+            Google Drive Video Link / Live Stream URL *
+          </label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-3 text-slate-400 text-[20px] pointer-events-none">link</span>
+            <input type="url" id="modal-video-url" class="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-red-500 focus:bg-white transition-all" placeholder="https://drive.google.com/file/d/1BxiMVs.../view?usp=sharing" required/>
+          </div>
+          <div class="mt-1.5 flex items-center gap-1.5 text-[11px] text-orange-800 bg-orange-50 border border-orange-200 p-2 rounded-lg">
+            <span class="material-symbols-outlined text-[16px] text-orange-600">verified</span>
+            <span>Paste any Google Drive sharing or view link. It automatically converts to an embeddable stream preview.</span>
+          </div>
+        </div>
+
+        <!-- Video Live Preview in Modal -->
+        <div class="p-3.5 bg-slate-900 rounded-xl border border-slate-800 text-white space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span class="uppercase tracking-wider font-bold">Interactive Stream Preview</span>
+            <span id="modal-preview-video-status" class="px-2 py-0.5 rounded-full bg-red-600 text-white font-bold text-[10px]">LIVE</span>
+          </div>
+
+          <div id="modal-preview-video-box" class="relative w-full aspect-video max-h-[240px] rounded-xl bg-black overflow-hidden border border-slate-800 flex items-center justify-center">
+            <div class="text-center p-4 text-slate-500 text-xs flex flex-col items-center gap-2">
+              <span class="material-symbols-outlined text-[32px] text-slate-600">play_circle</span>
+              <span>Paste a Google Drive or YouTube link to preview video</span>
+            </div>
+          </div>
+
+          <div class="pt-1">
+            <span id="modal-preview-video-venue" class="text-amber-400 text-[10px] font-bold tracking-wider uppercase">GRAND ANDALUSIAN DOME</span>
+            <h4 id="modal-preview-video-title" class="font-bold text-sm text-white">Mystic Poetry Recital &amp; Qurtuba Ensemble</h4>
+            <p id="modal-preview-video-desc" class="text-[11px] text-slate-400">Live Cultural Stage &amp; Ensemble Performances</p>
+          </div>
+        </div>
+
+        <!-- Title, Venue, Heading -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label for="modal-video-heading" class="block text-xs font-bold uppercase text-slate-600 mb-1">Section Heading</label>
+            <input type="text" id="modal-video-heading" class="form-input text-xs" value="Main Stage Broadcast" required/>
+          </div>
+          <div>
+            <label for="modal-video-venue" class="block text-xs font-bold uppercase text-slate-600 mb-1">Stage / Venue Tag</label>
+            <input type="text" id="modal-video-venue" class="form-input text-xs" value="GRAND ANDALUSIAN DOME" required/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label for="modal-video-title" class="block text-xs font-bold uppercase text-slate-600 mb-1">Programme / Video Title</label>
+            <input type="text" id="modal-video-title" class="form-input text-xs" value="Mystic Poetry Recital &amp; Qurtuba Ensemble" required/>
+          </div>
+          <div>
+            <label for="modal-video-desc" class="block text-xs font-bold uppercase text-slate-600 mb-1">Performer / Description</label>
+            <input type="text" id="modal-video-desc" class="form-input text-xs" value="Live Cultural Stage &amp; Ensemble Performances" required/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="flex items-center gap-2 pt-2">
+            <input type="checkbox" id="modal-video-live" class="w-4 h-4 text-red-600 rounded" checked/>
+            <label for="modal-video-live" class="text-xs font-bold text-slate-800 cursor-pointer">Live Broadcast Pill</label>
+          </div>
+          <div>
+            <label for="modal-video-viewers" class="block text-[11px] font-semibold text-slate-600 mb-1">Viewers Count Note</label>
+            <input type="text" id="modal-video-viewers" class="form-input text-xs" value="4.8k live"/>
+          </div>
+          <div>
+            <label for="modal-video-duration" class="block text-[11px] font-semibold text-slate-600 mb-1">Duration Note</label>
+            <input type="text" id="modal-video-duration" class="form-input text-xs" value="42 mins remaining"/>
+          </div>
+        </div>
+
+        <div class="modal-footer flex items-center justify-end gap-2 pt-2">
+          <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
+          <button type="submit" id="btn-save-modal-video" class="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">save</span>
+            <span>Save &amp; Publish Video Broadcast</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= IMPOSE RESTRICTION MODAL ================= -->
   <div id="modal-restrict-delegate" class="modal-backdrop">
     <div class="modal-box max-w-lg bg-white rounded-2xl p-0 overflow-hidden shadow-2xl">
-      <div class="modal-header bg-slate-900 text-white p-4">
-        <h3 class="flex items-center gap-2 text-white">
-          <span class="material-symbols-outlined text-red-500">lock_person</span>
-          <span>Impose Operational Restriction</span>
+      <div class="modal-header bg-slate-900 text-white p-4 flex items-center justify-between">
+        <h3 id="modal-restrict-title" class="flex items-center gap-2 text-white font-bold text-base">
+          <span class="material-symbols-outlined text-red-500" id="modal-restrict-icon">lock_person</span>
+          <span id="modal-restrict-title-text">Impose Operational Restriction</span>
         </h3>
         <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
       </div>
@@ -2806,11 +3213,11 @@
       <form id="form-restrict-delegate" class="p-6 space-y-4">
         <input type="hidden" id="restrict-target-id">
 
-        <!-- Target Attendee Info Box -->
+        <!-- Target Attendee / Team Info Box -->
         <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl space-y-1">
           <div class="flex items-center justify-between">
             <strong id="restrict-target-code" class="text-red-700 font-mono text-sm font-bold">ALM-XXXX</strong>
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-900">SECURITY ACTION</span>
+            <span id="restrict-current-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-900">SECURITY ACTION</span>
           </div>
           <div id="restrict-target-name" class="text-xs font-bold text-slate-800"></div>
           <div id="restrict-target-college" class="text-[11px] text-slate-600"></div>
@@ -2828,23 +3235,30 @@
         </div>
 
         <div>
-          <label for="restrict-notes-input" class="block text-xs font-bold uppercase text-slate-600 mb-1">Administrative Notes (Optional)</label>
-          <textarea id="restrict-notes-input" rows="2" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-red-500" placeholder="Specific incident details, report reference, or remarks..."></textarea>
+          <label for="restrict-severity-select" class="block text-xs font-bold uppercase text-slate-600 mb-1">Enforcement Severity Level</label>
+          <select id="restrict-severity-select" class="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-red-500" required>
+            <option value="FULL_LOCKOUT">Full Perimeter Lockout (Gate Check-In Blocked)</option>
+            <option value="STAGE_RESTRICTED">Stage &amp; Competition Performance Barred</option>
+            <option value="PROBATION_WARNING">Probationary Alert (Admitted with Warning Flag)</option>
+          </select>
         </div>
 
-        <div class="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-500 space-y-1">
-          <strong class="block font-bold text-slate-700">Enforcement Effect:</strong>
-          <span>• Immediate lockdown at all venue gate scanners.</span><br>
-          <span>• Admission credentials marked RESTRICTED in central database.</span><br>
-          <span>• Incident logged in executive audit trail.</span>
+        <div>
+          <label for="restrict-notes-input" class="block text-xs font-bold uppercase text-slate-600 mb-1">Administrative Notes &amp; Directives</label>
+          <textarea id="restrict-notes-input" rows="2" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-red-500" placeholder="Specify incident notes, supervisor approval, or evidence..."></textarea>
         </div>
 
-        <div class="pt-2 flex items-center justify-end gap-3">
-          <button type="button" class="btn-close-modal px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900">Cancel</button>
-          <button type="submit" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[16px]">lock</span>
-            <span>Impose Restriction &amp; Block Access</span>
+        <div class="modal-footer flex items-center justify-between pt-2">
+          <button type="button" id="btn-modal-lift-action" class="hidden px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">lock_open</span>
+            <span>Lift Restriction Now</span>
           </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" class="btn-close-modal btn-secondary">Cancel</button>
+            <button type="submit" id="btn-submit-restrict" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all">
+              Save Restriction Directive
+            </button>
+          </div>
         </div>
       </form>
     </div>

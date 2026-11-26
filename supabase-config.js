@@ -432,9 +432,35 @@ export const db = {
     return item;
   },
 
+    async updateRegistration(id, updates) {
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('registrations')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        if (!error && data) return data;
+      } catch (e) {
+        console.warn('Supabase updateRegistration error, fallback to local:', e);
+      }
+    }
+    const list = await this.getRegistrations();
+    const item = list.find((r) => r.id === id);
+    if (item) {
+      Object.assign(item, updates);
+      localStorage.setItem(STORAGE_KEYS.REGISTRATIONS, JSON.stringify(list));
+      return item;
+    }
+    throw new Error('Registration record not found.');
+  },
+
   async addRegistration(regData) {
-    regData.ticket_code = 'ALM-' + Math.floor(1000 + Math.random() * 9000);
-    regData.created_at = new Date().toISOString();
+    if (!regData.ticket_code) {
+      regData.ticket_code = (regData.team_name ? 'ALM-TEAM-' : 'ALM-') + Math.floor(1000 + Math.random() * 9000);
+    }
+    regData.created_at = regData.created_at || new Date().toISOString();
     if (!regData.team_members) regData.team_members = [{ name: regData.leader_name, role: 'Lead' }];
 
     if (this.isLive()) {
@@ -448,7 +474,7 @@ export const db = {
     regData.id = generateUuid();
     const list = await this.getRegistrations();
     list.unshift(regData);
-    localStorage.setItem('almurafaqa_registrations', JSON.stringify(list));
+    localStorage.setItem(STORAGE_KEYS.REGISTRATIONS, JSON.stringify(list));
     return regData;
   },
 
@@ -755,31 +781,19 @@ export const db = {
   // ----------------------------------------------------------------------------
   // RESTRICTION & ACCESS CONTROL ENGINE
   // ----------------------------------------------------------------------------
-  async setRegistrationRestriction(id, is_restricted, reason = '') {
+    async setRegistrationRestriction(id, is_restricted, reason = '', severity = 'FULL_LOCKOUT', category = 'Disciplinary Violation / Misconduct') {
     const timestamp = is_restricted ? new Date().toISOString() : null;
-    if (this.isLive()) {
-      try {
-        const { data, error } = await supabase
-          .from('registrations')
-          .update({ is_restricted, restriction_reason: reason, restricted_at: timestamp })
-          .eq('id', id)
-          .select()
-          .single();
-        if (!error && data) return data;
-      } catch (e) {
-        console.warn('Supabase restriction update error, persisting locally:', e);
-      }
-    }
-    const list = await this.getRegistrations();
-    const item = list.find((r) => r.id === id);
-    if (item) {
-      item.is_restricted = Boolean(is_restricted);
-      item.restriction_reason = is_restricted ? reason : '';
-      item.restricted_at = timestamp;
-      localStorage.setItem('almurafaqa_registrations', JSON.stringify(list));
-    }
-    return item;
+    const updates = {
+      is_restricted: Boolean(is_restricted),
+      restriction_reason: is_restricted ? reason : '',
+      restriction_severity: is_restricted ? severity : null,
+      restriction_category: is_restricted ? category : null,
+      restricted_at: timestamp
+    };
+    return await this.updateRegistration(id, updates);
   },
+
+
 
   async getRestrictions() {
     const defaultRestrictions = {
