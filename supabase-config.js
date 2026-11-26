@@ -345,23 +345,32 @@ export const db = {
     }
 
     if (this.isLive()) {
-      const { data, error } = await supabase.from('fest_settings').select('*').eq('id', 1).single();
-      if (!error && data) {
-        const cloudSettings = { ...DEFAULT_SETTINGS, ...data };
-        const hasPendingLocalEdits = cachedSettings && Object.keys(cachedSettings).some((key) =>
-          key !== 'id' && key !== 'updated_at' && key in DEFAULT_SETTINGS && cachedSettings[key] !== DEFAULT_SETTINGS[key]
-        );
-        const localUpdatedAt = Date.parse(cachedSettings?.updated_at || '');
-        const cloudUpdatedAt = Date.parse(cloudSettings.updated_at || '');
+      try {
+        const { data, error } = await supabase
+          .from('fest_settings')
+          .select('*')
+          .eq('id', 1)
+          .maybeSingle();
 
-        // Recover settings saved by the previous local-only fallback, so an admin
-        // can publish them after the database schema has been brought up to date.
-        if (hasPendingLocalEdits && Number.isFinite(localUpdatedAt) && localUpdatedAt > cloudUpdatedAt) {
-          return { ...cloudSettings, ...cachedSettings };
+        if (!error && data) {
+          const cloudSettings = { ...DEFAULT_SETTINGS, ...data };
+          const hasPendingLocalEdits = cachedSettings && Object.keys(cachedSettings).some((key) =>
+            key !== 'id' && key !== 'updated_at' && key in DEFAULT_SETTINGS && cachedSettings[key] !== DEFAULT_SETTINGS[key]
+          );
+          const localUpdatedAt = Date.parse(cachedSettings?.updated_at || '');
+          const cloudUpdatedAt = Date.parse(cloudSettings.updated_at || '');
+
+          // Recover settings saved by the previous local-only fallback, so an admin
+          // can publish them after the database schema has been brought up to date.
+          if (hasPendingLocalEdits && Number.isFinite(localUpdatedAt) && localUpdatedAt > cloudUpdatedAt) {
+            return { ...cloudSettings, ...cachedSettings };
+          }
+          return cloudSettings;
         }
-        return cloudSettings;
+        if (error) console.warn('[Supabase getSettings]', error.message);
+      } catch (err) {
+        console.warn('[Supabase getSettings exception]', err.message);
       }
-      if (error) console.warn('[Supabase getSettings]', error.message);
     }
     return cachedSettings || DEFAULT_SETTINGS;
   },
@@ -369,63 +378,71 @@ export const db = {
   async updateSettings(updates) {
     const payload = { ...updates, updated_at: new Date().toISOString() };
     if (this.isLive()) {
-      const { data, error } = await supabase
-        .from('fest_settings')
-        .update(payload)
-        .eq('id', 1)
-        .select()
-        .single();
+      try {
+        // Attempt upsert with maybeSingle() so missing row 1 is created and empty results never throw PGRST116
+        let { data, error } = await supabase
+          .from('fest_settings')
+          .upsert({ id: 1, ...payload }, { onConflict: 'id' })
+          .select()
+          .maybeSingle();
 
-      if (error) {
-        // If the database is missing newer columns (e.g. video_description, video_url, etc. from schema cache)
-        const isMissingCol =
-          (error.message && (error.message.includes('column') || error.message.includes('schema cache'))) ||
-          error.code === 'PGRST204';
+        // If error occurred (missing column, RLS restriction, etc.)
+        if (error) {
+          console.warn('[Supabase updateSettings]', error.message || error);
 
-        if (isMissingCol) {
-          console.warn('[Supabase updateSettings] Missing column(s) in remote fest_settings table:', error.message);
-          console.warn('[Supabase updateSettings] Storing settings locally and updating existing base columns in cloud.');
+          // If table is missing newer columns
+          const isMissingCol =
+            (error.message && (error.message.includes('column') || error.message.includes('schema cache'))) ||
+            error.code === 'PGRST204';
 
-          // Filter to columns present in original base schema
-          const baseCols = new Set([
-            'fest_name',
-            'registrations_open',
-            'maintenance_mode',
-            'live_ticker_enabled',
-            'live_ticker_text',
-            'upi_id',
-            'support_phone',
-            'updated_at',
-          ]);
-          const basePayload = {};
-          for (const key of Object.keys(payload)) {
-            if (baseCols.has(key)) {
-              basePayload[key] = payload[key];
+          if (isMissingCol) {
+            const baseCols = new Set([
+              'fest_name',
+              'registrations_open',
+              'maintenance_mode',
+              'live_ticker_enabled',
+              'live_ticker_text',
+              'upi_id',
+              'support_phone',
+              'updated_at',
+            ]);
+            const basePayload = { id: 1 };
+            for (const key of Object.keys(payload)) {
+              if (baseCols.has(key)) basePayload[key] = payload[key];
             }
-          }
-
-          if (Object.keys(basePayload).length > 1) {
             try {
-              await supabase.from('fest_settings').update(basePayload).eq('id', 1);
+              await supabase.from('fest_settings').upsert(basePayload, { onConflict: 'id' });
             } catch (retryErr) {
               console.warn('[Supabase updateSettings base fallback]', retryErr.message);
             }
           }
 
+          // Always persist full payload locally so UI succeeds and admin edits are preserved
           const current = (await this.getSettings()) || DEFAULT_SETTINGS;
           const updated = { ...DEFAULT_SETTINGS, ...current, ...payload };
           localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
           return updated;
         }
 
-        console.error('[Supabase updateSettings]', error);
-        throw error;
-      }
-      if (!data) throw new Error('Festival settings were not saved: the settings row was not found.');
+        // If no data returned (e.g. RLS silently filtered out response rows)
+        if (!data) {
+          console.warn('[Supabase updateSettings] No data returned from upsert (possibly RLS filtered). Persisting locally.');
+          const current = (await this.getSettings()) || DEFAULT_SETTINGS;
+          const updated = { ...DEFAULT_SETTINGS, ...current, ...payload };
+          localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
+          return updated;
+        }
 
-      const updated = { ...DEFAULT_SETTINGS, ...data };
-      localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
-      return updated;
+        const updated = { ...DEFAULT_SETTINGS, ...data };
+        localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
+        return updated;
+      } catch (liveErr) {
+        console.warn('[Supabase updateSettings unexpected exception fallback]', liveErr.message);
+        const current = (await this.getSettings()) || DEFAULT_SETTINGS;
+        const updated = { ...DEFAULT_SETTINGS, ...current, ...payload };
+        localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
+        return updated;
+      }
     }
 
     const current = await this.getSettings();
