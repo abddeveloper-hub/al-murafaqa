@@ -751,4 +751,59 @@ export const db = {
     await this.addAuditLog('DATABASE_RESTORE', 'Full database restored from JSON backup archive', 'Super Admin');
     return true;
   },
+
+  // ----------------------------------------------------------------------------
+  // RESTRICTION & ACCESS CONTROL ENGINE
+  // ----------------------------------------------------------------------------
+  async setRegistrationRestriction(id, is_restricted, reason = '') {
+    const timestamp = is_restricted ? new Date().toISOString() : null;
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('registrations')
+          .update({ is_restricted, restriction_reason: reason, restricted_at: timestamp })
+          .eq('id', id)
+          .select()
+          .single();
+        if (!error && data) return data;
+      } catch (e) {
+        console.warn('Supabase restriction update error, persisting locally:', e);
+      }
+    }
+    const list = await this.getRegistrations();
+    const item = list.find((r) => r.id === id);
+    if (item) {
+      item.is_restricted = Boolean(is_restricted);
+      item.restriction_reason = is_restricted ? reason : '';
+      item.restricted_at = timestamp;
+      localStorage.setItem('almurafaqa_registrations', JSON.stringify(list));
+    }
+    return item;
+  },
+
+  async getRestrictions() {
+    const defaultRestrictions = {
+      site_lockdown: false,
+      registration_freeze: false,
+      gate_ingress_restricted: false,
+      score_embargo: false,
+      zone_backstage_restricted: true,
+      zone_vip_restricted: true,
+      zone_press_restricted: true,
+      updated_at: new Date().toISOString(),
+    };
+    try {
+      const raw = localStorage.getItem('almurafaqa_restrictions');
+      return raw ? { ...defaultRestrictions, ...JSON.parse(raw) } : defaultRestrictions;
+    } catch (e) {
+      return defaultRestrictions;
+    }
+  },
+
+  async updateRestrictions(restrictionsObj) {
+    const current = await this.getRestrictions();
+    const merged = { ...current, ...restrictionsObj, updated_at: new Date().toISOString() };
+    localStorage.setItem('almurafaqa_restrictions', JSON.stringify(merged));
+    return merged;
+  },
 };

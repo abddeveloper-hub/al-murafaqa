@@ -359,6 +359,12 @@
               <span class="text-sm font-semibold tracking-tight">Broadcast Alerts</span>
             </button>
 
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="restrictions">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">gpp_maybe</span>
+              <span class="text-sm font-semibold tracking-tight">Access Restrictions</span>
+              <span id="badge-restricted-count" class="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800" style="display:none">0</span>
+            </button>
+
             <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="settings">
               <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">shield_person</span>
               <span class="text-sm font-semibold tracking-tight">Governance &amp; Audit</span>
@@ -2245,6 +2251,173 @@
 </div>
       </section>
 
+      <!-- ================= TAB: OPERATIONAL RESTRICTIONS & SECURITY BLACKLIST ================= -->
+      <section id="tab-restrictions" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          
+          <!-- Header Banner -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Access Restrictions &amp; Disciplinary Blacklist</h2>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">Manage global gate ingress halts, score embargoes, zone security perimeters, and delegate restriction directives.</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-open-direct-restrict-modal" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px]">lock_person</span>
+                <span>+ Impose Direct Restriction</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Master Operational Restriction Switches -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-2">
+              <span class="material-symbols-outlined text-red-600 text-[20px]">shield</span>
+              <span>Master Operational Restrictions Matrix</span>
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+              
+              <!-- 1. Gate Ingress Halt -->
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between space-y-3">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <strong class="text-sm text-slate-900 block font-bold">Gate Ingress Halt</strong>
+                    <span class="text-[11px] text-slate-500 block mt-0.5">Halt attendee admittance across all venue gates.</span>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+                    <input type="checkbox" id="switch-restrict-gate" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
+                </div>
+                <span id="label-restrict-gate" class="text-[10px] font-bold text-emerald-700 uppercase">Gates Operating Normally</span>
+              </div>
+
+              <!-- 2. Registration Intake Freeze -->
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between space-y-3">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <strong class="text-sm text-slate-900 block font-bold">Registration Freeze</strong>
+                    <span class="text-[11px] text-slate-500 block mt-0.5">Block all online &amp; on-spot walk-in registrations.</span>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+                    <input type="checkbox" id="switch-restrict-regs" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
+                </div>
+                <span id="label-restrict-regs" class="text-[10px] font-bold text-emerald-700 uppercase">Intake Open</span>
+              </div>
+
+              <!-- 3. Adjudication Score Embargo -->
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between space-y-3">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <strong class="text-sm text-slate-900 block font-bold">Score Embargo</strong>
+                    <span class="text-[11px] text-slate-500 block mt-0.5">Hide official scores &amp; podium from public view.</span>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+                    <input type="checkbox" id="switch-restrict-scores" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
+                </div>
+                <span id="label-restrict-scores" class="text-[10px] font-bold text-emerald-700 uppercase">Public Leaderboard Active</span>
+              </div>
+
+              <!-- 4. Public Portal Lockdown -->
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between space-y-3">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <strong class="text-sm text-slate-900 block font-bold">Portal Lockdown</strong>
+                    <span class="text-[11px] text-slate-500 block mt-0.5">Restrict frontpage to maintenance notice.</span>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+                    <input type="checkbox" id="switch-restrict-site" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
+                </div>
+                <span id="label-restrict-site" class="text-[10px] font-bold text-emerald-700 uppercase">Public Site Live</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Venue Security Zone Perimeters -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-2">
+              <span class="material-symbols-outlined text-amber-600 text-[20px]">meeting_room</span>
+              <span>Venue Security Zone Access Matrix</span>
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <span class="text-xs font-bold text-slate-800 block">Main Festival Hall</span>
+                <span class="text-[11px] text-slate-500 block mt-0.5">All registered ticket holders</span>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">UNRESTRICTED</span>
+              </div>
+
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <span class="text-xs font-bold text-slate-800 block">Backstage &amp; Green Room</span>
+                <span class="text-[11px] text-slate-500 block mt-0.5">Performers &amp; Stage Crew Only</span>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">RESTRICTED PERIMETER</span>
+              </div>
+
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <span class="text-xs font-bold text-slate-800 block">Royal VIP &amp; Jury Lounge</span>
+                <span class="text-[11px] text-slate-500 block mt-0.5">Faculty, Dignitaries &amp; Adjudicators</span>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">STRICT CLEARANCE</span>
+              </div>
+
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <span class="text-xs font-bold text-slate-800 block">Press &amp; Media Deck</span>
+                <span class="text-[11px] text-slate-500 block mt-0.5">Accredited Journalists &amp; Photographers</span>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">PRESS CREDENTIAL</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Restricted / Blacklisted Delegates Table -->
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+            <div class="p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-red-600 text-[20px]">person_off</span>
+                  <span>Restricted &amp; Disciplinary Blacklist</span>
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">Delegates flagged with active access restrictions. Ingress scanner and check-in are blocked automatically.</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input type="text" id="blacklist-search-input" class="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs" placeholder="Search restricted pass...">
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase border-b border-slate-200">
+                  <tr>
+                    <th class="py-3 px-4">Pass Code</th>
+                    <th class="py-3 px-4">Attendee / Delegation</th>
+                    <th class="py-3 px-4">Institution</th>
+                    <th class="py-3 px-4">Restriction Reason</th>
+                    <th class="py-3 px-4">Imposed At</th>
+                    <th class="py-3 px-4 text-right">Administrative Action</th>
+                  </tr>
+                </thead>
+                <tbody id="blacklist-table-body" class="divide-y divide-slate-100">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
     </main>
   </div>
 
@@ -2615,6 +2788,65 @@
         <span class="font-mono text-slate-400">Al Murafaqa Executive CLI</span>
       </div>
 
+    </div>
+  </div>
+
+  
+  <!-- ================= IMPOSE RESTRICTION MODAL ================= -->
+  <div id="modal-restrict-delegate" class="modal-backdrop">
+    <div class="modal-box max-w-lg bg-white rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <div class="modal-header bg-slate-900 text-white p-4">
+        <h3 class="flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-red-500">lock_person</span>
+          <span>Impose Operational Restriction</span>
+        </h3>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
+      </div>
+
+      <form id="form-restrict-delegate" class="p-6 space-y-4">
+        <input type="hidden" id="restrict-target-id">
+
+        <!-- Target Attendee Info Box -->
+        <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl space-y-1">
+          <div class="flex items-center justify-between">
+            <strong id="restrict-target-code" class="text-red-700 font-mono text-sm font-bold">ALM-XXXX</strong>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-200 text-red-900">SECURITY ACTION</span>
+          </div>
+          <div id="restrict-target-name" class="text-xs font-bold text-slate-800"></div>
+          <div id="restrict-target-college" class="text-[11px] text-slate-600"></div>
+        </div>
+
+        <div>
+          <label for="restrict-reason-select" class="block text-xs font-bold uppercase text-slate-600 mb-1">Standard Restriction Category</label>
+          <select id="restrict-reason-select" class="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-red-500" required>
+            <option value="Disciplinary Violation / Misconduct">Disciplinary Violation / Misconduct</option>
+            <option value="Payment Default / Unverified Transaction">Payment Default / Unverified Transaction</option>
+            <option value="Duplicate Credential / Ticket Scalping">Duplicate Credential / Ticket Scalping</option>
+            <option value="Ineligible Category / Credential Tampering">Ineligible Category / Credential Tampering</option>
+            <option value="Executive Security Directive">Executive Security Directive</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="restrict-notes-input" class="block text-xs font-bold uppercase text-slate-600 mb-1">Administrative Notes (Optional)</label>
+          <textarea id="restrict-notes-input" rows="2" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-red-500" placeholder="Specific incident details, report reference, or remarks..."></textarea>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-500 space-y-1">
+          <strong class="block font-bold text-slate-700">Enforcement Effect:</strong>
+          <span>• Immediate lockdown at all venue gate scanners.</span><br>
+          <span>• Admission credentials marked RESTRICTED in central database.</span><br>
+          <span>• Incident logged in executive audit trail.</span>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" class="btn-close-modal px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">lock</span>
+            <span>Impose Restriction &amp; Block Access</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

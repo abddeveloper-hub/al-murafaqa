@@ -15,6 +15,7 @@ let cachedWinners = [];
 let cachedScores = [];
 let cachedStageOps = null;
 let cachedAuditLogs = [];
+let cachedRestrictions = null;
 let activeRole = 'superadmin'; // 'superadmin' | 'jury' | 'marshal' | 'stageops'
 let currentAttendeeLookup = null;
 let html5QrScanner = null;
@@ -339,6 +340,7 @@ function setupEventListeners() {
   setupScoringControls();
   setupAnalyticsControls();
   setupCameraScanner();
+  setupRestrictionsControls();
 
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
@@ -379,6 +381,8 @@ function switchTab(tabId) {
   if (tabId === 'scoring') renderScoringTab();
   if (tabId === 'analytics') renderAnalyticsTab();
   if (tabId === 'settings') renderAuditLog();
+  if (tabId === 'restrictions') renderRestrictionsTab();
+    renderRestrictionsTab();
 
   initLucide();
 }
@@ -399,6 +403,7 @@ async function loadAllData() {
       db.getScores ? db.getScores() : [],
       db.getStageOps ? db.getStageOps() : null,
       db.getAuditLogs ? db.getAuditLogs() : [],
+      db.getRestrictions ? db.getRestrictions() : null,
     ]);
 
     cachedSettings = settings;
@@ -409,6 +414,7 @@ async function loadAllData() {
     cachedScores = scores || [];
     cachedStageOps = stageOps;
     cachedAuditLogs = auditLogs || [];
+    cachedRestrictions = arguments[7] || null;
 
     renderOverview();
     renderAnnouncementsTab();
@@ -420,6 +426,7 @@ async function loadAllData() {
     renderScoringTab();
     renderAnalyticsTab();
     renderAuditLog();
+    renderRestrictionsTab();
 
     initLucide();
   } catch (err) {
@@ -1297,19 +1304,36 @@ function renderRegistrationsTab() {
         </td>
         <td>${escapeHtml(r.college_name)}</td>
         <td>
-          <span class="badge ${r.checked_in ? 'checked' : ''}" style="${!r.checked_in ? 'background: #FEF3C7; color: #92400E;' : ''}">
-            ${r.checked_in ? 'Admitted' : 'Pending Check-In'}
-          </span>
+          ${
+            r.is_restricted
+              ? `<span class="badge" style="background: #FEE2E2; color: #991B1B; border: 1px solid #F87171; font-weight: 700; letter-spacing: 0.5px;">
+                   RESTRICTED
+                 </span>`
+              : `<span class="badge ${r.checked_in ? 'checked' : ''}" style="${!r.checked_in ? 'background: #FEF3C7; color: #92400E;' : ''}">
+                   ${r.checked_in ? 'Admitted' : 'Pending Check-In'}
+                 </span>`
+          }
         </td>
         <td style="text-align: right;">
-          <div class="action-btn-group" style="justify-content: flex-end;">
+          <div class="action-btn-group" style="justify-content: flex-end; gap: 4px;">
             ${
-              !r.checked_in
+              !r.checked_in && !r.is_restricted
                 ? `<button class="btn-icon verify" title="Check-In Attendee" onclick="window.quickCheckIn('${r.id}')">
                      <i data-lucide="check" style="width: 16px; height: 16px;"></i>
                    </button>`
-                : `<button class="btn-icon" title="Admitted" disabled style="opacity: 0.5; cursor: default;">
+                : r.checked_in
+                ? `<button class="btn-icon" title="Admitted" disabled style="opacity: 0.5; cursor: default;">
                      <i data-lucide="check-check" style="width: 16px; height: 16px;"></i>
+                   </button>`
+                : ''
+            }
+            ${
+              r.is_restricted
+                ? `<button class="btn-icon" style="color: #059669; border-color: #A7F3D0; width: 32px; height: 32px;" title="Lift Restriction" onclick="window.liftRestriction('${r.id}', '${escapeHtml(r.leader_name)}')">
+                     <span class="material-symbols-outlined text-[16px]">lock_open</span>
+                   </button>`
+                : `<button class="btn-icon" style="color: #DC2626; border-color: #FECACA; width: 32px; height: 32px;" title="Impose Restriction / Blacklist" onclick="window.openRestrictModal('${r.id}')">
+                     <span class="material-symbols-outlined text-[16px]">lock_person</span>
                    </button>`
             }
           </div>
@@ -1910,6 +1934,7 @@ async function logAudit(action, details) {
     if (!cachedAuditLogs) cachedAuditLogs = [];
     cachedAuditLogs.unshift(entry);
     renderAuditLog();
+    renderRestrictionsTab();
   } catch (e) {
     console.warn('Failed to log audit event:', e);
   }
@@ -3480,3 +3505,369 @@ renderAnalyticsTab = async function() {
 document.addEventListener('DOMContentLoaded', () => {
   setupCommandPalette();
 });
+
+
+// ==============================================================================
+// 17. ACCESS & OPERATIONAL RESTRICTIONS ENGINE
+// ==============================================================================
+
+function setupRestrictionsControls() {
+  // Master Switches
+  const swGate = document.getElementById('switch-restrict-gate');
+  const swRegs = document.getElementById('switch-restrict-regs');
+  const swScores = document.getElementById('switch-restrict-scores');
+  const swSite = document.getElementById('switch-restrict-site');
+
+  if (swGate) {
+    swGate.addEventListener('change', async () => {
+      const active = swGate.checked;
+      await db.updateRestrictions({ gate_ingress_restricted: active });
+      cachedRestrictions = await db.getRestrictions();
+      logAudit('RESTRICTION_SWITCH_TOGGLED', `Gate Ingress Curfew ${active ? 'ENFORCED (ALL GATES HALTED)' : 'LIFTED (NORMAL OPERATION)'}`);
+      showToast(`Gate Ingress ${active ? 'HALTED: All check-ins blocked' : 'Normal: Check-in active'}`, active ? 'error' : 'info');
+      updateRestrictionLabels();
+    });
+  }
+
+  if (swRegs) {
+    swRegs.addEventListener('change', async () => {
+      const active = swRegs.checked;
+      await db.updateRestrictions({ registration_freeze: active });
+      cachedRestrictions = await db.getRestrictions();
+      logAudit('RESTRICTION_SWITCH_TOGGLED', `Registration Intake ${active ? 'FROZEN' : 'ACTIVE'}`);
+      showToast(`Registrations ${active ? 'FROZEN' : 'Reopened'}`, active ? 'warning' : 'info');
+      updateRestrictionLabels();
+    });
+  }
+
+  if (swScores) {
+    swScores.addEventListener('change', async () => {
+      const active = swScores.checked;
+      await db.updateRestrictions({ score_embargo: active });
+      cachedRestrictions = await db.getRestrictions();
+      logAudit('RESTRICTION_SWITCH_TOGGLED', `Competition Score Embargo ${active ? 'ENFORCED' : 'LIFTED'}`);
+      showToast(`Official Scores ${active ? 'EMBARGOED from public' : 'Published to public'}`, active ? 'warning' : 'info');
+      updateRestrictionLabels();
+    });
+  }
+
+  if (swSite) {
+    swSite.addEventListener('change', async () => {
+      const active = swSite.checked;
+      await db.updateRestrictions({ site_lockdown: active });
+      cachedRestrictions = await db.getRestrictions();
+      logAudit('RESTRICTION_SWITCH_TOGGLED', `Public Portal Lockdown ${active ? 'ACTIVATED' : 'DEACTIVATED'}`);
+      showToast(`Public Site ${active ? 'LOCKED DOWN' : 'Accessible normally'}`, active ? 'error' : 'info');
+      updateRestrictionLabels();
+    });
+  }
+
+  // Blacklist Search Input
+  const bSearch = document.getElementById('blacklist-search-input');
+  if (bSearch) {
+    bSearch.addEventListener('input', () => renderBlacklistTable(bSearch.value));
+  }
+
+  // Open Direct Restrict Modal Button
+  const btnDirectRestrict = document.getElementById('btn-open-direct-restrict-modal');
+  if (btnDirectRestrict) {
+    btnDirectRestrict.addEventListener('click', () => {
+      // Pick first non-restricted attendee or prompt
+      const regs = cachedRegistrations || [];
+      const firstValid = regs.find((r) => !r.is_restricted);
+      if (firstValid) {
+        openRestrictModal(firstValid.id);
+      } else {
+        showToast('All registered attendees are already restricted or no attendees registered.', 'info');
+      }
+    });
+  }
+
+  // Restrict Form Submit
+  const formRestrict = document.getElementById('form-restrict-delegate');
+  if (formRestrict) {
+    formRestrict.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetId = document.getElementById('restrict-target-id')?.value;
+      const reasonCategory = document.getElementById('restrict-reason-select')?.value;
+      const notes = (document.getElementById('restrict-notes-input')?.value || '').trim();
+      const fullReason = notes ? `${reasonCategory} — ${notes}` : reasonCategory;
+
+      if (!targetId) return;
+
+      try {
+        await db.setRegistrationRestriction(targetId, true, fullReason);
+        cachedRegistrations = await db.getRegistrations();
+
+        const attendee = cachedRegistrations.find((r) => r.id === targetId);
+        const name = attendee ? (attendee.team_name || attendee.leader_name) : 'Delegate';
+
+        logAudit('DELEGATE_RESTRICTION_IMPOSED', `Imposed restriction on ${name} (${attendee?.ticket_code}): ${fullReason}`);
+        showToast(`Restriction imposed on ${name}. Access blocked at all gates.`, 'error');
+
+        // Close modal
+        document.getElementById('modal-restrict-delegate')?.classList.remove('show');
+
+        // Re-render
+        renderRestrictionsTab();
+        renderRegistrationsTab();
+      } catch (err) {
+        showToast('Failed to impose restriction: ' + err.message, 'error');
+      }
+    });
+  }
+}
+
+async function renderRestrictionsTab() {
+  if (!cachedRestrictions) cachedRestrictions = await db.getRestrictions();
+  const res = cachedRestrictions;
+
+  const swGate = document.getElementById('switch-restrict-gate');
+  const swRegs = document.getElementById('switch-restrict-regs');
+  const swScores = document.getElementById('switch-restrict-scores');
+  const swSite = document.getElementById('switch-restrict-site');
+
+  if (swGate) swGate.checked = Boolean(res.gate_ingress_restricted);
+  if (swRegs) swRegs.checked = Boolean(res.registration_freeze);
+  if (swScores) swScores.checked = Boolean(res.score_embargo);
+  if (swSite) swSite.checked = Boolean(res.site_lockdown);
+
+  updateRestrictionLabels();
+  renderBlacklistTable();
+}
+
+function updateRestrictionLabels() {
+  const res = cachedRestrictions || {};
+
+  const lGate = document.getElementById('label-restrict-gate');
+  const lRegs = document.getElementById('label-restrict-regs');
+  const lScores = document.getElementById('label-restrict-scores');
+  const lSite = document.getElementById('label-restrict-site');
+
+  if (lGate) {
+    lGate.textContent = res.gate_ingress_restricted ? 'INGRESS HALTED (LOCKED)' : 'Gates Operating Normally';
+    lGate.className = `text-[10px] font-bold uppercase ${res.gate_ingress_restricted ? 'text-red-600' : 'text-emerald-700'}`;
+  }
+  if (lRegs) {
+    lRegs.textContent = res.registration_freeze ? 'INTAKE FROZEN (BLOCKED)' : 'Intake Open';
+    lRegs.className = `text-[10px] font-bold uppercase ${res.registration_freeze ? 'text-red-600' : 'text-emerald-700'}`;
+  }
+  if (lScores) {
+    lScores.textContent = res.score_embargo ? 'SCORES EMBARGOED' : 'Public Leaderboard Active';
+    lScores.className = `text-[10px] font-bold uppercase ${res.score_embargo ? 'text-amber-700' : 'text-emerald-700'}`;
+  }
+  if (lSite) {
+    lSite.textContent = res.site_lockdown ? 'PORTAL IN LOCKDOWN' : 'Public Site Live';
+    lSite.className = `text-[10px] font-bold uppercase ${res.site_lockdown ? 'text-red-600' : 'text-emerald-700'}`;
+  }
+}
+
+function renderBlacklistTable(filterText = '') {
+  const tbody = document.getElementById('blacklist-table-body');
+  const badgeCount = document.getElementById('badge-restricted-count');
+  if (!tbody) return;
+
+  const regs = cachedRegistrations || [];
+  const restrictedList = regs.filter((r) => r.is_restricted);
+
+  if (badgeCount) {
+    if (restrictedList.length > 0) {
+      badgeCount.textContent = restrictedList.length;
+      badgeCount.style.display = 'inline-block';
+    } else {
+      badgeCount.style.display = 'none';
+    }
+  }
+
+  const query = (filterText || '').toLowerCase().trim();
+  const filtered = restrictedList.filter((r) => {
+    if (!query) return true;
+    return (
+      (r.ticket_code || '').toLowerCase().includes(query) ||
+      (r.leader_name || '').toLowerCase().includes(query) ||
+      (r.college_name || '').toLowerCase().includes(query) ||
+      (r.restriction_reason || '').toLowerCase().includes(query)
+    );
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-8 text-center text-slate-400">
+          No restricted delegates found. All attendees in good administrative standing.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((r) => {
+    const timeStr = r.restricted_at ? new Date(r.restricted_at).toLocaleTimeString() : 'Active Flag';
+    const dateStr = r.restricted_at ? new Date(r.restricted_at).toLocaleDateString() : 'Direct';
+
+    return `
+      <tr class="bg-red-50/40 hover:bg-red-50/70 transition-colors">
+        <td class="py-3 px-4 font-mono font-bold text-red-700 whitespace-nowrap">
+          ${escapeHtml(r.ticket_code)}
+        </td>
+        <td class="py-3 px-4">
+          <strong class="text-slate-900 block font-bold">${escapeHtml(r.team_name || r.leader_name)}</strong>
+          <span class="text-[10px] text-slate-500">${escapeHtml(r.leader_phone || '')}</span>
+        </td>
+        <td class="py-3 px-4 text-slate-700">
+          ${escapeHtml(r.college_name)}
+        </td>
+        <td class="py-3 px-4 text-red-800 font-semibold max-w-xs">
+          <span class="inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px] text-red-600">block</span>
+            <span>${escapeHtml(r.restriction_reason || 'Disciplinary Directive')}</span>
+          </span>
+        </td>
+        <td class="py-3 px-4 text-slate-500 whitespace-nowrap text-[11px]">
+          <span>${timeStr}</span>
+          <span class="text-[10px] text-slate-400 block">${dateStr}</span>
+        </td>
+        <td class="py-3 px-4 text-right whitespace-nowrap">
+          <button type="button" class="btn-lift-restriction px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all" data-id="${r.id}" data-name="${escapeHtml(r.leader_name)}">
+            Lift Restriction
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Attach Lift Restriction click handlers
+  tbody.querySelectorAll('.btn-lift-restriction').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name');
+      liftRestriction(id, name);
+    });
+  });
+}
+
+function openRestrictModal(registrationId) {
+  const modal = document.getElementById('modal-restrict-delegate');
+  if (!modal) return;
+
+  const attendee = (cachedRegistrations || []).find((r) => r.id === registrationId);
+  if (!attendee) {
+    showToast('Delegate record not found', 'error');
+    return;
+  }
+
+  const targetIdInput = document.getElementById('restrict-target-id');
+  const codeEl = document.getElementById('restrict-target-code');
+  const nameEl = document.getElementById('restrict-target-name');
+  const colEl = document.getElementById('restrict-target-college');
+
+  if (targetIdInput) targetIdInput.value = attendee.id;
+  if (codeEl) codeEl.textContent = attendee.ticket_code;
+  if (nameEl) nameEl.textContent = attendee.team_name || attendee.leader_name;
+  if (colEl) colEl.textContent = attendee.college_name;
+
+  modal.classList.add('show');
+}
+
+async function liftRestriction(registrationId, name = 'Delegate') {
+  if (!confirm(`Are you sure you want to lift the operational restriction on ${name}? This will restore normal gate ingress and check-in privileges.`)) {
+    return;
+  }
+
+  try {
+    await db.setRegistrationRestriction(registrationId, false, '');
+    cachedRegistrations = await db.getRegistrations();
+
+    logAudit('RESTRICTION_LIFTED', `Executive lifted restriction on ${name} (${registrationId})`);
+    showToast(`Operational restriction lifted for ${name}. Good standing restored.`, 'success');
+
+    renderRestrictionsTab();
+    renderRegistrationsTab();
+  } catch (err) {
+    showToast('Failed to lift restriction: ' + err.message, 'error');
+  }
+}
+
+// Enhance onQrCodeScanned with Gate Ingress Restriction & Attendee Restriction Enforcement
+const originalOnQrCodeScanned = onQrCodeScanned;
+onQrCodeScanned = async function(decodedText) {
+  if (!decodedText) return;
+  const rawCode = decodedText.trim().toUpperCase();
+  const match = rawCode.match(/[A-Z0-9]{3,4}-[A-Z0-9]{3,6}/) || [rawCode];
+  const ticketCode = match[0];
+
+  // Check 1: Global Gate Ingress Restriction
+  if (cachedRestrictions?.gate_ingress_restricted) {
+    playWarningBuzzer();
+    const resultBox = document.getElementById('qr-modal-result');
+    if (resultBox) {
+      resultBox.classList.remove('hidden');
+      resultBox.className = 'p-4 bg-red-100 border-2 border-red-500 rounded-xl text-left space-y-1.5 animate-pulse';
+      resultBox.innerHTML = `
+        <div class="flex items-center gap-2 text-red-900 font-extrabold text-sm uppercase">
+          <span class="material-symbols-outlined text-[20px] text-red-600">block</span>
+          <span>GATE INGRESS HALTED</span>
+        </div>
+        <p class="text-xs text-red-800 font-semibold">Venue curfew or administrative lockdown is currently active. All admissions are halted.</p>
+      `;
+    }
+    showToast('GATE HALTED: Ingress restrictions currently active.', 'error');
+    logAudit('GATE_HALT_REJECTION', `Ingress rejected for ${ticketCode} due to active curfew lockdown`);
+    return;
+  }
+
+  // Check 2: Attendee Blacklist / Restriction Check
+  const regs = cachedRegistrations || [];
+  const found = regs.find((r) => r.ticket_code?.toUpperCase() === ticketCode);
+
+  if (found && found.is_restricted) {
+    playWarningBuzzer();
+    const resultBox = document.getElementById('qr-modal-result');
+    if (resultBox) {
+      resultBox.classList.remove('hidden');
+      resultBox.className = 'p-4 bg-red-100 border-2 border-red-600 rounded-xl text-left space-y-1.5';
+      resultBox.innerHTML = `
+        <div class="flex items-center justify-between">
+          <strong class="text-red-900 font-mono text-sm font-extrabold">${escapeHtml(ticketCode)}</strong>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-700 text-white">ACCESS RESTRICTED</span>
+        </div>
+        <div class="text-xs font-bold text-red-950">${escapeHtml(found.leader_name)} (${escapeHtml(found.college_name)})</div>
+        <div class="text-[11px] text-red-800 font-semibold bg-white/60 p-2 rounded-lg border border-red-300">
+          Reason: ${escapeHtml(found.restriction_reason || 'Administrative Disciplinary Directive')}
+        </div>
+        <p class="text-[10px] text-red-700 font-bold uppercase mt-1">Check-in blocked. Direct attendee to Security / Executive Control.</p>
+      `;
+    }
+    showToast(`ACCESS BLOCKED: ${ticketCode} is restricted by administration.`, 'error');
+    logAudit('RESTRICTED_GATE_ATTEMPT', `Restricted delegate ${found.leader_name} (${ticketCode}) attempted gate ingress. Action denied.`);
+    return;
+  }
+
+  // Normal scan flow
+  await originalOnQrCodeScanned(decodedText);
+};
+
+function playWarningBuzzer() {
+  if (globalAudioMuted) return;
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(120, audioCtx.currentTime + 0.15);
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch (e) {}
+}
+
+window.openRestrictModal = openRestrictModal;
+window.liftRestriction = liftRestriction;
