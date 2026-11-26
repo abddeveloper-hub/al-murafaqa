@@ -291,6 +291,10 @@
           <span class="material-symbols-outlined text-[19px]">groups</span><span>Registrations</span>
           <span id="badge-pending-count" class="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800" style="display:none">0</span>
         </button>
+        <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="teamleaders">
+          <span class="material-symbols-outlined text-[19px]">badge</span><span>Team Leaders</span>
+          <span id="badge-leaders-count" class="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800" style="display:none">0</span>
+        </button>
         <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="scoring">
           <span class="material-symbols-outlined text-[19px]">gavel</span><span>Scoring</span>
         </button>
@@ -664,10 +668,10 @@
                     </span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <button class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 backdrop-blur-md text-slate-200 text-label-sm font-label-sm hover:bg-slate-700 flex items-center gap-1 transition-colors">
+                    <button type="button" id="btn-cam-switch" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 backdrop-blur-md text-slate-200 text-label-sm font-label-sm hover:bg-slate-700 flex items-center gap-1 transition-colors">
                       <span class="material-symbols-outlined text-[16px] text-red-400">videocam</span> Cam 2 (Wide Crane)
                     </button>
-                    <button class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700 backdrop-blur-md text-slate-200 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                    <button type="button" id="btn-overview-fullscreen" class="w-8 h-8 rounded-lg bg-slate-800/80 border border-slate-700 backdrop-blur-md text-slate-200 flex items-center justify-center hover:bg-slate-700 transition-colors" title="Toggle Fullscreen">
                       <span class="material-symbols-outlined text-[18px]">fullscreen</span>
                     </button>
                   </div>
@@ -1346,7 +1350,146 @@
         </div>
       </section>
 
-      <!-- ================= TAB 4: LIVE BROADCASTS & STAGES / ANNOUNCEMENTS ================= -->
+      <!-- ================= TAB: TEAM LEADERS & INSTITUTIONAL DELEGATIONS ================= -->
+      <section id="tab-teamleaders" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          
+          <!-- Banner & Header -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 text-[11px] font-bold uppercase tracking-wider">
+                  Delegation Command
+                </span>
+                <span class="text-xs text-slate-400 font-medium">• Token-Authenticated Access</span>
+              </div>
+              <h2 class="font-headline-md text-2xl font-bold text-slate-900 mt-1">Team Leaders &amp; Institutional Delegations</h2>
+              <p class="text-sm text-slate-500 mt-0.5">Assign team leaders using unique tokens and shareable invite links. Leaders can enroll their students and assign them to competition stages.</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <a href="leader.html" target="_blank" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                <span>Open Leader Portal</span>
+              </a>
+              <button type="button" id="btn-open-team-leader-add-team" onclick="window.openAddTeamModal()" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[18px]">group_add</span>
+                <span>+ Register New Team</span>
+              </button>
+              <button type="button" id="btn-open-assign-leader-modal" onclick="window.openAssignLeaderModal()" class="px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all active:scale-[0.98]">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                <span>+ Assign New Team Leader</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Telemetry Metrics -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Team Leaders</span>
+                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">supervisor_account</span>
+                </div>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span id="stat-total-leaders" class="text-3xl font-extrabold text-slate-900">0</span>
+                <span class="text-xs text-slate-500 font-semibold">Institutions</span>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Active Tokens</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">vpn_key</span>
+                </div>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span id="stat-active-tokens" class="text-3xl font-extrabold text-emerald-700">0</span>
+                <span class="text-xs text-slate-500 font-semibold">Ready to Access</span>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Enrolled Students</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">groups</span>
+                </div>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span id="stat-leader-students" class="text-3xl font-extrabold text-slate-900">0</span>
+                <span class="text-xs text-slate-500 font-semibold">Via Delegations</span>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Stage Allocations</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[18px]">theater_comedy</span>
+                </div>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span id="stat-leader-allocations" class="text-3xl font-extrabold text-amber-700">0</span>
+                <span class="text-xs text-slate-500 font-semibold">Programmes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search & Filter Bar -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="relative flex-1 max-w-md">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+              <input type="text" id="search-team-leaders" placeholder="Search by leader name, institution, or token (TL-XXXX)..." class="w-full h-10 pl-9 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="filter-leader-status" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-purple-600">
+                <option value="">All Statuses</option>
+                <option value="active">Active Only</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table of Team Leaders -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <th class="py-3 px-4">Institution &amp; Team</th>
+                    <th class="py-3 px-4">Leader &amp; Contact</th>
+                    <th class="py-3 px-4">Access Token &amp; Link</th>
+                    <th class="py-3 px-4">Students Enrolled</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="team-leaders-table-body" class="divide-y divide-slate-100 text-slate-700">
+                  <!-- Dynamically populated via admin.js -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="team-leaders-empty-state" class="hidden p-12 text-center">
+              <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[28px]">badge</span>
+              </div>
+              <h3 class="text-sm font-bold text-slate-800">No Team Leaders Assigned Yet</h3>
+              <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
+                Assign institutional team leaders by generating an access token and invitation link.
+              </p>
+              <button type="button" class="px-4 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold hover:bg-purple-800 transition-colors inline-flex items-center gap-1.5" onclick="window.openAssignLeaderModal()">
+                <span class="material-symbols-outlined text-[16px]">person_add</span>
+                <span>Assign First Team Leader</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
       <section id="tab-announcements" class="tab-pane hidden">
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -3175,6 +3318,133 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ASSIGN TEAM LEADER & GENERATE TOKEN ================= -->
+  <div id="modal-assign-team-leader" class="modal-backdrop">
+    <div class="modal-box max-w-lg bg-white rounded-2xl p-6 shadow-2xl border border-slate-200">
+      <div class="modal-header flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]">person_add</span>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-900">Assign Institutional Team Leader</h3>
+            <p class="text-xs text-slate-500">Generate a secure token and portal invitation link for the delegation</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <form id="form-assign-team-leader" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Institution / College / Delegation Name *</label>
+          <input type="text" id="leader-form-institution" required placeholder="e.g. Cordoba Cultural Academy" class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Team Leader Full Name *</label>
+            <input type="text" id="leader-form-name" required placeholder="e.g. Prof. Tariq Al-Mansoor" class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Team Name (Optional)</label>
+            <input type="text" id="leader-form-team" placeholder="e.g. Cordoba Falcon Ensemble" class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Leader Email *</label>
+            <input type="email" id="leader-form-email" required placeholder="leader@institution.edu" class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Leader Phone / WhatsApp *</label>
+            <input type="text" id="leader-form-phone" required placeholder="+91 98471 ..." class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Max Student Quota</label>
+            <input type="number" id="leader-form-quota" value="50" min="1" max="500" class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"/>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Delegation Status</label>
+            <select id="leader-form-status" class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:outline-none focus:border-purple-600">
+              <option value="active">Active (Granted Portal Access)</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Token Generation & Link Preview Box -->
+        <div class="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-purple-900 text-[11px] uppercase tracking-wider">Access Token Provisioning</label>
+            <button type="button" id="btn-generate-random-token" class="text-purple-700 hover:text-purple-900 text-[11px] font-bold flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">refresh</span>
+              <span>Generate New Token</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="leader-form-token" required class="flex-1 h-9 px-3 bg-white border border-purple-300 rounded-lg font-mono font-bold text-purple-900 text-xs tracking-wider uppercase focus:outline-none"/>
+            <button type="button" id="btn-copy-form-token" class="px-2.5 h-9 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+              <span class="material-symbols-outlined text-[15px]">content_copy</span>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="text-[11px] text-purple-800/80 truncate">
+            Invite Link: <span id="leader-form-link-preview" class="font-mono text-purple-900 font-semibold underline">leader.html?token=...</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Administrative Notes</label>
+          <textarea id="leader-form-notes" rows="2" placeholder="e.g. Approved by Director, 2 stage slots reserved..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"></textarea>
+        </div>
+
+        <div class="modal-footer flex items-center justify-end gap-2 pt-2">
+          <button type="button" class="btn-close-modal btn-secondary px-4 py-2 rounded-xl text-xs font-semibold">Cancel</button>
+          <button type="submit" id="btn-save-team-leader" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm">
+            <span class="material-symbols-outlined text-[16px]">check</span>
+            <span>Assign Leader &amp; Create Link</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: LEADER ROSTER & PROGRAMMES VIEWER ================= -->
+  <div id="modal-view-leader-roster" class="modal-backdrop">
+    <div class="modal-box max-w-2xl bg-white rounded-2xl p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[85vh]">
+      <div class="modal-header flex items-center justify-between pb-3 border-b border-slate-100 mb-4 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]">badge</span>
+          </div>
+          <div>
+            <h3 id="roster-view-institution" class="font-bold text-base text-slate-900">Delegation Roster Details</h3>
+            <p id="roster-view-leader" class="text-xs text-slate-500">Lead: --- • Token: ---</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal btn-icon text-slate-400 hover:text-slate-700">&times;</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll space-y-4 pr-1">
+        <div id="roster-view-students-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-footer flex items-center justify-between pt-3 mt-4 border-t border-slate-100 shrink-0">
+        <a id="roster-view-portal-link" href="#" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-purple-50 text-purple-800 hover:bg-purple-100 font-bold text-xs flex items-center gap-1.5 transition-colors">
+          <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+          <span>Open As Team Leader</span>
+        </a>
+        <button type="button" class="btn-close-modal btn-secondary px-4 py-2 rounded-xl text-xs font-semibold">Close</button>
+      </div>
     </div>
   </div>
 

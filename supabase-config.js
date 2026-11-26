@@ -18,6 +18,65 @@ export function generateUuid() {
 
 export const isUuid = (val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val || '');
 
+export const STORAGE_KEYS = {
+  SETTINGS: 'almurafaqa_settings',
+  EVENTS: 'almurafaqa_events',
+  REGISTRATIONS: 'almurafaqa_registrations',
+  ANNOUNCEMENTS: 'almurafaqa_announcements',
+  WINNERS: 'almurafaqa_winners',
+  SCORES: 'almurafaqa_scores',
+  AUDIT_LOGS: 'almurafaqa_audit_logs',
+  RESTRICTIONS: 'almurafaqa_restrictions',
+  TEAM_LEADERS: 'almurafaqa_team_leaders',
+  TEAM_STUDENTS: 'almurafaqa_team_students',
+  TEAM_ASSIGNMENTS: 'almurafaqa_team_assignments',
+  TEAM_GROUPS: 'almurafaqa_team_groups',
+};
+
+// Generate alphanumeric Team Leader access token, e.g. TL-8F2B-91C4
+export function generateLeaderToken() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let p1 = '';
+  let p2 = '';
+  for (let i = 0; i < 4; i++) {
+    p1 += chars.charAt(Math.floor(Math.random() * chars.length));
+    p2 += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `TL-${p1}-${p2}`;
+}
+
+// ------------------------------------------------------------------------------
+// PUBLIC PRODUCTION BASE URL & SHAREABLE PORTAL LINK GENERATOR
+// Ensures generated links point to the public GitHub Pages domain (never localhost)
+// ------------------------------------------------------------------------------
+export const PRODUCTION_BASE_URL = 'https://abddeveloper-hub.github.io/al-murafaqa';
+
+export function getShareablePortalUrl(token = '', page = 'leader.html') {
+  const isLocal = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' || 
+    window.location.protocol === 'file:' ||
+    !window.location.origin
+  );
+
+  let baseUrl = PRODUCTION_BASE_URL;
+  if (!isLocal && typeof window !== 'undefined' && window.location.origin) {
+    const path = window.location.pathname;
+    const dir = path.substring(0, path.lastIndexOf('/'));
+    baseUrl = `${window.location.origin}${dir}`;
+  }
+
+  // Allow custom override if configured in localStorage
+  if (typeof localStorage !== 'undefined') {
+    const custom = localStorage.getItem('almurafaqa_production_base_url');
+    if (custom) baseUrl = custom.trim().replace(/\/+$/, '');
+  }
+
+  const cleanTok = (token || '').trim().toUpperCase();
+  const tokenParam = cleanTok ? `?token=${encodeURIComponent(cleanTok)}` : '';
+  return `${baseUrl}/${page}${tokenParam}`;
+}
+
 // ------------------------------------------------------------------------------
 // 1. SUPABASE CREDENTIALS (PASTE YOUR SUPABASE DETAILS HERE)
 // ------------------------------------------------------------------------------
@@ -838,5 +897,551 @@ export const db = {
     const merged = { ...current, ...restrictionsObj, updated_at: new Date().toISOString() };
     localStorage.setItem('almurafaqa_restrictions', JSON.stringify(merged));
     return merged;
+  },
+
+  // ============================================================================
+  // TEAM LEADER PORTAL & TOKEN SYSTEM (Module 9)
+  // ============================================================================
+
+  // Fetch all team leaders
+  async getTeamLeaders() {
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('team_leaders')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(data));
+          return data;
+        }
+        if (error) console.warn('[Supabase getTeamLeaders]', error.message);
+      } catch (err) {
+        console.warn('[Supabase getTeamLeaders catch]', err);
+      }
+    }
+    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_LEADERS);
+    if (!raw) {
+      // Seed default demonstration delegation if empty
+      const demoLeader = {
+        id: 'tl-demo-001',
+        token: 'TL-CORD-2026',
+        leader_name: 'Prof. Tariq Al-Mansoor',
+        leader_email: 'tariq.mansoor@cordoba.edu',
+        leader_phone: '+91 98471 23456',
+        institution_name: 'Cordoba Cultural Academy',
+        team_name: 'Cordoba Falcon Ensemble',
+        max_students: 50,
+        status: 'active',
+        notes: 'Official delegate lead for inter-college Andalusian arts tracks',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify([demoLeader]));
+
+      // Seed starter students for demo
+      const demoStudents = [
+        {
+          id: 'stu-demo-001',
+          team_leader_id: 'tl-demo-001',
+          student_name: 'Amina Benali',
+          student_code: 'COR-101',
+          category: 'Senior',
+          gender: 'Female',
+          phone: '+91 98471 11223',
+          email: 'amina.b@cordoba.edu',
+          notes: 'Vocal soloist & Arabic calligraphy lead',
+          assigned_events: [],
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'stu-demo-002',
+          team_leader_id: 'tl-demo-001',
+          student_name: 'Ziyad Al-Andalusi',
+          student_code: 'COR-102',
+          category: 'Senior',
+          gender: 'Male',
+          phone: '+91 98471 33445',
+          email: 'ziyad.a@cordoba.edu',
+          notes: 'Oud instrumentalist',
+          assigned_events: [],
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'stu-demo-003',
+          team_leader_id: 'tl-demo-001',
+          student_name: 'Fatima Al-Zahra',
+          student_code: 'COR-103',
+          category: 'Junior',
+          gender: 'Female',
+          phone: '+91 98471 55667',
+          email: 'fatima.z@cordoba.edu',
+          notes: 'Classical Arabic debate',
+          assigned_events: [],
+          created_at: new Date().toISOString(),
+        },
+      ];
+      localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(demoStudents));
+      return [demoLeader];
+    }
+    return JSON.parse(raw);
+  },
+
+  // Lookup team leader by token (e.g. TL-7A9B-4F12)
+  async getTeamLeaderByToken(token) {
+    if (!token) return null;
+    const cleanToken = token.trim().toUpperCase();
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('team_leaders')
+          .select('*')
+          .eq('token', cleanToken)
+          .eq('status', 'active')
+          .maybeSingle();
+        if (!error && data) return data;
+        if (error) console.warn('[Supabase getTeamLeaderByToken]', error.message);
+      } catch (err) {
+        console.warn('[Supabase getTeamLeaderByToken catch]', err);
+      }
+    }
+    const list = await this.getTeamLeaders();
+    return list.find((tl) => (tl.token || '').trim().toUpperCase() === cleanToken && tl.status === 'active') || null;
+  },
+
+  // Create new team leader and assign unique token
+  async createTeamLeader(data) {
+    const leaderToken = data.token ? data.token.trim().toUpperCase() : generateLeaderToken();
+    const newLeader = {
+      id: generateUuid(),
+      token: leaderToken,
+      leader_name: (data.leader_name || 'Team Leader').trim(),
+      leader_email: (data.leader_email || '').trim(),
+      leader_phone: (data.leader_phone || '').trim(),
+      institution_name: (data.institution_name || 'Institutional Delegation').trim(),
+      team_name: (data.team_name || '').trim(),
+      max_students: Number(data.max_students) || 50,
+      status: data.status || 'active',
+      notes: (data.notes || '').trim(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (this.isLive()) {
+      try {
+        const payload = { ...newLeader };
+        delete payload.id;
+        const { data: inserted, error } = await supabase
+          .from('team_leaders')
+          .insert([payload])
+          .select()
+          .single();
+        if (!error && inserted) {
+          const list = await this.getTeamLeaders();
+          list.unshift(inserted);
+          localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(list));
+          return inserted;
+        }
+        if (error) console.warn('[Supabase createTeamLeader]', error.message);
+      } catch (err) {
+        console.warn('[Supabase createTeamLeader catch]', err);
+      }
+    }
+
+    const list = await this.getTeamLeaders();
+    list.unshift(newLeader);
+    localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(list));
+    return newLeader;
+  },
+
+  // Update existing team leader
+  async updateTeamLeader(id, updates) {
+    updates.updated_at = new Date().toISOString();
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('team_leaders')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        if (!error && data) {
+          const list = await this.getTeamLeaders();
+          const idx = list.findIndex((l) => l.id === id);
+          if (idx !== -1) list[idx] = data;
+          localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(list));
+          return data;
+        }
+      } catch (err) {
+        console.warn('[Supabase updateTeamLeader]', err);
+      }
+    }
+    const list = await this.getTeamLeaders();
+    const idx = list.findIndex((l) => l.id === id);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(list));
+      return list[idx];
+    }
+    throw new Error('Team leader record not found.');
+  },
+
+  // Regenerate Token for Team Leader
+  async regenerateTeamLeaderToken(id) {
+    const newToken = generateLeaderToken();
+    return await this.updateTeamLeader(id, { token: newToken });
+  },
+
+  // Delete Team Leader
+  async deleteTeamLeader(id) {
+    if (this.isLive()) {
+      try {
+        await supabase.from('team_leaders').delete().eq('id', id);
+      } catch (err) {
+        console.warn('[Supabase deleteTeamLeader]', err);
+      }
+    }
+    const list = await this.getTeamLeaders();
+    const filtered = list.filter((l) => l.id !== id);
+    localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(filtered));
+
+    // Clean up students and assignments for this leader
+    const students = await this.getTeamStudents();
+    localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(students.filter((s) => s.team_leader_id !== id)));
+    const assignments = await this.getTeamAssignments();
+    localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(assignments.filter((a) => a.team_leader_id !== id)));
+    return true;
+  },
+
+  // ----------------------------------------------------------------------------
+  // TEAM STUDENTS (ROSTER) OPERATIONS
+  // ----------------------------------------------------------------------------
+
+  async getTeamStudents(teamLeaderId = null) {
+    if (this.isLive()) {
+      try {
+        let query = supabase.from('team_students').select('*').order('created_at', { ascending: false });
+        if (teamLeaderId) {
+          query = query.eq('team_leader_id', teamLeaderId);
+        }
+        const { data, error } = await query;
+        if (!error && data) {
+          if (!teamLeaderId) localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(data));
+          return data;
+        }
+      } catch (err) {
+        console.warn('[Supabase getTeamStudents]', err);
+      }
+    }
+    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_STUDENTS);
+    const all = raw ? JSON.parse(raw) : [];
+    return teamLeaderId ? all.filter((s) => s.team_leader_id === teamLeaderId) : all;
+  },
+
+  async addTeamStudent(studentData) {
+    const student = {
+      id: generateUuid(),
+      team_leader_id: studentData.team_leader_id,
+      student_name: studentData.student_name.trim(),
+      student_code: studentData.student_code ? studentData.student_code.trim().toUpperCase() : 'STU-' + Math.floor(100 + Math.random() * 900),
+      category: studentData.category || 'Senior',
+      gender: studentData.gender || 'Male',
+      phone: studentData.phone || '',
+      email: studentData.email || '',
+      notes: studentData.notes || '',
+      assigned_events: Array.isArray(studentData.assigned_events) ? studentData.assigned_events : [],
+      created_at: new Date().toISOString(),
+    };
+
+    if (this.isLive()) {
+      try {
+        const payload = { ...student };
+        delete payload.id;
+        const { data: inserted, error } = await supabase
+          .from('team_students')
+          .insert([payload])
+          .select()
+          .single();
+        if (!error && inserted) {
+          const list = await this.getTeamStudents();
+          list.unshift(inserted);
+          localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(list));
+          return inserted;
+        }
+      } catch (err) {
+        console.warn('[Supabase addTeamStudent]', err);
+      }
+    }
+
+    const list = await this.getTeamStudents();
+    list.unshift(student);
+    localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(list));
+    return student;
+  },
+
+  async updateTeamStudent(studentId, updates) {
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('team_students')
+          .update(updates)
+          .eq('id', studentId)
+          .select()
+          .single();
+        if (!error && data) {
+          const list = await this.getTeamStudents();
+          const idx = list.findIndex((s) => s.id === studentId);
+          if (idx !== -1) list[idx] = data;
+          localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(list));
+          return data;
+        }
+      } catch (err) {
+        console.warn('[Supabase updateTeamStudent]', err);
+      }
+    }
+    const list = await this.getTeamStudents();
+    const idx = list.findIndex((s) => s.id === studentId);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...updates };
+      localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(list));
+      return list[idx];
+    }
+    throw new Error('Student record not found.');
+  },
+
+  async deleteTeamStudent(studentId) {
+    if (this.isLive()) {
+      try {
+        await supabase.from('team_students').delete().eq('id', studentId);
+      } catch (err) {
+        console.warn('[Supabase deleteTeamStudent]', err);
+      }
+    }
+    const list = await this.getTeamStudents();
+    const filtered = list.filter((s) => s.id !== studentId);
+    localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(filtered));
+    return true;
+  },
+
+  // ----------------------------------------------------------------------------
+  // PROGRAMME ALLOCATION & ASSIGNMENT OPERATIONS
+  // ----------------------------------------------------------------------------
+
+  async getTeamAssignments(teamLeaderId = null) {
+    if (this.isLive()) {
+      try {
+        let query = supabase.from('team_assignments').select('*');
+        if (teamLeaderId) query = query.eq('team_leader_id', teamLeaderId);
+        const { data, error } = await query;
+        if (!error && data) {
+          if (!teamLeaderId) localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(data));
+          return data;
+        }
+      } catch (err) {
+        console.warn('[Supabase getTeamAssignments]', err);
+      }
+    }
+    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_ASSIGNMENTS);
+    const all = raw ? JSON.parse(raw) : [];
+    return teamLeaderId ? all.filter((a) => a.team_leader_id === teamLeaderId) : all;
+  },
+
+  // Assign students to a festival event, and synchronize with registrations desk
+  async saveTeamAssignment(teamLeaderId, eventId, studentIds) {
+    const leaders = await this.getTeamLeaders();
+    const leader = leaders.find((l) => l.id === teamLeaderId);
+    const events = await this.getEvents();
+    const event = events.find((e) => e.id === eventId);
+    const allStudents = await this.getTeamStudents(teamLeaderId);
+    const assignedStudents = allStudents.filter((s) => studentIds.includes(s.id));
+
+    if (!leader || !event) throw new Error('Invalid leader or event reference.');
+
+    // 1. Sync or generate festival registration record for the assigned students
+    const ticketCode = `ALM-TL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const teamMembersList = assignedStudents.map((s) => ({
+      name: s.student_name,
+      code: s.student_code,
+      role: 'Delegation Participant',
+      phone: s.phone || leader.leader_phone || '',
+    }));
+
+    const regPayload = {
+      event_id: eventId,
+      ticket_code: ticketCode,
+      leader_name: assignedStudents[0]?.student_name || leader.leader_name,
+      leader_email: leader.leader_email,
+      leader_phone: leader.leader_phone,
+      college_name: leader.institution_name,
+      team_name: leader.team_name || leader.institution_name,
+      team_members: teamMembersList,
+      payment_status: 'verified',
+      checked_in: false,
+    };
+
+    let savedReg = null;
+    try {
+      savedReg = await this.addRegistration(regPayload);
+    } catch (regErr) {
+      console.warn('[Sync Registration for Team Assignment]', regErr);
+    }
+
+    // 2. Save team assignment record
+    const assignmentRecord = {
+      id: generateUuid(),
+      team_leader_id: teamLeaderId,
+      event_id: eventId,
+      student_ids: studentIds,
+      registration_id: savedReg ? savedReg.id : null,
+      created_at: new Date().toISOString(),
+    };
+
+    if (this.isLive()) {
+      try {
+        const payload = { ...assignmentRecord };
+        delete payload.id;
+        await supabase.from('team_assignments').insert([payload]);
+      } catch (err) {
+        console.warn('[Supabase saveTeamAssignment]', err);
+      }
+    }
+
+    const assignments = await this.getTeamAssignments();
+    const filtered = assignments.filter((a) => !(a.team_leader_id === teamLeaderId && a.event_id === eventId));
+    filtered.push(assignmentRecord);
+    localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(filtered));
+
+    // 3. Update student records' assigned_events
+    for (const student of allStudents) {
+      const isAssigned = studentIds.includes(student.id);
+      let studentEvents = Array.isArray(student.assigned_events) ? [...student.assigned_events] : [];
+      studentEvents = studentEvents.filter((ev) => ev.event_id !== eventId);
+      if (isAssigned) {
+        studentEvents.push({
+          event_id: event.id,
+          event_title: event.title,
+          category: event.category,
+          day_number: event.day_number,
+          time_slot: event.time_slot,
+          venue: event.venue,
+          ticket_code: savedReg?.ticket_code || ticketCode,
+        });
+      }
+      await this.updateTeamStudent(student.id, { assigned_events: studentEvents });
+    }
+
+    return assignmentRecord;
+  },
+
+  // Remove assignment for a programme
+  async removeTeamAssignment(teamLeaderId, eventId) {
+    if (this.isLive()) {
+      try {
+        await supabase.from('team_assignments').delete().eq('team_leader_id', teamLeaderId).eq('event_id', eventId);
+      } catch (err) {
+        console.warn('[Supabase removeTeamAssignment]', err);
+      }
+    }
+    const assignments = await this.getTeamAssignments();
+    const filtered = assignments.filter((a) => !(a.team_leader_id === teamLeaderId && a.event_id === eventId));
+    localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(filtered));
+
+    // Remove event from all students under this leader
+    const students = await this.getTeamStudents(teamLeaderId);
+    for (const student of students) {
+      const studentEvents = (student.assigned_events || []).filter((ev) => ev.event_id !== eventId);
+      await this.updateTeamStudent(student.id, { assigned_events: studentEvents });
+    }
+    return true;
+  },
+
+  // ----------------------------------------------------------------------------
+  // TEAM GROUPS / SQUADS WITHIN DELEGATIONS
+  // ----------------------------------------------------------------------------
+  async getTeamGroups(teamLeaderId = null) {
+    if (this.isLive()) {
+      try {
+        let query = supabase.from('team_groups').select('*').order('created_at', { ascending: false });
+        if (teamLeaderId) query = query.eq('team_leader_id', teamLeaderId);
+        const { data, error } = await query;
+        if (!error && data) {
+          if (!teamLeaderId) localStorage.setItem(STORAGE_KEYS.TEAM_GROUPS, JSON.stringify(data));
+          return data;
+        }
+      } catch (err) {
+        console.warn('[Supabase getTeamGroups]', err);
+      }
+    }
+    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_GROUPS);
+    const all = raw ? JSON.parse(raw) : [];
+    return teamLeaderId ? all.filter((g) => g.team_leader_id === teamLeaderId) : all;
+  },
+
+  async saveTeamGroup(teamData) {
+    const list = await this.getTeamGroups();
+    let record = null;
+    const now = new Date().toISOString();
+
+    if (teamData.id) {
+      // Update
+      const index = list.findIndex((g) => g.id === teamData.id);
+      if (index !== -1) {
+        record = {
+          ...list[index],
+          ...teamData,
+          student_ids: teamData.student_ids || list[index].student_ids || [],
+          updated_at: now,
+        };
+        list[index] = record;
+      }
+      if (this.isLive()) {
+        try {
+          const payload = { ...record };
+          await supabase.from('team_groups').update(payload).eq('id', teamData.id);
+        } catch (err) {
+          console.warn('[Supabase saveTeamGroup update]', err);
+        }
+      }
+    } else {
+      // Create new
+      record = {
+        id: generateUuid(),
+        team_leader_id: teamData.team_leader_id,
+        team_name: teamData.team_name,
+        category: teamData.category || 'Senior',
+        event_id: teamData.event_id || null,
+        student_ids: teamData.student_ids || [],
+        notes: teamData.notes || '',
+        created_at: now,
+      };
+      if (this.isLive()) {
+        try {
+          const payload = { ...record };
+          delete payload.id;
+          const { data, error } = await supabase.from('team_groups').insert([payload]).select().single();
+          if (!error && data) record = data;
+        } catch (err) {
+          console.warn('[Supabase saveTeamGroup insert]', err);
+        }
+      }
+      list.unshift(record);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.TEAM_GROUPS, JSON.stringify(list));
+    return record;
+  },
+
+  async deleteTeamGroup(teamGroupId) {
+    if (this.isLive()) {
+      try {
+        await supabase.from('team_groups').delete().eq('id', teamGroupId);
+      } catch (err) {
+        console.warn('[Supabase deleteTeamGroup]', err);
+      }
+    }
+    const list = await this.getTeamGroups();
+    const filtered = list.filter((g) => g.id !== teamGroupId);
+    localStorage.setItem(STORAGE_KEYS.TEAM_GROUPS, JSON.stringify(filtered));
+    return true;
   },
 };

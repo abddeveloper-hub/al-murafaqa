@@ -831,7 +831,7 @@
                 </span>
               </div>
               <div class="flex items-center gap-1">
-                <button aria-label="Change quality" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white hover:text-fest-gold transition-colors">
+                <button id="quality-btn" aria-label="Change quality" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white hover:text-fest-gold active:scale-95 transition-all">
                   <span class="material-symbols-outlined text-[18px]">hd</span>
                 </button>
                 <button id="fullscreen-btn" aria-label="Fullscreen" class="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white hover:text-fest-gold active:scale-95 transition-all">
@@ -1340,6 +1340,17 @@
           const exit = document.exitFullscreen || document.webkitExitFullscreen;
           if (exit) Promise.resolve(exit.call(document)).catch(() => showToast('Could not exit fullscreen'));
         }
+      });
+    }
+
+    // Video Quality Toggle
+    const qualityBtn = document.getElementById('quality-btn');
+    const streamQualities = ['1080p HD (Auto)', '720p HD', '480p SD'];
+    let currentQualityIdx = 0;
+    if (qualityBtn) {
+      qualityBtn.addEventListener('click', () => {
+        currentQualityIdx = (currentQualityIdx + 1) % streamQualities.length;
+        showToast(`Stream quality set to ${streamQualities[currentQualityIdx]}`);
       });
     }
 

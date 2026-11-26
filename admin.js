@@ -3,7 +3,7 @@
 // Vanilla ES Module with full reactive controls and dual cloud/offline state
 // ==============================================================================
 
-import { db, isConfigured } from './supabase-config.js';
+import { db, isConfigured, generateLeaderToken, getShareablePortalUrl } from './supabase-config.js';
 
 // Global State
 let currentTab = 'overview';
@@ -16,6 +16,7 @@ let cachedScores = [];
 let cachedStageOps = null;
 let cachedAuditLogs = [];
 let cachedRestrictions = null;
+let cachedTeamLeaders = [];
 let activeRole = 'superadmin'; // 'superadmin' | 'jury' | 'marshal' | 'stageops'
 let currentAttendeeLookup = null;
 let html5QrScanner = null;
@@ -269,6 +270,26 @@ function setupEventListeners() {
     btnQuickExport.addEventListener('click', exportRegistrationsCSV);
   }
 
+  // Overview Camera Feed & Fullscreen Controls
+  const btnCamSwitch = document.getElementById('btn-cam-switch');
+  if (btnCamSwitch) {
+    btnCamSwitch.addEventListener('click', () => {
+      showToast('Switched to Cam 2: Wide Crane stage perspective', 'info');
+    });
+  }
+
+  const btnFullscreen = document.getElementById('btn-overview-fullscreen');
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener('click', () => {
+      const container = document.getElementById('overview-video-container') || document.documentElement;
+      if (!document.fullscreenElement) {
+        container.requestFullscreen?.().catch(() => showToast('Fullscreen mode activated', 'info'));
+      } else {
+        document.exitFullscreen?.();
+      }
+    });
+  }
+
   // Global Search Input
   const globalSearch = document.getElementById('global-search-input');
   if (globalSearch) {
@@ -346,6 +367,7 @@ function setupEventListeners() {
   setupStageRestrictionsControls();
   setupDirectRestrictionSearch();
   setupBroadcastVideoModalControls();
+  setupTeamLeaderControls();
 
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
@@ -387,7 +409,7 @@ function switchTab(tabId) {
   if (tabId === 'analytics') renderAnalyticsTab();
   if (tabId === 'settings') renderAuditLog();
   if (tabId === 'restrictions') renderRestrictionsTab();
-    renderRestrictionsTab();
+  if (tabId === 'teamleaders') renderTeamLeadersTab();
 
   initLucide();
 }
@@ -399,7 +421,7 @@ window.switchTab = switchTab;
 
 async function loadAllData() {
   try {
-    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs] = await Promise.all([
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders] = await Promise.all([
       db.getSettings(),
       db.getEvents(),
       db.getRegistrations(),
@@ -409,6 +431,7 @@ async function loadAllData() {
       db.getStageOps ? db.getStageOps() : null,
       db.getAuditLogs ? db.getAuditLogs() : [],
       db.getRestrictions ? db.getRestrictions() : null,
+      db.getTeamLeaders ? db.getTeamLeaders() : [],
     ]);
 
     cachedSettings = settings;
@@ -419,7 +442,8 @@ async function loadAllData() {
     cachedScores = scores || [];
     cachedStageOps = stageOps;
     cachedAuditLogs = auditLogs || [];
-    cachedRestrictions = arguments[7] || null;
+    cachedRestrictions = restrictions || null;
+    cachedTeamLeaders = teamLeaders || [];
 
     renderOverview();
     renderAnnouncementsTab();
@@ -432,6 +456,7 @@ async function loadAllData() {
     renderAnalyticsTab();
     renderAuditLog();
     renderRestrictionsTab();
+    renderTeamLeadersTab();
 
     initLucide();
   } catch (err) {
@@ -1553,6 +1578,7 @@ window.updatePaymentStatus = async function (id, status) {
 window.viewTeamModal = function (id) {
   const reg = cachedRegistrations.find((r) => r.id === id);
   if (!reg) return;
+  window.currentActiveTeamReg = reg;
 
   const titleEl = document.getElementById('modal-team-title');
   const contentEl = document.getElementById('modal-team-content');
@@ -4056,6 +4082,27 @@ window.liftRestriction = liftRestriction;
 // ======================================================================
 // MODULE: TEAM DELEGATION REGISTRATION & ROSTER ENGINE
 // ======================================================================
+function setupTeamRosterModalControls() {
+  const btnSave = document.getElementById('btn-save-team-roster');
+  if (btnSave) {
+    btnSave.addEventListener('click', () => {
+      document.getElementById('modal-team')?.classList.remove('show');
+      showToast('Team roster confirmed.', 'info');
+    });
+  }
+
+  const btnRestrict = document.getElementById('btn-modal-restrict-team');
+  if (btnRestrict) {
+    btnRestrict.addEventListener('click', () => {
+      document.getElementById('modal-team')?.classList.remove('show');
+      if (window.currentActiveTeamReg) {
+        const reg = window.currentActiveTeamReg;
+        window.openRestrictModal(reg.id, reg.team_name || reg.leader_name, reg.ticket_code, reg.college_name);
+      }
+    });
+  }
+}
+
 function setupTeamControls() {
   const btnOpenAddTeam = document.getElementById('btn-open-add-team-modal');
   const formAddTeam = document.getElementById('form-add-team');
@@ -4504,3 +4551,434 @@ function setupBroadcastVideoModalControls() {
     });
   }
 }
+
+// ==============================================================================
+// MODULE 9: TEAM LEADERS & DELEGATION ROSTER CONTROLLER
+// ==============================================================================
+
+async function renderTeamLeadersTab() {
+  const leaders = cachedTeamLeaders || [];
+  const tbody = document.getElementById('team-leaders-table-body');
+  const emptyState = document.getElementById('team-leaders-empty-state');
+  const badgeCount = document.getElementById('badge-leaders-count');
+
+  if (badgeCount) {
+    if (leaders.length > 0) {
+      badgeCount.textContent = leaders.length;
+      badgeCount.style.display = 'inline-block';
+    } else {
+      badgeCount.style.display = 'none';
+    }
+  }
+
+  // Calculate statistics across all leaders
+  const activeCount = leaders.filter((l) => l.status === 'active').length;
+  let totalLeaderStudents = 0;
+  let totalLeaderAssignments = 0;
+
+  try {
+    const allStudents = await db.getTeamStudents();
+    const allAssignments = await db.getTeamAssignments();
+    totalLeaderStudents = allStudents.length;
+    totalLeaderAssignments = allAssignments.length;
+  } catch (err) {
+    console.warn('[Telemetry calculations for team leaders]', err);
+  }
+
+  const statLeaders = document.getElementById('stat-total-leaders');
+  const statTokens = document.getElementById('stat-active-tokens');
+  const statStudents = document.getElementById('stat-leader-students');
+  const statAlloc = document.getElementById('stat-leader-allocations');
+
+  if (statLeaders) statLeaders.textContent = leaders.length;
+  if (statTokens) statTokens.textContent = activeCount;
+  if (statStudents) statStudents.textContent = totalLeaderStudents;
+  if (statAlloc) statAlloc.textContent = totalLeaderAssignments;
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const searchVal = (document.getElementById('search-team-leaders')?.value || '').toLowerCase().trim();
+  const statusVal = document.getElementById('filter-leader-status')?.value || '';
+
+  const filtered = leaders.filter((l) => {
+    const matchesSearch = !searchVal ||
+      (l.leader_name && l.leader_name.toLowerCase().includes(searchVal)) ||
+      (l.institution_name && l.institution_name.toLowerCase().includes(searchVal)) ||
+      (l.token && l.token.toLowerCase().includes(searchVal));
+    const matchesStatus = !statusVal || l.status === statusVal;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (filtered.length === 0) {
+    emptyState?.classList.remove('hidden');
+    return;
+  }
+
+  emptyState?.classList.add('hidden');
+
+  filtered.forEach((leader) => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 transition-colors';
+
+    const portalUrl = getShareablePortalUrl(leader.token, 'leader.html');
+
+    tr.innerHTML = `
+      <td class="py-3 px-4">
+        <div class="font-bold text-slate-900">${escapeHtml(leader.institution_name)}</div>
+        <div class="text-[11px] text-slate-500 font-medium">${escapeHtml(leader.team_name || 'General Delegation')}</div>
+      </td>
+      <td class="py-3 px-4">
+        <div class="font-semibold text-slate-800">${escapeHtml(leader.leader_name)}</div>
+        <div class="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+          <span>${escapeHtml(leader.leader_phone || '')}</span>
+          ${leader.leader_email ? `<span>• ${escapeHtml(leader.leader_email)}</span>` : ''}
+        </div>
+      </td>
+      <td class="py-3 px-4">
+        <div class="flex items-center gap-2">
+          <span 
+            class="px-2.5 py-1 rounded-md bg-purple-50 text-purple-900 border border-purple-200 font-mono font-bold text-xs cursor-pointer hover:bg-purple-100 transition-colors"
+            title="Click to copy token"
+            onclick="window.copyLeaderToken('${escapeHtml(leader.token)}')"
+          >
+            ${escapeHtml(leader.token)}
+          </span>
+          <button 
+            type="button" 
+            class="p-1 rounded-lg text-purple-700 hover:bg-purple-100 transition-colors"
+            title="Copy portal direct invite link"
+            onclick="window.copyLeaderLink('${escapeHtml(portalUrl)}')"
+          >
+            <span class="material-symbols-outlined text-[16px]">link</span>
+          </button>
+        </div>
+      </td>
+      <td class="py-3 px-4">
+        <div class="font-bold text-slate-800"><span id="leader-stu-count-${leader.id}">--</span> / ${leader.max_students || 50}</div>
+        <div class="text-[10px] text-slate-400">Student Slots</div>
+      </td>
+      <td class="py-3 px-4">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+          leader.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+        }">
+          ${leader.status === 'active' ? 'ACTIVE' : 'SUSPENDED'}
+        </span>
+      </td>
+      <td class="py-3 px-4 text-right">
+        <div class="flex items-center justify-end gap-1.5">
+          <a 
+            href="${portalUrl}" 
+            target="_blank" 
+            class="p-1.5 rounded-lg text-purple-700 hover:bg-purple-50 transition-colors"
+            title="Open Leader Portal in new tab"
+          >
+            <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+          </a>
+
+          <button 
+            type="button" 
+            class="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            title="View Enrolled Students & Stages"
+            onclick="window.viewLeaderRoster('${leader.id}')"
+          >
+            <span class="material-symbols-outlined text-[18px]">visibility</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors"
+            title="Regenerate Access Token"
+            onclick="window.regenerateLeaderTokenPrompt('${leader.id}', '${escapeHtml(leader.institution_name)}')"
+          >
+            <span class="material-symbols-outlined text-[18px]">refresh</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
+            title="Delete Team Leader"
+            onclick="window.deleteLeaderPrompt('${leader.id}', '${escapeHtml(leader.institution_name)}')"
+          >
+            <span class="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    // Fetch student count asynchronously for this leader
+    db.getTeamStudents(leader.id).then((students) => {
+      const el = document.getElementById(`leader-stu-count-${leader.id}`);
+      if (el) el.textContent = students.length;
+    });
+  });
+}
+
+function setupTeamLeaderControls() {
+  const btnOpenModal = document.getElementById('btn-open-assign-leader-modal');
+  const formAssign = document.getElementById('form-assign-team-leader');
+  const btnGenToken = document.getElementById('btn-generate-random-token');
+  const btnCopyToken = document.getElementById('btn-copy-form-token');
+  const tokenInput = document.getElementById('leader-form-token');
+  const linkPreview = document.getElementById('leader-form-link-preview');
+
+  function updateLinkPreview(tok) {
+    if (!linkPreview) return;
+    const cleanTok = (tok || '').trim().toUpperCase();
+    const portalUrl = getShareablePortalUrl(cleanTok, 'leader.html');
+    linkPreview.textContent = portalUrl;
+  }
+
+  function setFreshToken() {
+    const newToken = generateLeaderToken();
+    if (tokenInput) {
+      tokenInput.value = newToken;
+      updateLinkPreview(newToken);
+    }
+  }
+
+  if (btnOpenModal) {
+    btnOpenModal.addEventListener('click', () => {
+      window.openAssignLeaderModal();
+    });
+  }
+
+  if (btnGenToken) {
+    btnGenToken.addEventListener('click', setFreshToken);
+  }
+
+  if (tokenInput) {
+    tokenInput.addEventListener('input', () => {
+      tokenInput.value = tokenInput.value.toUpperCase();
+      updateLinkPreview(tokenInput.value);
+    });
+  }
+
+  if (btnCopyToken) {
+    btnCopyToken.addEventListener('click', () => {
+      if (!tokenInput || !tokenInput.value) return;
+      navigator.clipboard.writeText(tokenInput.value).then(() => {
+        showToast(`Token "${tokenInput.value}" copied!`, 'info');
+      });
+    });
+  }
+
+  if (formAssign) {
+    formAssign.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const institution = document.getElementById('leader-form-institution').value.trim();
+      const name = document.getElementById('leader-form-name').value.trim();
+      const team = document.getElementById('leader-form-team').value.trim();
+      const email = document.getElementById('leader-form-email').value.trim();
+      const phone = document.getElementById('leader-form-phone').value.trim();
+      const quota = Number(document.getElementById('leader-form-quota').value) || 50;
+      const status = document.getElementById('leader-form-status').value;
+      const token = document.getElementById('leader-form-token').value.trim().toUpperCase();
+      const notes = document.getElementById('leader-form-notes').value.trim();
+
+      const btn = document.getElementById('btn-save-team-leader');
+      btn.disabled = true;
+
+      try {
+        const created = await db.createTeamLeader({
+          institution_name: institution,
+          leader_name: name,
+          team_name: team,
+          leader_email: email,
+          leader_phone: phone,
+          max_students: quota,
+          status,
+          token,
+          notes,
+        });
+
+        document.getElementById('modal-assign-team-leader')?.classList.remove('show');
+        const shareUrl = getShareablePortalUrl(created.token, 'leader.html');
+
+        // Copy link directly and notify admin
+        navigator.clipboard.writeText(shareUrl);
+        showToast(`Team Leader assigned! Access link for "${institution}" copied to clipboard.`, 'success');
+
+        logAudit('TEAM_LEADER_PROVISIONED', `Assigned team leader "${name}" (${institution}) with token ${created.token}`);
+        await loadAllData();
+      } catch (err) {
+        showToast('Failed to assign team leader: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // Search & Filter listeners
+  document.getElementById('search-team-leaders')?.addEventListener('input', renderTeamLeadersTab);
+  document.getElementById('filter-leader-status')?.addEventListener('change', renderTeamLeadersTab);
+}
+
+// Open Assign Team Leader Modal
+window.openAssignLeaderModal = function () {
+  const formAssign = document.getElementById('form-assign-team-leader');
+  if (formAssign) formAssign.reset();
+  const tokenInput = document.getElementById('leader-form-token');
+  const linkPreview = document.getElementById('leader-form-link-preview');
+  const newToken = generateLeaderToken();
+  if (tokenInput) {
+    tokenInput.value = newToken;
+    if (linkPreview) {
+      linkPreview.textContent = getShareablePortalUrl(newToken, 'leader.html');
+    }
+  }
+  document.getElementById('modal-assign-team-leader')?.classList.add('show');
+};
+
+// Open Add Team Delegation Modal
+window.openAddTeamModal = function () {
+  switchTab('registrations');
+  document.getElementById('btn-open-add-team-modal')?.click();
+};
+
+// Window actions for Team Leaders Table
+window.copyLeaderToken = (token) => {
+  navigator.clipboard.writeText(token).then(() => {
+    showToast(`Token "${token}" copied to clipboard!`, 'info');
+  });
+};
+
+window.copyLeaderLink = (url) => {
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('Direct portal link copied to clipboard!', 'success');
+  }).catch(() => {
+    prompt('Copy this portal invite link:', url);
+  });
+};
+
+window.regenerateLeaderTokenPrompt = async (id, institution) => {
+  if (!confirm(`Regenerate access token for "${institution}"? The previous token will be invalidated immediately.`)) {
+    return;
+  }
+  try {
+    const updated = await db.regenerateTeamLeaderToken(id);
+    showToast(`New token generated: ${updated.token}`, 'success');
+    logAudit('TEAM_LEADER_TOKEN_REGENERATED', `Regenerated token for "${institution}" to ${updated.token}`);
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to regenerate token: ' + err.message, 'error');
+  }
+};
+
+window.deleteLeaderPrompt = async (id, institution) => {
+  if (!confirm(`Are you sure you want to delete the team leader for "${institution}"? All enrolled delegation students and stage allocations will be permanently removed.`)) {
+    return;
+  }
+  try {
+    await db.deleteTeamLeader(id);
+    showToast(`Deleted team leader for "${institution}".`, 'info');
+    logAudit('TEAM_LEADER_DELETED', `Deleted team leader for institution "${institution}"`);
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to delete team leader: ' + err.message, 'error');
+  }
+};
+
+window.viewLeaderRoster = async (leaderId) => {
+  const leader = (cachedTeamLeaders || []).find((l) => l.id === leaderId);
+  if (!leader) return;
+
+  document.getElementById('roster-view-institution').textContent = leader.institution_name;
+  document.getElementById('roster-view-leader').textContent = `Lead: ${leader.leader_name} • Token: ${leader.token} • ${leader.leader_phone || ''}`;
+
+  const portalUrl = getShareablePortalUrl(leader.token, 'leader.html');
+  const linkEl = document.getElementById('roster-view-portal-link');
+  if (linkEl) linkEl.href = portalUrl;
+
+  const container = document.getElementById('roster-view-students-container');
+  container.innerHTML = '<div class="p-6 text-center text-xs text-slate-500 font-semibold">Loading delegation students & squads...</div>';
+
+  document.getElementById('modal-view-leader-roster')?.classList.add('show');
+
+  try {
+    const [students, teams] = await Promise.all([
+      db.getTeamStudents(leaderId),
+      db.getTeamGroups(leaderId),
+    ]);
+
+    if (students.length === 0 && teams.length === 0) {
+      container.innerHTML = `
+        <div class="p-8 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-200">
+          This team leader has not enrolled any students or teams yet. Provide them the invite link to begin.
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+
+    // Render Teams if any
+    if (teams.length > 0) {
+      html += `
+        <div class="mb-4">
+          <div class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-purple-700">groups_3</span>
+            <span>Delegation Teams & Squads (${teams.length})</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${teams.map((t) => {
+              const count = (t.student_ids || []).length;
+              return `
+                <div class="p-3 bg-purple-50/60 rounded-xl border border-purple-200 text-xs">
+                  <div class="font-bold text-purple-900">${escapeHtml(t.team_name)}</div>
+                  <div class="text-[11px] text-purple-700 mt-0.5">${escapeHtml(t.category)} • ${count} members</div>
+                  ${t.notes ? `<div class="text-[10px] text-slate-500 italic mt-1">${escapeHtml(t.notes)}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Render Students
+    html += `
+      <div class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px] text-brand-700">group</span>
+        <span>Enrolled Students (${students.length} / ${leader.max_students || 50})</span>
+      </div>
+      <div class="space-y-2">
+        ${students.length > 0 ? students.map((s) => {
+          const events = s.assigned_events || [];
+          return `
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start justify-between gap-3 text-xs">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-slate-900">${escapeHtml(s.student_name)}</span>
+                  <span class="px-2 py-0.5 rounded bg-purple-100 text-purple-900 font-mono font-bold text-[10px]">${escapeHtml(s.student_code)}</span>
+                  <span class="text-slate-500 text-[11px]">${escapeHtml(s.category)}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">
+                  ${s.phone ? `Phone: ${escapeHtml(s.phone)}` : ''}
+                </div>
+                <!-- Assigned Events -->
+                <div class="mt-2 flex flex-wrap gap-1">
+                  ${events.length > 0
+                    ? events.map((ev) => `
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">
+                          <span class="material-symbols-outlined text-[12px]">theater_comedy</span>
+                          <span>${escapeHtml(ev.event_title)}</span>
+                          <span class="text-amber-700 font-mono">(${ev.ticket_code || ''})</span>
+                        </span>
+                      `).join('')
+                    : '<span class="text-slate-400 text-[11px] italic">No stage assigned</span>'
+                  }
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('') : '<div class="text-xs text-slate-400 italic">No individual students enrolled yet.</div>'}
+      </div>
+    `;
+
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = `<div class="p-4 text-xs text-red-600 font-semibold">Error loading roster: ${err.message}</div>`;
+  }
+};
