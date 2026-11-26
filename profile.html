@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <title id="page-title">Participant Accreditation Profile • Al Murafaqa 5th Edition</title>
+
+  <!-- Typography & Google Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            white: "#FFFAED",
+            black: "#2D101A",
+            "fest-red": "#7F011F",
+            "fest-red-dark": "#570018",
+            "fest-red-light": "#A72A47",
+            "fest-orange": "#9C2644",
+            "fest-orange-warm": "#B3425B",
+            "fest-gold": "#F5EBD0",
+            "fest-dark": "#2D101A",
+            "fest-cream": "#F5EBD0",
+            primary: "#7F011F",
+            "primary-container": "#AC3150",
+            "secondary-container": "#6B1028"
+          },
+          fontFamily: {
+            headline: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            body: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            sans: ["Clash Display", "Noto Sans Arabic", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @layer base {
+      html, body {
+        overflow-x: hidden;
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+        background-color: #FBF5E5;
+        color: #2D101A;
+      }
+    }
+    @media print {
+      body {
+        background-color: #ffffff;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-card {
+        box-shadow: none !important;
+        border: 2px solid #7F011F !important;
+      }
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(127, 1, 31, 0.2);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-fest-orange selection:text-white">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="no-print sticky top-0 z-40 bg-[#FBF5E5]/90 backdrop-blur-md border-b border-[#2D101A]/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+    <a href="home.html" class="flex items-center gap-2.5 group">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#45101F] to-[#7F011F] text-fest-gold flex items-center justify-center font-bold text-sm shadow-md">
+        AM
+      </div>
+      <div class="flex flex-col">
+        <span class="font-headline font-bold text-sm tracking-tight text-fest-dark group-hover:text-fest-red transition-colors">Al Murafaqa</span>
+        <span class="text-[10px] uppercase font-mono font-bold text-fest-red tracking-wider">5th Edition • Digital Accreditation</span>
+      </div>
+    </a>
+
+    <div class="flex items-center gap-2">
+      <a href="participants.html" class="px-3.5 py-1.5 rounded-xl bg-neutral-200/80 hover:bg-neutral-300 text-fest-dark font-bold text-xs flex items-center gap-1.5 transition-all">
+        <span class="material-symbols-outlined text-[15px]">people</span>
+        <span class="hidden sm:inline">All Participants</span>
+      </a>
+      <a href="home.html" class="px-3.5 py-1.5 rounded-xl bg-fest-red hover:bg-fest-red-dark text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[15px]">home</span>
+        <span class="hidden sm:inline">Home</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12 max-w-xl mx-auto w-full">
+
+    <!-- Loading State -->
+    <div id="profile-loading" class="flex flex-col items-center justify-center py-16 space-y-4">
+      <div class="w-12 h-12 rounded-full border-4 border-fest-red/20 border-t-fest-red animate-spin"></div>
+      <p class="font-bold text-sm text-neutral-600">Verifying Accreditation Credentials...</p>
+    </div>
+
+    <!-- Not Found State -->
+    <div id="profile-not-found" class="hidden flex-col items-center justify-center text-center py-12 px-6 bg-white rounded-3xl border border-neutral-200 shadow-md w-full max-w-md">
+      <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4">
+        <span class="material-symbols-outlined text-[32px]">badge</span>
+      </div>
+      <h2 class="font-headline text-xl font-bold text-neutral-900 mb-1">Participant Profile Not Found</h2>
+      <p class="text-xs text-neutral-600 mb-6 leading-relaxed">
+        The requested accreditation ID or code does not match any registered participant in the database.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-2.5 w-full">
+        <a href="participants.html" class="flex-1 py-2.5 px-4 rounded-xl bg-fest-red text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md hover:bg-fest-red-dark transition-all">
+          <span class="material-symbols-outlined text-[16px]">search</span>
+          <span>Browse Directory</span>
+        </a>
+        <a href="home.html" class="flex-1 py-2.5 px-4 rounded-xl bg-neutral-100 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-neutral-200 transition-all">
+          <span class="material-symbols-outlined text-[16px]">home</span>
+          <span>Return Home</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ================= ACCREDITATION PROFILE CARD ================= -->
+    <article id="profile-card" class="hidden print-card w-full bg-[#45101F] text-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-fest-gold/30 relative overflow-hidden flex flex-col gap-6">
+
+      <!-- Background decorative glow -->
+      <div class="absolute -right-20 -top-20 w-64 h-64 bg-fest-orange/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-fest-gold/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Top Accreditation Badge Header -->
+      <div class="relative z-10 flex items-center justify-between border-b border-fest-gold/20 pb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-fest-gold/20 flex items-center justify-center text-fest-gold">
+            <span class="material-symbols-outlined text-[18px]">verified</span>
+          </div>
+          <div>
+            <h1 class="text-[11px] font-mono font-bold uppercase tracking-widest text-fest-gold">Official Accreditation</h1>
+            <p class="text-[10px] text-fest-cream/70">Al Murafaqa • 5th International Edition</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>VERIFIED PASS</span>
+        </div>
+      </div>
+
+      <!-- Profile Avatar & Details -->
+      <div class="relative z-10 flex flex-col items-center text-center">
+        <!-- Avatar Initials -->
+        <div id="p-avatar" class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-fest-gold via-amber-200 to-amber-400 text-[#45101F] font-headline font-extrabold text-3xl sm:text-4xl flex items-center justify-center shadow-xl ring-4 ring-fest-gold/40 mb-4 tracking-tighter">
+          --
+        </div>
+
+        <!-- Full Name -->
+        <h2 id="p-name" class="font-headline font-bold text-2xl sm:text-3xl text-white tracking-tight mb-1">
+          Loading Name...
+        </h2>
+
+        <!-- Institution / Delegation -->
+        <p id="p-institution" class="text-xs sm:text-sm text-fest-gold font-semibold max-w-sm">
+          Festival Delegation
+        </p>
+
+        <!-- Category & Chest Badges -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-3.5">
+          <div class="flex items-center gap-1 px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white text-xs font-mono font-bold">
+            <span class="text-fest-gold">CHEST:</span>
+            <span id="p-chest">--</span>
+          </div>
+          <div class="flex items-center gap-1 px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white text-xs font-bold">
+            <span class="text-fest-gold">CATEGORY:</span>
+            <span id="p-category">Senior</span>
+          </div>
+          <div class="flex items-center gap-1 px-3 py-1 rounded-xl bg-white/10 border border-white/10 text-white text-xs font-mono font-bold">
+            <span class="text-fest-gold">CODE:</span>
+            <span id="p-code">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assigned Competition Stages Section -->
+      <div class="relative z-10 p-4 rounded-2xl bg-black/25 border border-white/10">
+        <div class="flex items-center justify-between text-xs text-fest-gold font-bold uppercase tracking-wider mb-2.5">
+          <span class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px]">theater_comedy</span>
+            <span>Registered Tracks &amp; Stages</span>
+          </span>
+          <span id="p-events-count" class="font-mono text-[11px] text-white/70">0 Stages</span>
+        </div>
+        <div id="p-events-list" class="space-y-2 max-h-48 overflow-y-auto custom-scroll text-xs">
+          <!-- Populated Dynamically -->
+        </div>
+      </div>
+
+      <!-- Verified QR Authentication Section -->
+      <div class="relative z-10 p-4 rounded-2xl bg-white text-neutral-900 flex flex-col sm:flex-row items-center gap-4 shadow-xl border border-fest-gold/40">
+        <div class="w-32 h-32 sm:w-36 sm:h-36 bg-white p-1 rounded-xl shrink-0 flex items-center justify-center border border-neutral-200 shadow-inner">
+          <img id="p-qr-image" src="" alt="Accreditation Verification QR Code" class="w-full h-full object-contain">
+        </div>
+        <div class="text-center sm:text-left flex-1 space-y-1">
+          <span class="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider block">Official Gate Ingress Token</span>
+          <p id="p-ticket-code" class="text-sm font-mono font-extrabold text-[#45101F]">
+            ALM-0000
+          </p>
+          <p class="text-[11px] text-neutral-600 leading-snug">
+            This digital credential confirms accredited standing for all main dome cultural sessions and assigned competition tracks.
+          </p>
+          <div class="pt-1 flex items-center justify-center sm:justify-start gap-1 text-[10px] font-bold text-emerald-700">
+            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+            <span>Identity Verified &amp; Cleared for Entry</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons (Hidden on Print) -->
+      <div class="no-print relative z-10 flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+        <button type="button" onclick="window.print()" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-fest-gold hover:bg-amber-200 text-[#45101F] font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer">
+          <span class="material-symbols-outlined text-[17px]">print</span>
+          <span>Print / Save Badge</span>
+        </button>
+        <button type="button" id="btn-share-profile" class="w-full sm:flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
+          <span class="material-symbols-outlined text-[17px]">share</span>
+          <span id="btn-share-text">Share Profile</span>
+        </button>
+        <a href="participants.html" class="w-full sm:w-auto py-3 px-4 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center">
+          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+          <span>Directory</span>
+        </a>
+      </div>
+
+    </article>
+
+  </main>
+
+  <!-- Toast Notification Pill -->
+  <div id="toast-banner" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2D101A] text-white border border-fest-gold/40 px-4 py-2.5 rounded-full shadow-2xl font-body text-[12px] font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 translate-y-3">
+    <span class="material-symbols-outlined text-fest-gold text-[18px]">check_circle</span>
+    <span id="toast-text">Action completed</span>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { db, PRODUCTION_BASE_URL } from './supabase-config.js';
+
+    const DEFAULT_PARTICIPANTS = [
+      {
+        id: 'p-1',
+        name: 'Ammar Qureshi',
+        code: 'STU-102',
+        chest_number: 'CH-102',
+        ticket_code: 'ALM-1042',
+        institution: 'Faculty of Arts & Architecture, Granada Delegation',
+        category: 'Senior',
+        assigned_events: [
+          { event_title: 'Mystic Poetry Recital', day_number: 1, time_slot: '10:00 AM', venue: 'Grand Dome' },
+          { event_title: 'Classical Arabic Oratory', day_number: 2, time_slot: '02:30 PM', venue: 'Sala Ámbar' }
+        ]
+      },
+      {
+        id: 'p-2',
+        name: 'Tariq Mansoor',
+        code: 'STU-104',
+        chest_number: 'CH-104',
+        ticket_code: 'ALM-1044',
+        institution: 'School of Classical Arabic Studies, Cordoba Delegation',
+        category: 'Senior',
+        assigned_events: [
+          { event_title: 'Classical Arabic Oratory', day_number: 2, time_slot: '02:30 PM', venue: 'Sala Ámbar' }
+        ]
+      },
+      {
+        id: 'p-3',
+        name: 'Bilal Farooqui',
+        code: 'STU-201',
+        chest_number: 'CH-201',
+        ticket_code: 'ALM-1045',
+        institution: 'Seville Institute of Fine Arts & Calligraphy',
+        category: 'General',
+        assigned_events: [
+          { event_title: 'Traditional Calligraphy Showcase', day_number: 1, time_slot: '11:30 AM', venue: 'Patio Mayor' }
+        ]
+      },
+      {
+        id: 'p-4',
+        name: 'Hamza Al-Sayed',
+        code: 'STU-202',
+        chest_number: 'CH-202',
+        ticket_code: 'ALM-1046',
+        institution: 'Seville Institute of Fine Arts & Calligraphy',
+        category: 'General',
+        assigned_events: [
+          { event_title: 'Andalusian Architectural Modeling', day_number: 3, time_slot: '04:00 PM', venue: 'Grand Dome' }
+        ]
+      },
+      {
+        id: 'p-5',
+        name: 'Sofia Benali',
+        code: 'STU-103',
+        chest_number: 'CH-103',
+        ticket_code: 'ALM-1043',
+        institution: 'Faculty of Arts & Architecture, Granada Delegation',
+        category: 'Junior',
+        assigned_events: [
+          { event_title: 'Mystic Poetry Recital', day_number: 1, time_slot: '10:00 AM', venue: 'Grand Dome' }
+        ]
+      }
+    ];
+
+    function showToast(msg) {
+      const banner = document.getElementById('toast-banner');
+      const text = document.getElementById('toast-text');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+      banner.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        banner.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+        banner.classList.remove('opacity-100', 'translate-y-0');
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getInitials(name) {
+      if (!name) return 'AM';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    async function loadAllParticipants() {
+      try {
+        const [teamStudents, teamLeaders, registrations, events] = await Promise.all([
+          db.getTeamStudents ? db.getTeamStudents() : [],
+          db.getTeamLeaders ? db.getTeamLeaders() : [],
+          db.getRegistrations ? db.getRegistrations() : [],
+          db.getEvents ? db.getEvents() : [],
+        ]);
+
+        let list = [];
+
+        if (Array.isArray(teamStudents) && teamStudents.length > 0) {
+          teamStudents.forEach((s) => {
+            const leader = (teamLeaders || []).find((l) => l.id === s.team_leader_id);
+            const instName = leader?.institution_name || leader?.team_name || 'Festival Delegation';
+            const tCode = (s.assigned_events && s.assigned_events[0]?.ticket_code) || `ALM-${s.student_code}`;
+            list.push({
+              id: s.id,
+              name: s.student_name,
+              code: s.student_code,
+              chest_number: s.chest_number || s.student_code,
+              ticket_code: tCode,
+              institution: instName,
+              category: s.category || 'Senior',
+              assigned_events: s.assigned_events || []
+            });
+          });
+        }
+
+        if (Array.isArray(registrations) && registrations.length > 0) {
+          registrations.forEach((r) => {
+            if (r.team_members && Array.isArray(r.team_members) && r.team_members.length > 0) {
+              r.team_members.forEach((m, idx) => {
+                if (m.name && !list.some((item) => item.name.toLowerCase() === m.name.toLowerCase())) {
+                  list.push({
+                    id: `${r.id}-${idx}`,
+                    name: m.name,
+                    code: m.code || `REG-${r.ticket_code.slice(-4)}-${idx + 1}`,
+                    chest_number: m.code || `REG-${idx + 1}`,
+                    ticket_code: r.ticket_code,
+                    institution: r.college_name || r.team_name || 'Delegation Team',
+                    category: 'Senior',
+                    assigned_events: r.events ? [{ event_title: r.events.title, day_number: 1, time_slot: '10:00 AM', venue: 'Dome' }] : []
+                  });
+                }
+              });
+            } else if (r.leader_name && !list.some((item) => item.name.toLowerCase() === r.leader_name.toLowerCase())) {
+              list.push({
+                id: r.id,
+                name: r.leader_name,
+                code: `REG-${r.ticket_code.slice(-4)}`,
+                chest_number: `REG-${r.ticket_code.slice(-4)}`,
+                ticket_code: r.ticket_code,
+                institution: r.college_name || r.team_name || 'Delegation Team',
+                category: 'Senior',
+                assigned_events: r.events ? [{ event_title: r.events.title, day_number: 1, time_slot: '10:00 AM', venue: 'Dome' }] : []
+              });
+            }
+          });
+        }
+
+        if (list.length === 0) list = DEFAULT_PARTICIPANTS;
+        return list;
+      } catch (err) {
+        console.warn('Could not fetch remote participants, using seed list:', err);
+        return DEFAULT_PARTICIPANTS;
+      }
+    }
+
+    async function initProfilePage() {
+      const loading = document.getElementById('profile-loading');
+      const notFound = document.getElementById('profile-not-found');
+      const card = document.getElementById('profile-card');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryId = (urlParams.get('id') || urlParams.get('code') || urlParams.get('chest') || urlParams.get('ticket') || '').trim().toLowerCase();
+
+      const participants = await loadAllParticipants();
+
+      let p = null;
+      if (queryId) {
+        p = participants.find((item) =>
+          String(item.id || '').toLowerCase() === queryId ||
+          String(item.code || '').toLowerCase() === queryId ||
+          String(item.chest_number || '').toLowerCase() === queryId ||
+          String(item.ticket_code || '').toLowerCase() === queryId ||
+          String(item.name || '').toLowerCase() === queryId
+        );
+      } else if (participants.length > 0) {
+        // Fallback to first participant if opened with no parameter
+        p = participants[0];
+      }
+
+      if (loading) loading.classList.add('hidden');
+
+      if (!p) {
+        if (notFound) notFound.classList.remove('hidden');
+        if (notFound) notFound.classList.add('flex');
+        return;
+      }
+
+      // Populate Card
+      document.getElementById('page-title').textContent = `${p.name} • Accredited Contender Profile`;
+      document.getElementById('p-name').textContent = p.name;
+      document.getElementById('p-avatar').textContent = getInitials(p.name);
+      document.getElementById('p-institution').textContent = p.institution || 'Festival Delegation';
+      document.getElementById('p-chest').textContent = p.chest_number || p.code || 'CH-00';
+      document.getElementById('p-category').textContent = p.category || 'Senior';
+      document.getElementById('p-code').textContent = p.code || 'STU-00';
+      document.getElementById('p-ticket-code').textContent = p.ticket_code || `ALM-${p.code}`;
+
+      // Stages list
+      const evsList = document.getElementById('p-events-list');
+      const evsCount = document.getElementById('p-events-count');
+      const evs = p.assigned_events || [];
+
+      if (evsCount) evsCount.textContent = `${evs.length} Stage${evs.length === 1 ? '' : 's'}`;
+      if (evsList) {
+        evsList.innerHTML = '';
+        if (evs.length === 0) {
+          evsList.innerHTML = '<div class="text-[11px] text-white/60 italic p-2 bg-white/5 rounded-xl">Accredited General Delegate Pass (No Stages Assigned)</div>';
+        } else {
+          evs.forEach((ev) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/10 border border-white/5';
+            row.innerHTML = `
+              <div class="flex items-center gap-2 truncate">
+                <span class="w-1.5 h-1.5 rounded-full bg-fest-gold shrink-0"></span>
+                <span class="font-bold text-white truncate">${escapeHtml(ev.event_title)}</span>
+              </div>
+              <span class="text-[10px] text-amber-200/90 font-mono shrink-0">Day ${ev.day_number || 1} • ${escapeHtml(ev.time_slot || 'TBA')}</span>
+            `;
+            evsList.appendChild(row);
+          });
+        }
+      }
+
+      // Scannable Verification QR Code pointing directly to this profile URL
+      const currentUrl = window.location.href;
+      const qrImg = document.getElementById('p-qr-image');
+      if (qrImg) {
+        const primary = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(currentUrl)}`;
+        const fallback = `https://quickchart.io/qr?size=320&text=${encodeURIComponent(currentUrl)}`;
+        qrImg.onerror = function() {
+          if (this.src !== fallback) this.src = fallback;
+        };
+        qrImg.src = primary;
+      }
+
+      // Share Profile Link Button
+      const shareBtn = document.getElementById('btn-share-profile');
+      if (shareBtn) {
+        shareBtn.onclick = async () => {
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: `${p.name} - Festival Accreditation Profile`,
+                text: `Accredited Contender Profile for ${p.name} (${p.chest_number || p.code}) at Al Murafaqa 5th Edition`,
+                url: currentUrl
+              });
+              return;
+            } catch (err) {}
+          }
+          try {
+            await navigator.clipboard.writeText(currentUrl);
+            showToast('Accreditation profile link copied to clipboard!');
+            const shareText = document.getElementById('btn-share-text');
+            if (shareText) {
+              shareText.textContent = 'Copied!';
+              setTimeout(() => { shareText.textContent = 'Share Profile'; }, 2000);
+            }
+          } catch (e) {
+            showToast('Profile URL: ' + currentUrl);
+          }
+        };
+      }
+
+      if (card) card.classList.remove('hidden');
+    }
+
+    initProfilePage();
+  </script>
+</body>
+</html>

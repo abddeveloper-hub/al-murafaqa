@@ -1022,14 +1022,14 @@ function openStudentPassModal(studentId) {
     window.location.hostname === '127.0.0.1' ||
     window.location.protocol === 'file:'
   );
-  const participantsUrl = (!isLocalHost && window.location.origin)
-    ? `${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/participants.html?id=${encodeURIComponent(studentRef)}`
-    : `https://abddeveloper-hub.github.io/al-murafaqa/participants.html?id=${encodeURIComponent(studentRef)}`;
+  const profileUrl = (!isLocalHost && window.location.origin)
+    ? `${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/profile.html?id=${encodeURIComponent(studentRef)}`
+    : `https://abddeveloper-hub.github.io/al-murafaqa/profile.html?id=${encodeURIComponent(studentRef)}`;
 
   const qrImg = document.getElementById('pass-qr-img');
   if (qrImg) {
-    const primaryUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(participantsUrl)}`;
-    const fallbackUrl = `https://quickchart.io/qr?size=250&text=${encodeURIComponent(participantsUrl)}`;
+    const primaryUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(profileUrl)}`;
+    const fallbackUrl = `https://quickchart.io/qr?size=250&text=${encodeURIComponent(profileUrl)}`;
     qrImg.onerror = function() {
       if (this.src !== fallbackUrl) this.src = fallbackUrl;
     };

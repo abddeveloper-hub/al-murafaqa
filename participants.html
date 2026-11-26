@@ -446,15 +446,15 @@
   <script type="module">
     import { db, PRODUCTION_BASE_URL } from './supabase-config.js';
 
-    // Base URL resolution for sharing and QR code generation
+    // Base URL resolution for individual profile accreditation page
     const isLocalHost = typeof window !== 'undefined' && (
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1' ||
       window.location.protocol === 'file:'
     );
-    const PARTICIPANTS_BASE_URL = (!isLocalHost && window.location.origin)
-      ? `${window.location.origin}${window.location.pathname}`
-      : (PRODUCTION_BASE_URL ? `${PRODUCTION_BASE_URL}/participants.html` : 'https://abddeveloper-hub.github.io/al-murafaqa/participants.html');
+    const PROFILE_BASE_URL = (!isLocalHost && window.location.origin)
+      ? `${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/profile.html`
+      : (PRODUCTION_BASE_URL ? `${PRODUCTION_BASE_URL}/profile.html` : 'https://abddeveloper-hub.github.io/al-murafaqa/profile.html');
 
     const DEFAULT_PARTICIPANTS = [
       {
@@ -687,9 +687,9 @@
         }
       }
 
-      // Generate QR Code that directly opens this participant's accredited profile
+      // Generate QR Code that directly opens this participant's individual profile page
       const studentRef = p.code || p.id || p.chest_number || p.ticket_code;
-      const profileUrl = `${PARTICIPANTS_BASE_URL}?id=${encodeURIComponent(studentRef)}`;
+      const profileUrl = `${PROFILE_BASE_URL}?id=${encodeURIComponent(studentRef)}`;
 
       const qrImg = document.getElementById('modal-p-qr-image');
       const qrLink = document.getElementById('modal-p-qr-link');
@@ -819,7 +819,7 @@
             String(p.ticket_code || '').toLowerCase() === targetQuery
           );
           if (matched) {
-            setTimeout(() => openParticipantModal(matched), 150);
+            setTimeout(() => window.openParticipantModal(matched.id), 150);
           }
         }
       } catch (err) {
@@ -837,7 +837,7 @@
             String(p.ticket_code || '').toLowerCase() === targetQuery
           );
           if (matched) {
-            setTimeout(() => openParticipantModal(matched), 150);
+            setTimeout(() => window.openParticipantModal(matched.id), 150);
           }
         }
       }
