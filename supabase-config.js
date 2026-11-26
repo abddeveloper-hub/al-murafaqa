@@ -186,6 +186,17 @@ function initStorage() {
     localStorage.removeItem('almurafaqa_team_groups');
   }
 
+  const existingSettingsRaw = localStorage.getItem('almurafaqa_settings');
+  if (existingSettingsRaw && (existingSettingsRaw.includes('AB6AXuBI4u7wM1') || existingSettingsRaw.includes('googleusercontent.com/aida-public'))) {
+    try {
+      const parsed = JSON.parse(existingSettingsRaw);
+      parsed.video_poster_url = 'video-poster.jpg';
+      localStorage.setItem('almurafaqa_settings', JSON.stringify(parsed));
+    } catch (_) {
+      localStorage.removeItem('almurafaqa_settings');
+    }
+  }
+
   if (!localStorage.getItem('almurafaqa_settings')) {
     localStorage.setItem('almurafaqa_settings', JSON.stringify(DEFAULT_SETTINGS));
   }
@@ -375,6 +386,13 @@ export const db = {
 
         if (!error && data) {
           const cloudSettings = { ...DEFAULT_SETTINGS, ...data };
+          if (!cloudSettings.video_poster_url || cloudSettings.video_poster_url.includes('AB6AXuBI4u7wM1') || cloudSettings.video_poster_url.includes('googleusercontent.com/aida-public')) {
+            cloudSettings.video_poster_url = 'video-poster.jpg';
+            // Self-heal cloud database row if it still holds the legacy mock oud player image URL
+            if (data?.video_poster_url && (data.video_poster_url.includes('AB6AXuBI4u7wM1') || data.video_poster_url.includes('googleusercontent.com/aida-public'))) {
+              supabase.from('fest_settings').update({ video_poster_url: 'video-poster.jpg' }).eq('id', 1).then(() => {}).catch(() => {});
+            }
+          }
           const hasPendingLocalEdits = cachedSettings && Object.keys(cachedSettings).some((key) =>
             key !== 'id' && key !== 'updated_at' && key in DEFAULT_SETTINGS && cachedSettings[key] !== DEFAULT_SETTINGS[key]
           );
@@ -384,7 +402,11 @@ export const db = {
           // Recover settings saved by the previous local-only fallback, so an admin
           // can publish them after the database schema has been brought up to date.
           if (hasPendingLocalEdits && Number.isFinite(localUpdatedAt) && localUpdatedAt > cloudUpdatedAt) {
-            return { ...cloudSettings, ...cachedSettings };
+            const merged = { ...cloudSettings, ...cachedSettings };
+            if (!merged.video_poster_url || merged.video_poster_url.includes('AB6AXuBI4u7wM1') || merged.video_poster_url.includes('googleusercontent.com/aida-public')) {
+              merged.video_poster_url = 'video-poster.jpg';
+            }
+            return merged;
           }
           return cloudSettings;
         }
@@ -393,7 +415,13 @@ export const db = {
         console.warn('[Supabase getSettings exception]', err.message);
       }
     }
-    return cachedSettings || DEFAULT_SETTINGS;
+    if (cachedSettings) {
+      if (!cachedSettings.video_poster_url || cachedSettings.video_poster_url.includes('AB6AXuBI4u7wM1') || cachedSettings.video_poster_url.includes('googleusercontent.com/aida-public')) {
+        cachedSettings.video_poster_url = 'video-poster.jpg';
+      }
+      return cachedSettings;
+    }
+    return DEFAULT_SETTINGS;
   },
 
   async updateSettings(updates) {

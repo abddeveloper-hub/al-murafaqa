@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.fest_settings (
     video_description TEXT NOT NULL DEFAULT 'Live Cultural Stage & Ensemble Performances',
     video_venue TEXT NOT NULL DEFAULT 'GRAND ANDALUSIAN DOME',
     video_url TEXT NOT NULL DEFAULT '',
-    video_poster_url TEXT NOT NULL DEFAULT 'https://lh3.googleusercontent.com/aida-public/AB6AXuBI4u7wM1OZBhGT-FXa7reqYfBd_iL47KqTEKkVKg_Idm8vRlJmbdWzUsd9leeBo8C1iT-u8DngFM0FXGt4ts66akMHNMMhJLX5H6lI38Ip4TNgcxyWt6W6jrtfl8IL1YkL1-zJsck5U9-dkM5NH5LH6IELBONbt9z8WvfI5KOrGwxcxGylyHzbQlrAkuV1nBWBiuu2E9UOdxa5D3h9k-8p5XBeRoQS0gaQ6sVBMXJb',
+    video_poster_url TEXT NOT NULL DEFAULT 'video-poster.jpg',
     video_is_live BOOLEAN NOT NULL DEFAULT true,
     video_viewer_count TEXT NOT NULL DEFAULT '4.8k live',
     video_duration_note TEXT NOT NULL DEFAULT '42 mins remaining',
@@ -38,7 +38,7 @@ ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_title TEXT DEFAU
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_description TEXT DEFAULT 'Live Cultural Stage & Ensemble Performances';
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_venue TEXT DEFAULT 'GRAND ANDALUSIAN DOME';
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_url TEXT DEFAULT '';
-ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_poster_url TEXT DEFAULT 'https://lh3.googleusercontent.com/aida-public/AB6AXuBI4u7wM1OZBhGT-FXa7reqYfBd_iL47KqTEKkVKg_Idm8vRlJmbdWzUsd9leeBo8C1iT-u8DngFM0FXGt4ts66akMHNMMhJLX5H6lI38Ip4TNgcxyWt6W6jrtfl8IL1YkL1-zJsck5U9-dkM5NH5LH6IELBONbt9z8WvfI5KOrGwxcxGylyHzbQlrAkuV1nBWBiuu2E9UOdxa5D3h9k-8p5XBeRoQS0gaQ6sVBMXJb';
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_poster_url TEXT DEFAULT 'video-poster.jpg';
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_is_live BOOLEAN DEFAULT true;
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_viewer_count TEXT DEFAULT '4.8k live';
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_duration_note TEXT DEFAULT '42 mins remaining';

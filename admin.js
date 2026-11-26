@@ -862,7 +862,10 @@ function renderAnnouncementsTab() {
     if (videoTitle) videoTitle.value = cachedSettings.video_title || 'Mystic Poetry Recital & Qurtuba Ensemble';
     if (videoDesc) videoDesc.value = cachedSettings.video_description || 'Live Cultural Stage & Ensemble Performances';
     if (videoVenue) videoVenue.value = cachedSettings.video_venue || 'GRAND ANDALUSIAN DOME';
-    if (videoPoster) videoPoster.value = cachedSettings.video_poster_url || '';
+    if (videoPoster) {
+      const pVal = cachedSettings.video_poster_url || '';
+      videoPoster.value = (pVal.includes('AB6AXuBI4u7wM1') || pVal.includes('googleusercontent.com/aida-public')) ? 'video-poster.jpg' : pVal;
+    }
     if (videoLive) videoLive.checked = cachedSettings.video_is_live !== false;
     if (videoViewers) videoViewers.value = cachedSettings.video_viewer_count || '4.8k live';
     if (videoDuration) videoDuration.value = cachedSettings.video_duration_note || '42 mins remaining';
