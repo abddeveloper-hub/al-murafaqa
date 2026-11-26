@@ -348,17 +348,28 @@
         </div>
       </div>
 
-      <!-- QR Code Section: OPENS HOME PAGE -->
+      <!-- QR Code Section: OPENS PARTICIPANT PROFILE -->
       <div class="p-3.5 rounded-2xl bg-white text-neutral-900 flex flex-col items-center justify-center shadow-lg border border-fest-gold/30">
-        <div class="w-40 h-40 sm:w-44 sm:h-44 bg-white p-1 rounded-xl flex items-center justify-center relative overflow-hidden">
-          <img id="modal-p-qr-image" src="" alt="Festival Home Page QR Code" class="w-full h-full object-contain">
-        </div>
-        <div class="text-center mt-1.5">
-          <span class="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider block">Official Festival QR</span>
+        <a id="modal-p-qr-link" href="#" target="_blank" rel="noopener" class="w-40 h-40 sm:w-44 sm:h-44 bg-white p-1 rounded-xl flex items-center justify-center relative overflow-hidden border border-neutral-200 hover:border-fest-red transition-all cursor-pointer group" title="Click or tap to open this participant's profile directly">
+          <img id="modal-p-qr-image" src="" alt="Accredited Participant Profile QR Code" class="w-full h-full object-contain transition-transform group-hover:scale-105">
+        </a>
+        <div class="text-center mt-2 w-full">
+          <span class="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-wider block">Official Participant Accreditation QR</span>
           <p class="text-[11px] font-bold text-[#45101F] flex items-center justify-center gap-1 mt-0.5">
-            <span class="material-symbols-outlined text-[15px] text-fest-red">home</span>
-            <span>Scan with phone camera to open Festival Home Page</span>
+            <span class="material-symbols-outlined text-[15px] text-fest-red">qr_code_scanner</span>
+            <span>Scan with phone camera to open this profile</span>
           </p>
+          <div class="mt-1.5 flex items-center justify-center gap-2">
+            <a id="btn-open-profile-direct" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-[11px] font-bold text-fest-red hover:text-fest-red/80 underline decoration-fest-red/40 hover:decoration-fest-red">
+              <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+              <span>Open Profile Link</span>
+            </a>
+            <span class="text-neutral-300">•</span>
+            <button type="button" id="btn-copy-profile-link" class="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-600 hover:text-neutral-900 cursor-pointer">
+              <span class="material-symbols-outlined text-[13px]">content_copy</span>
+              <span id="copy-btn-text">Copy Link</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -435,12 +446,15 @@
   <script type="module">
     import { db, PRODUCTION_BASE_URL } from './supabase-config.js';
 
-    // The QR code explicitly opens the Festival Home Page
-    const FESTIVAL_HOME_URL = PRODUCTION_BASE_URL 
-      ? `${PRODUCTION_BASE_URL}/home.html` 
-      : (window.location.origin && !window.location.origin.includes('localhost') && !window.location.origin.includes('127.0.0.1'))
-        ? `${window.location.origin}/home.html`
-        : 'https://abddeveloper-hub.github.io/al-murafaqa/home.html';
+    // Base URL resolution for sharing and QR code generation
+    const isLocalHost = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.protocol === 'file:'
+    );
+    const PARTICIPANTS_BASE_URL = (!isLocalHost && window.location.origin)
+      ? `${window.location.origin}${window.location.pathname}`
+      : (PRODUCTION_BASE_URL ? `${PRODUCTION_BASE_URL}/participants.html` : 'https://abddeveloper-hub.github.io/al-murafaqa/participants.html');
 
     const DEFAULT_PARTICIPANTS = [
       {
@@ -673,10 +687,41 @@
         }
       }
 
-      // The QR Code explicitly opens the Festival Home Page
+      // Generate QR Code that directly opens this participant's accredited profile
+      const studentRef = p.code || p.id || p.chest_number || p.ticket_code;
+      const profileUrl = `${PARTICIPANTS_BASE_URL}?id=${encodeURIComponent(studentRef)}`;
+
       const qrImg = document.getElementById('modal-p-qr-image');
+      const qrLink = document.getElementById('modal-p-qr-link');
+      const openDirectBtn = document.getElementById('btn-open-profile-direct');
+      const copyBtn = document.getElementById('btn-copy-profile-link');
+
       if (qrImg) {
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(FESTIVAL_HOME_URL)}`;
+        const primaryUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(profileUrl)}`;
+        const fallbackUrl = `https://quickchart.io/qr?size=350&text=${encodeURIComponent(profileUrl)}`;
+        qrImg.onerror = function() {
+          if (this.src !== fallbackUrl) this.src = fallbackUrl;
+        };
+        qrImg.src = primaryUrl;
+      }
+
+      if (qrLink) qrLink.href = profileUrl;
+      if (openDirectBtn) openDirectBtn.href = profileUrl;
+
+      if (copyBtn) {
+        copyBtn.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(profileUrl);
+            showToast('Participant profile link copied to clipboard!');
+            const txt = document.getElementById('copy-btn-text');
+            if (txt) {
+              txt.textContent = 'Copied!';
+              setTimeout(() => { txt.textContent = 'Copy Link'; }, 2000);
+            }
+          } catch (e) {
+            showToast('Profile link: ' + profileUrl);
+          }
+        };
       }
 
       // Show modal
@@ -762,10 +807,39 @@
 
         cachedParticipants = list;
         renderParticipantsGrid();
+
+        // Check if page opened with ?id= or ?code= parameter (e.g. from scanning a QR code!)
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetQuery = (urlParams.get('id') || urlParams.get('code') || urlParams.get('chest') || urlParams.get('ticket') || '').trim().toLowerCase();
+        if (targetQuery) {
+          const matched = cachedParticipants.find((p) =>
+            String(p.id || '').toLowerCase() === targetQuery ||
+            String(p.code || '').toLowerCase() === targetQuery ||
+            String(p.chest_number || '').toLowerCase() === targetQuery ||
+            String(p.ticket_code || '').toLowerCase() === targetQuery
+          );
+          if (matched) {
+            setTimeout(() => openParticipantModal(matched), 150);
+          }
+        }
       } catch (err) {
         console.warn('Error fetching participants:', err);
         cachedParticipants = DEFAULT_PARTICIPANTS;
         renderParticipantsGrid();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetQuery = (urlParams.get('id') || urlParams.get('code') || urlParams.get('chest') || urlParams.get('ticket') || '').trim().toLowerCase();
+        if (targetQuery) {
+          const matched = cachedParticipants.find((p) =>
+            String(p.id || '').toLowerCase() === targetQuery ||
+            String(p.code || '').toLowerCase() === targetQuery ||
+            String(p.chest_number || '').toLowerCase() === targetQuery ||
+            String(p.ticket_code || '').toLowerCase() === targetQuery
+          );
+          if (matched) {
+            setTimeout(() => openParticipantModal(matched), 150);
+          }
+        }
       }
     }
 

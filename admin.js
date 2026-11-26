@@ -3152,7 +3152,15 @@ document.addEventListener('click', (e) => {
 
 async function onQrCodeScanned(decodedText) {
   if (!decodedText) return;
-  const rawCode = decodedText.trim().toUpperCase();
+  let rawCode = decodedText.trim();
+  try {
+    if (rawCode.includes('?')) {
+      const parsedUrl = new URL(rawCode, window.location.origin);
+      const paramVal = parsedUrl.searchParams.get('id') || parsedUrl.searchParams.get('code') || parsedUrl.searchParams.get('ticket');
+      if (paramVal) rawCode = paramVal;
+    }
+  } catch (e) {}
+  rawCode = rawCode.toUpperCase();
   // Match code e.g. ALM-XXXX or pure code
   const match = rawCode.match(/[A-Z0-9]{3,4}-[A-Z0-9]{3,6}/) || [rawCode];
   const ticketCode = match[0];

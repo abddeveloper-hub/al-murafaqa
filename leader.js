@@ -1015,10 +1015,25 @@ function openStudentPassModal(studentId) {
   const ticketCode = (student.assigned_events && student.assigned_events[0]?.ticket_code) || `ALM-${student.student_code}`;
   document.getElementById('pass-ticket-code').textContent = ticketCode;
 
-  // Generate QR Code via clean reliable QR API
+  // Generate QR Code via clean reliable QR API pointing to accredited participant profile
+  const studentRef = student.student_code || student.id;
+  const isLocalHost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:'
+  );
+  const participantsUrl = (!isLocalHost && window.location.origin)
+    ? `${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/participants.html?id=${encodeURIComponent(studentRef)}`
+    : `https://abddeveloper-hub.github.io/al-murafaqa/participants.html?id=${encodeURIComponent(studentRef)}`;
+
   const qrImg = document.getElementById('pass-qr-img');
   if (qrImg) {
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(ticketCode)}`;
+    const primaryUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(participantsUrl)}`;
+    const fallbackUrl = `https://quickchart.io/qr?size=250&text=${encodeURIComponent(participantsUrl)}`;
+    qrImg.onerror = function() {
+      if (this.src !== fallbackUrl) this.src = fallbackUrl;
+    };
+    qrImg.src = primaryUrl;
   }
 
   const eventsBox = document.getElementById('pass-events-container');
