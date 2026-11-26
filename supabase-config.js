@@ -165,6 +165,27 @@ function initStorage() {
     localStorage.removeItem('almurafaqa_delegate_pass');
   }
 
+  // Purge any mock/demo team students, leaders, assignments, and groups
+  const existingTeamStudents = localStorage.getItem('almurafaqa_team_students');
+  if (existingTeamStudents && (existingTeamStudents.includes('stu-demo') || existingTeamStudents.includes('COR-101') || existingTeamStudents.includes('Amina Benali'))) {
+    localStorage.removeItem('almurafaqa_team_students');
+  }
+
+  const existingTeamLeaders = localStorage.getItem('almurafaqa_team_leaders');
+  if (existingTeamLeaders && (existingTeamLeaders.includes('tl-demo-001') || existingTeamLeaders.includes('TL-CORD-2026') || existingTeamLeaders.includes('Cordoba Cultural Academy'))) {
+    localStorage.removeItem('almurafaqa_team_leaders');
+  }
+
+  const existingTeamAssign = localStorage.getItem('almurafaqa_team_assignments');
+  if (existingTeamAssign && (existingTeamAssign.includes('stu-demo') || existingTeamAssign.includes('COR-101'))) {
+    localStorage.removeItem('almurafaqa_team_assignments');
+  }
+
+  const existingTeamGroups = localStorage.getItem('almurafaqa_team_groups');
+  if (existingTeamGroups && (existingTeamGroups.includes('tl-demo-001') || existingTeamGroups.includes('COR-'))) {
+    localStorage.removeItem('almurafaqa_team_groups');
+  }
+
   if (!localStorage.getItem('almurafaqa_settings')) {
     localStorage.setItem('almurafaqa_settings', JSON.stringify(DEFAULT_SETTINGS));
   }
@@ -980,67 +1001,7 @@ export const db = {
     }
     const raw = localStorage.getItem(STORAGE_KEYS.TEAM_LEADERS);
     if (!raw) {
-      // Seed default demonstration delegation if empty
-      const demoLeader = {
-        id: 'tl-demo-001',
-        token: 'TL-CORD-2026',
-        leader_name: 'Prof. Tariq Al-Mansoor',
-        leader_email: 'tariq.mansoor@cordoba.edu',
-        leader_phone: '+91 98471 23456',
-        institution_name: 'Cordoba Cultural Academy',
-        team_name: 'Cordoba Falcon Ensemble',
-        max_students: 50,
-        status: 'active',
-        notes: 'Official delegate lead for inter-college Andalusian arts tracks',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify([demoLeader]));
-
-      // Seed starter students for demo
-      const demoStudents = [
-        {
-          id: 'stu-demo-001',
-          team_leader_id: 'tl-demo-001',
-          student_name: 'Amina Benali',
-          student_code: 'COR-101',
-          category: 'Senior',
-          gender: 'Female',
-          phone: '+91 98471 11223',
-          email: 'amina.b@cordoba.edu',
-          notes: 'Vocal soloist & Arabic calligraphy lead',
-          assigned_events: [],
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'stu-demo-002',
-          team_leader_id: 'tl-demo-001',
-          student_name: 'Ziyad Al-Andalusi',
-          student_code: 'COR-102',
-          category: 'Senior',
-          gender: 'Male',
-          phone: '+91 98471 33445',
-          email: 'ziyad.a@cordoba.edu',
-          notes: 'Oud instrumentalist',
-          assigned_events: [],
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'stu-demo-003',
-          team_leader_id: 'tl-demo-001',
-          student_name: 'Fatima Al-Zahra',
-          student_code: 'COR-103',
-          category: 'Junior',
-          gender: 'Female',
-          phone: '+91 98471 55667',
-          email: 'fatima.z@cordoba.edu',
-          notes: 'Classical Arabic debate',
-          assigned_events: [],
-          created_at: new Date().toISOString(),
-        },
-      ];
-      localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(demoStudents));
-      return [demoLeader];
+      return [];
     }
     return JSON.parse(raw);
   },

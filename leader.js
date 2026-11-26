@@ -1074,15 +1074,6 @@ function setupEventListeners() {
     });
   }
 
-  // Demo Token Pill
-  const btnDemoToken = document.getElementById('btn-demo-token');
-  if (btnDemoToken) {
-    btnDemoToken.addEventListener('click', async () => {
-      document.getElementById('input-leader-token').value = 'TL-CORD-2026';
-      await authenticateWithToken('TL-CORD-2026');
-    });
-  }
-
   // Copy Direct Link Button
   const btnCopyLink = document.getElementById('btn-copy-portal-link');
   if (btnCopyLink) {

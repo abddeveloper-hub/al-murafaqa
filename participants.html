@@ -459,118 +459,7 @@
       ? `${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/profile.html`
       : (PRODUCTION_BASE_URL ? `${PRODUCTION_BASE_URL}/profile.html` : 'https://abddeveloper-hub.github.io/al-murafaqa/profile.html');
 
-    const DEFAULT_PARTICIPANTS = [
-      {
-        id: 'p-101',
-        name: 'Zaid Al-Mansoor',
-        code: 'STU-1001',
-        chest_number: 'CH-01',
-        ticket_code: 'ALM-STU-1001',
-        institution: 'Qurtuba Academic Complex',
-        category: 'Senior',
-        assigned_events: [
-          { event_title: 'Grand Andalusian Debate Championship', day_number: 1, time_slot: '10:00 AM - 12:00 PM', venue: 'Grand Andalusian Dome' },
-          { event_title: 'Classical Arabic Poetry Recital', day_number: 2, time_slot: '02:00 PM - 04:30 PM', venue: 'Patio Mayor' }
-        ]
-      },
-      {
-        id: 'p-102',
-        name: 'Fathima Nuha',
-        code: 'STU-1002',
-        chest_number: 'CH-02',
-        ticket_code: 'ALM-STU-1002',
-        institution: 'Markaz Garden Campus',
-        category: 'Junior',
-        assigned_events: [
-          { event_title: 'Traditional Arts & Master Calligraphy', day_number: 1, time_slot: '02:30 PM - 05:00 PM', venue: 'Sala Ámbar' }
-        ]
-      },
-      {
-        id: 'p-103',
-        name: 'Muhammad Bilal',
-        code: 'STU-1003',
-        chest_number: 'CH-03',
-        ticket_code: 'ALM-STU-1003',
-        institution: 'Darul Huda Islamic University',
-        category: 'Senior',
-        assigned_events: [
-          { event_title: 'Qur’anic Tafsir & Hermeneutics Colloquium', day_number: 2, time_slot: '09:00 AM - 11:30 AM', venue: 'Al-Hambra Hall' }
-        ]
-      },
-      {
-        id: 'p-104',
-        name: 'Amina Zahra',
-        code: 'STU-1004',
-        chest_number: 'CH-04',
-        ticket_code: 'ALM-STU-1004',
-        institution: 'Al Jamia Arts & Shariah College',
-        category: 'Sub-Junior',
-        assigned_events: [
-          { event_title: 'Junior Elocution & Public Oratory', day_number: 1, time_slot: '11:00 AM - 01:00 PM', venue: 'Stage 03' }
-        ]
-      },
-      {
-        id: 'p-105',
-        name: 'Hamza Farooqi',
-        code: 'STU-1005',
-        chest_number: 'CH-05',
-        ticket_code: 'ALM-STU-1005',
-        institution: 'Madeenathunnoor College of Islamic Science',
-        category: 'Senior',
-        assigned_events: [
-          { event_title: 'Mystic Poetry Recital & Qurtuba Ensemble', day_number: 3, time_slot: '06:00 PM - 08:30 PM', venue: 'Grand Andalusian Dome' }
-        ]
-      },
-      {
-        id: 'p-106',
-        name: 'Rayan Kabeer',
-        code: 'STU-1006',
-        chest_number: 'CH-06',
-        ticket_code: 'ALM-STU-1006',
-        institution: 'Ma\'din Academy of Excellence',
-        category: 'Junior',
-        assigned_events: [
-          { event_title: 'Islamic History & Andalusian Heritage Quiz', day_number: 2, time_slot: '03:00 PM - 05:00 PM', venue: 'Conference Hall B' }
-        ]
-      },
-      {
-        id: 'p-107',
-        name: 'Ammar Qureshi',
-        code: 'STU-102',
-        chest_number: 'CH-102',
-        ticket_code: 'ALM-1042',
-        institution: 'Faculty of Arts & Architecture, Granada Delegation',
-        category: 'Senior',
-        assigned_events: [
-          { event_title: 'Mystic Poetry Recital', day_number: 1, time_slot: '10:00 AM', venue: 'Grand Dome' },
-          { event_title: 'Classical Arabic Oratory', day_number: 2, time_slot: '02:30 PM', venue: 'Sala Ámbar' }
-        ]
-      },
-      {
-        id: 'p-108',
-        name: 'Tariq Mansoor',
-        code: 'STU-104',
-        chest_number: 'CH-104',
-        ticket_code: 'ALM-1044',
-        institution: 'School of Classical Arabic Studies, Cordoba Delegation',
-        category: 'Senior',
-        assigned_events: [
-          { event_title: 'Classical Arabic Oratory', day_number: 2, time_slot: '02:30 PM', venue: 'Sala Ámbar' }
-        ]
-      },
-      {
-        id: 'p-109',
-        name: 'Sofia Benali',
-        code: 'STU-103',
-        chest_number: 'CH-103',
-        ticket_code: 'ALM-1043',
-        institution: 'Faculty of Arts & Architecture, Granada Delegation',
-        category: 'Junior',
-        assigned_events: [
-          { event_title: 'Mystic Poetry Recital', day_number: 1, time_slot: '10:00 AM', venue: 'Grand Dome' }
-        ]
-      }
-    ];
+    const DEFAULT_PARTICIPANTS = [];
 
     let cachedParticipants = [];
     let currentParticipantCategory = 'all';
@@ -841,16 +730,6 @@
           });
         }
 
-        if (list.length === 0) {
-          list = [...DEFAULT_PARTICIPANTS];
-        } else {
-          DEFAULT_PARTICIPANTS.forEach((dp) => {
-            if (!list.some((item) => String(item.code || '').toLowerCase() === String(dp.code || '').toLowerCase() || String(item.name || '').toLowerCase() === String(dp.name || '').toLowerCase())) {
-              list.push(dp);
-            }
-          });
-        }
-
         cachedParticipants = list;
         renderParticipantsGrid();
 
@@ -870,7 +749,7 @@
         }
       } catch (err) {
         console.warn('Error fetching participants:', err);
-        cachedParticipants = DEFAULT_PARTICIPANTS;
+        cachedParticipants = [];
         renderParticipantsGrid();
 
         const urlParams = new URLSearchParams(window.location.search);

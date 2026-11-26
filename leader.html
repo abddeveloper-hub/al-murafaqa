@@ -133,7 +133,7 @@
               id="input-leader-token" 
               required 
               maxlength="16"
-              placeholder="e.g. TL-CORD-2026 or TL-XXXX-YYYY"
+              placeholder="e.g. TL-XXXX-YYYY"
               class="w-full h-12 pl-11 pr-4 bg-slate-50 border border-slate-300 rounded-xl font-mono text-base font-bold text-slate-900 tracking-wider placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 uppercase"
             />
           </div>
@@ -149,18 +149,6 @@
           <span>Authenticate &amp; Enter Portal</span>
         </button>
       </form>
-
-      <!-- Demo Quick Fill Pill -->
-      <div class="mt-6 pt-5 border-t border-slate-100 flex flex-col items-center gap-2 text-xs text-slate-500">
-        <span>Need a test token?</span>
-        <button 
-          type="button" 
-          id="btn-demo-token" 
-          class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 font-mono font-semibold text-[11px] transition-colors"
-        >
-          Quick Demo: TL-CORD-2026
-        </button>
-      </div>
 
       <div class="mt-4 text-[11px] text-slate-400">
         Al Murafaqa • QUINTA EDICION • Festival Administration
@@ -185,16 +173,16 @@
           <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <h1 id="header-institution-name" class="font-bold text-sm sm:text-base text-slate-900 truncate">
-                Cordoba Cultural Academy
+                Institution Delegation
               </h1>
               <span id="badge-token-chip" class="px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 font-mono text-[11px] font-bold cursor-pointer hover:bg-amber-100" title="Click to copy token">
-                TL-CORD-2026
+                TL-XXXX-YYYY
               </span>
             </div>
             <div class="text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
-              <span>Leader: <strong id="header-leader-name" class="text-slate-700 font-semibold">Prof. Tariq Al-Mansoor</strong></span>
+              <span>Leader: <strong id="header-leader-name" class="text-slate-700 font-semibold">Team Leader</strong></span>
               <span>•</span>
-              <span id="header-team-title" class="text-slate-600">Cordoba Falcon Ensemble</span>
+              <span id="header-team-title" class="text-slate-600">Delegation Team</span>
             </div>
           </div>
         </div>
@@ -683,7 +671,7 @@
               type="text" 
               id="student-code" 
               required 
-              placeholder="e.g. COR-101" 
+              placeholder="e.g. STU-101" 
               class="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl uppercase font-mono font-bold text-slate-900 focus:outline-none focus:border-brand-600 focus:bg-white"
             />
           </div>
@@ -944,8 +932,8 @@
         Official Festival Pass
       </span>
 
-      <h3 id="pass-student-name" class="font-extrabold text-lg text-slate-900 mt-2">Amina Benali</h3>
-      <p id="pass-institution" class="text-xs text-slate-500 font-medium">Cordoba Cultural Academy</p>
+      <h3 id="pass-student-name" class="font-extrabold text-lg text-slate-900 mt-2">Student Name</h3>
+      <p id="pass-institution" class="text-xs text-slate-500 font-medium">Institution Delegation</p>
 
       <div class="my-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center">
         <!-- QR Code -->
@@ -953,7 +941,7 @@
           <img id="pass-qr-img" src="" alt="QR Pass" class="w-full h-full object-contain"/>
         </div>
         <div id="pass-ticket-code" class="mt-2 font-mono font-bold text-sm text-slate-900 tracking-wider">
-          ALM-COR-101
+          ALM-STU-XXXX
         </div>
         <span class="text-[10px] text-slate-400">Scan at Ingress &amp; Stage Control</span>
       </div>
