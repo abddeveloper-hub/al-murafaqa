@@ -123,7 +123,7 @@ const DEFAULT_SETTINGS = {
   video_description: 'Live Cultural Stage & Ensemble Performances',
   video_venue: 'GRAND ANDALUSIAN DOME',
   video_url: '',
-  video_poster_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBI4u7wM1OZBhGT-FXa7reqYfBd_iL47KqTEKkVKg_Idm8vRlJmbdWzUsd9leeBo8C1iT-u8DngFM0FXGt4ts66akMHNMMhJLX5H6lI38Ip4TNgcxyWt6W6jrtfl8IL1YkL1-zJsck5U9-dkM5NH5LH6IELBONbt9z8WvfI5KOrGwxcxGylyHzbQlrAkuV1nBWBiuu2E9UOdxa5D3h9k-8p5XBeRoQS0gaQ6sVBMXJb',
+  video_poster_url: 'video-poster.jpg',
   video_is_live: true,
   video_viewer_count: '4.8k live',
   video_duration_note: '42 mins remaining',
