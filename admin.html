@@ -118,6 +118,58 @@
   </style>
 
   <link rel="stylesheet" href="admin.css"/>
+
+  <style>
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #modal-certificate, #modal-certificate * {
+        visibility: visible !important;
+      }
+      #modal-certificate {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      #modal-certificate .modal-header,
+      #modal-certificate .modal-footer {
+        display: none !important;
+      }
+      #certificate-print-area {
+        width: 100% !important;
+        max-width: 900px !important;
+        box-shadow: none !important;
+        border: 4px solid #C88A3C !important;
+        page-break-inside: avoid !important;
+        margin: auto !important;
+      }
+      #modal-batch-badges, #modal-batch-badges * {
+        visibility: visible !important;
+      }
+      #modal-batch-badges {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100vw !important;
+        background: white !important;
+        padding: 0 !important;
+      }
+      #modal-batch-badges .modal-header,
+      #modal-batch-badges .modal-footer {
+        display: none !important;
+      }
+    }
+  </style>
+
 </head>
 <body class="bg-white font-body-md text-slate-900 antialiased selection:bg-red-500 selection:text-white">
 
@@ -191,74 +243,84 @@
         </div>
       </div>
 
-      <!-- Navigation Section -->
-      <div class="px-space-md py-space-sm">
-        <div class="px-space-sm py-space-xs font-label-sm text-label-sm text-slate-400 font-bold uppercase tracking-wider">
-          Festival Ops
-        </div>
-      </div>
+      <!-- Institutional Grouped Navigation -->
+      <nav class="flex-1 px-space-md space-y-4 text-xs font-medium">
+        
+        <!-- Section: Festival Operations -->
+        <div>
+          <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            Operations Command
+          </div>
+          <div class="space-y-1">
+            <button type="button" aria-current="page" class="nav-item flex items-center gap-3 px-3.5 py-2.5 transition-all duration-150 group bg-red-600 text-white font-bold rounded-xl shadow-sm shadow-red-600/25 w-full text-left active" data-tab="overview">
+              <span class="material-symbols-outlined text-[19px] transition-transform group-hover:scale-105">space_dashboard</span>
+              <span class="text-sm font-semibold tracking-tight">Command Overview</span>
+            </button>
 
-            <nav class="flex-1 px-space-md space-y-space-xs">
-        <button type="button" aria-current="page" class="nav-item flex items-center gap-space-md px-space-md py-space-sm transition-all duration-200 group bg-red-600 text-white font-label-lg font-bold rounded-xl shadow-md shadow-red-600/25 w-full text-left active" data-tab="overview">
-          <span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">space_dashboard</span>
-          <span class="font-label-lg text-label-lg">Overview</span>
-        </button>
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="stageops">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">theater_comedy</span>
+              <span class="text-sm font-semibold tracking-tight">Stage Control Room</span>
+            </button>
 
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="events">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">calendar_month</span>
-          <span class="font-label-lg text-label-lg">Programmes &amp; Schedule</span>
-        </button>
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="events">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">calendar_month</span>
+              <span class="text-sm font-semibold tracking-tight">Programme Schedule</span>
+            </button>
 
-        <!-- MODULE 3: Stage Ops & Run-of-Show -->
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="stageops">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">dvr</span>
-          <span class="font-label-lg text-label-lg">Stage Ops &amp; Run-of-Show</span>
-        </button>
-
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="registrations">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">groups_3</span>
-          <span class="font-label-lg text-label-lg">Teams &amp; Participants</span>
-          <span id="badge-pending-count" class="ml-auto px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800" style="display:none">0</span>
-        </button>
-
-        <!-- MODULE 2: Passes & Accreditation (Enhanced) -->
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="checkin">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">qr_code_scanner</span>
-          <span class="font-label-lg text-label-lg">Passes &amp; Accreditation</span>
-        </button>
-
-        <!-- MODULE 1: Jury Scoring Portal -->
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="scoring">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">gavel</span>
-          <span class="font-label-lg text-label-lg">Jury &amp; Scoring Portal</span>
-        </button>
-
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="winners">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">emoji_events</span>
-          <span class="font-label-lg text-label-lg">Results &amp; Podium</span>
-        </button>
-
-        <!-- MODULE 7: Analytics & Trophies -->
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="analytics">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">query_stats</span>
-          <span class="font-label-lg text-label-lg">Analytics &amp; Trophies</span>
-        </button>
-
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="announcements">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">podium</span>
-          <span class="font-label-lg text-label-lg">Live Broadcasts &amp; Stages</span>
-        </button>
-
-        <div class="pt-space-md pb-space-xs">
-          <div class="px-space-sm py-space-xs font-label-sm text-label-sm text-slate-400 font-bold uppercase tracking-wider">
-            System
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="checkin">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">qr_code_scanner</span>
+              <span class="text-sm font-semibold tracking-tight">Accreditation &amp; Ingress</span>
+            </button>
           </div>
         </div>
 
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="settings">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">tune</span>
-          <span class="font-label-lg text-label-lg">Emergency &amp; Settings</span>
-        </button>
+        <!-- Section: Academic & Competitions -->
+        <div>
+          <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            Adjudication &amp; Competitions
+          </div>
+          <div class="space-y-1">
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="registrations">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">groups_3</span>
+              <span class="text-sm font-semibold tracking-tight">Delegation Registry</span>
+              <span id="badge-pending-count" class="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800" style="display:none">0</span>
+            </button>
+
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="scoring">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">gavel</span>
+              <span class="text-sm font-semibold tracking-tight">Jury Adjudication</span>
+            </button>
+
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="winners">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">military_tech</span>
+              <span class="text-sm font-semibold tracking-tight">Official Laureates</span>
+            </button>
+
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="analytics">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">query_stats</span>
+              <span class="text-sm font-semibold tracking-tight">Championship Standings</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section: Governance & System -->
+        <div>
+          <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            System &amp; Dispatches
+          </div>
+          <div class="space-y-1">
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="announcements">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">podium</span>
+              <span class="text-sm font-semibold tracking-tight">Broadcast Alerts</span>
+            </button>
+
+            <button type="button" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150 group w-full text-left" data-tab="settings">
+              <span class="material-symbols-outlined text-[19px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-105">shield_person</span>
+              <span class="text-sm font-semibold tracking-tight">Governance &amp; Audit</span>
+            </button>
+          </div>
+        </div>
+
       </nav>
     </div>
 
@@ -303,16 +365,19 @@
 
         <!-- Header Actions & Profile -->
         <div class="flex items-center gap-space-md">
-          <!-- Active Role Selector (RBAC Module 8) -->
-          <div class="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:inline">Role:</span>
-            <select id="admin-role-selector" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer py-1 border-0">
-              <option value="superadmin">👑 Super Admin</option>
-              <option value="jury">⚖️ Jury / Judge</option>
-              <option value="marshal">🎫 Gate Marshal</option>
-              <option value="stageops">🎬 Stage Director</option>
-            </select>
-            <span id="admin-role-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 uppercase tracking-wide">Super</span>
+          <!-- Active Operational Role Selector -->
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 shadow-sm">
+            <span class="material-symbols-outlined text-[18px] text-slate-500">manage_accounts</span>
+            <div class="flex flex-col text-left">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none">Console Role</span>
+              <select id="admin-role-selector" class="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer py-0.5 pr-2 border-0">
+                <option value="superadmin">Executive Administration</option>
+                <option value="jury">Jury Adjudicator</option>
+                <option value="marshal">Accreditation Officer</option>
+                <option value="stageops">Stage Operations Director</option>
+              </select>
+            </div>
+            <span id="admin-role-badge" class="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-brand-50 text-brand-700 border border-brand-200/60 shrink-0">Executive</span>
           </div>
           <div class="flex items-center gap-space-xs">
             <a href="home.html" target="_blank" class="h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-1.5 transition-colors text-xs font-semibold" title="View Public Front Page">
@@ -941,7 +1006,7 @@
           </div>
         </div>
       </section>
-      <!-- ================= TAB: STAGE OPS & RUN-OF-SHOW CONTROLLER (MODULE 3) ================= -->
+      <!-- ================= TAB: STAGE OPS & RUN-OF-SHOW CONTROLLER ================= -->
       <section id="tab-stageops" class="tab-pane hidden">
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           
@@ -949,8 +1014,8 @@
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 uppercase tracking-wider">Module 3</span>
-                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Stage Operations &amp; Run-of-Show</h2>
+                
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Stage Control Room &amp; Live Transmission</h2>
               </div>
               <p class="text-sm text-slate-500 mt-1">Live performance timing, backstage green room queue, emergency schedule delay cascade, and AV cue sheets.</p>
             </div>
@@ -958,13 +1023,13 @@
             <!-- Stage Selector Pills -->
             <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto border border-slate-200">
               <button type="button" class="stage-pill-btn active px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition-all" data-stage="main">
-                🏛️ Main Dome
+                Stage I: Grand Dome
               </button>
               <button type="button" class="stage-pill-btn px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all" data-stage="stage2">
-                ✒️ Qalam Hall
+                Stage II: Qalam Hall
               </button>
               <button type="button" class="stage-pill-btn px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all" data-stage="stage3">
-                📜 Diwan Pavilion
+                Stage III: Diwan Pavilion
               </button>
             </div>
           </div>
@@ -1505,7 +1570,7 @@
           </div>
         </div>
       </section>
-      <!-- ================= TAB: JURY & SCORING PORTAL (MODULE 1) ================= -->
+      <!-- ================= TAB: JURY & SCORING PORTAL ================= -->
       <section id="tab-scoring" class="tab-pane hidden">
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           
@@ -1513,8 +1578,8 @@
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">Module 1</span>
-                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Jury &amp; Competitor Scoring Portal</h2>
+                
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Jury Adjudication &amp; Evaluation Desk</h2>
               </div>
               <p class="text-sm text-slate-500 mt-1">Standardized multi-criteria rubrics, time penalties, judge mark aggregation, and certificate issuance.</p>
             </div>
@@ -1690,7 +1755,7 @@
                 <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <span class="flex items-center gap-1">
                     <span class="material-symbols-outlined text-[16px] text-amber-600">workspace_premium</span>
-                    Click 📜 next to any team to generate an official Certificate.
+                    Select the certificate icon next to any team to generate an official academic diploma.
                   </span>
                 </div>
               </div>
@@ -1729,7 +1794,7 @@
                 <!-- 1st Place Gold -->
                 <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <strong class="text-amber-800 text-sm flex items-center gap-1.5 mb-2">
-                    🥇 1st Place (Gold Laureate)
+                    1st Place (Gold Laureate)
                   </strong>
                   <div class="grid grid-cols-2 gap-2">
                     <input type="text" id="win-1-name" class="h-10 px-3 bg-white border border-amber-200 rounded-lg text-sm" placeholder="Winner / Team" required/>
@@ -1740,7 +1805,7 @@
                 <!-- 2nd Place Silver -->
                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
                   <strong class="text-slate-700 text-sm flex items-center gap-1.5 mb-2">
-                    🥈 2nd Place (Silver Laureate)
+                    2nd Place (Silver Laureate)
                   </strong>
                   <div class="grid grid-cols-2 gap-2">
                     <input type="text" id="win-2-name" class="h-10 px-3 bg-white border border-slate-200 rounded-lg text-sm" placeholder="Winner / Team" required/>
@@ -1751,7 +1816,7 @@
                 <!-- 3rd Place Bronze -->
                 <div class="p-4 bg-orange-50 border border-orange-200 rounded-xl">
                   <strong class="text-orange-800 text-sm flex items-center gap-1.5 mb-2">
-                    🥉 3rd Place (Bronze Laureate)
+                    3rd Place (Bronze Laureate)
                   </strong>
                   <div class="grid grid-cols-2 gap-2">
                     <input type="text" id="win-3-name" class="h-10 px-3 bg-white border border-orange-200 rounded-lg text-sm" placeholder="Winner / Team" required/>
@@ -1784,7 +1849,7 @@
           </div>
         </div>
       </section>
-      <!-- ================= TAB: ANALYTICS & TROPHIES (MODULE 7) ================= -->
+      <!-- ================= TAB: ANALYTICS & TROPHIES ================= -->
       <section id="tab-analytics" class="tab-pane hidden">
         <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
           
@@ -1792,8 +1857,8 @@
           <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Module 7</span>
-                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Festival Intelligence &amp; Championship Standings</h2>
+                
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Institutional Championship Intelligence</h2>
               </div>
               <p class="text-sm text-slate-500 mt-1">Institutional championship points calculation, automated medal tables, and 1-click comprehensive exports.</p>
             </div>
@@ -1844,7 +1909,7 @@
                     <span class="material-symbols-outlined text-amber-500 text-[22px]">trophy</span>
                     <span>Al Murafaqa Overall Championship Trophy</span>
                   </h4>
-                  <p class="text-xs text-slate-500">Points weightage: 🥇 1st = 10 Pts | 🥈 2nd = 7 Pts | 🥉 3rd = 5 Pts</p>
+                  <p class="text-xs text-slate-500 font-medium">Official Weightage: Gold (1st) = 10 Pts | Silver (2nd) = 7 Pts | Bronze (3rd) = 5 Pts</p>
                 </div>
               </div>
 
@@ -1854,9 +1919,9 @@
                     <tr>
                       <th class="py-3 px-4">Rank</th>
                       <th class="py-3 px-4">College / Institution</th>
-                      <th class="py-3 px-3 text-center">🥇 Gold</th>
-                      <th class="py-3 px-3 text-center">🥈 Silver</th>
-                      <th class="py-3 px-3 text-center">🥉 Bronze</th>
+                      <th class="py-3 px-3 text-center">Gold (10 Pts)</th>
+                      <th class="py-3 px-3 text-center">Silver (7 Pts)</th>
+                      <th class="py-3 px-3 text-center">Bronze (5 Pts)</th>
                       <th class="py-3 px-4 text-right font-extrabold">Total Points</th>
                     </tr>
                   </thead>
@@ -1952,12 +2017,12 @@
             </div>
           </div>
         
-          <!-- MODULE 8: Security & Operations Audit Trail -->
+          <!-- Security & Operations Audit Trail -->
           <div class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 uppercase tracking-wider">Module 8</span>
+                  
                   <h3 class="font-headline-sm text-lg font-bold text-slate-900">Security &amp; Operations Audit Trail</h3>
                 </div>
                 <p class="text-xs text-slate-500 mt-0.5">Immutable record of every administrative action, score change, check-in, and configuration edit.</p>
@@ -1989,7 +2054,7 @@
             </div>
           </div>
 
-          <!-- MODULE 7: Database Restore from Backup -->
+          <!-- Database Restore from Backup -->
           <div class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3">
             <h3 class="font-headline-sm text-lg font-bold text-slate-900">Restore Database from JSON Archive</h3>
             <p class="text-xs text-slate-500">Restore your festival database from a previously downloaded .json snapshot.</p>
@@ -2233,52 +2298,68 @@
 
       <!-- Printable Certificate Canvas -->
       <div class="p-6 bg-amber-50/40 flex justify-center">
-        <div id="certificate-print-area" class="w-full max-w-[620px] aspect-[1.414/1] bg-[#FFFAED] text-[#2D101A] p-8 rounded-2xl border-4 border-[#C88A3C] shadow-2xl relative overflow-hidden flex flex-col justify-between text-center">
+        <div id="certificate-print-area" class="w-full max-w-[700px] aspect-[1.414/1] bg-[#FAF6EE] text-[#2D101A] p-10 rounded-2xl border-4 border-[#C88A3C] shadow-2xl relative overflow-hidden flex flex-col justify-between text-center font-body">
           
-          <!-- Ornate Border Inset -->
-          <div class="absolute inset-2 border-2 border-[#C88A3C]/40 rounded-xl pointer-events-none"></div>
+          <!-- Ornate Inner Geometric Filigree Border -->
+          <div class="absolute inset-2.5 border-2 border-[#C88A3C]/40 rounded-xl pointer-events-none"></div>
+          <div class="absolute inset-3 border border-[#C88A3C]/20 rounded-lg pointer-events-none"></div>
+
+          <!-- Corner Andalusian Diamond Rosettes -->
+          <div class="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-[#C88A3C]"></div>
+          <div class="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-[#C88A3C]"></div>
+          <div class="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-[#C88A3C]"></div>
+          <div class="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-[#C88A3C]"></div>
           
-          <!-- Top Header with Authentic Diamond Emblem -->
-          <div class="relative z-10 flex flex-col items-center">
-            <img src="logo-symbolism.png" alt="Emblem" class="w-14 h-14 object-contain filter drop-shadow mb-1">
-            <span class="font-headline-sm text-xs font-extrabold text-[#7F011F] tracking-widest uppercase">AL MURAFAQA • QUINTA EDICIÓN</span>
-            <span class="text-[10px] tracking-widest text-[#C88A3C] font-semibold uppercase mt-0.5">Pallidars: The Primal Source of Knowledge</span>
+          <!-- Academic Convocation Header with Authentic Diamond Emblem -->
+          <div class="relative z-10 flex flex-col items-center pt-2">
+            <img src="logo-symbolism.png" alt="Emblem" class="w-16 h-16 object-contain filter drop-shadow-sm mb-1.5">
+            <span class="font-headline text-[13px] font-extrabold text-[#7F011F] tracking-[0.25em] uppercase">AL MURAFAQA • QUINTA EDICIÓN</span>
+            <span class="text-[10px] tracking-[0.2em] text-[#C88A3C] font-bold uppercase mt-0.5">Grand Concourse of Knowledge &amp; Andalusian Heritage</span>
           </div>
 
-          <!-- Main Certificate Body -->
-          <div class="relative z-10 my-auto space-y-2">
-            <h2 id="cert-title-type" class="font-headline-md text-2xl font-extrabold text-[#7F011F] tracking-tight">
+          <!-- Diploma Body -->
+          <div class="relative z-10 my-auto py-4 space-y-2.5">
+            <div class="inline-block px-4 py-1 rounded-full bg-[#C88A3C]/10 border border-[#C88A3C]/30 text-[11px] font-bold text-[#7F011F] tracking-widest uppercase mb-1">
+              Official Diploma of Distinction
+            </div>
+            <h2 id="cert-title-type" class="font-headline text-2xl sm:text-3xl font-extrabold text-[#7F011F] tracking-tight">
               CERTIFICATE OF MERIT
             </h2>
-            <p class="text-xs text-slate-600 italic">This is proudly presented to</p>
-            <h3 id="cert-recipient-name" class="font-headline-lg text-2xl font-extrabold text-slate-900 tracking-tight">
-              Student / Team Name
+            <p class="text-xs text-slate-600 italic">This credential of high honor is formally conferred upon</p>
+            <h3 id="cert-recipient-name" class="font-headline text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Student / Delegation Name
             </h3>
-            <p class="text-xs text-slate-700">of <strong id="cert-institution-name">Institution Name</strong></p>
-            <p class="text-xs text-slate-600 max-w-md mx-auto pt-1">
-              for securing <strong id="cert-rank-distinction" class="text-[#7F011F]">1st Place</strong> in the official festival track of <strong id="cert-event-title">Track Name</strong>.
+            <p class="text-xs text-slate-700">representing <strong id="cert-institution-name" class="font-bold text-slate-900">Accredited Institution</strong></p>
+            <p class="text-xs text-slate-600 max-w-lg mx-auto pt-1 leading-relaxed">
+              in formal recognition of outstanding performance, securing <strong id="cert-rank-distinction" class="text-[#7F011F] font-bold">First Place Distinction</strong> in the official festival championship track of <strong id="cert-event-title" class="font-semibold text-slate-800">Track Name</strong>.
             </p>
           </div>
 
-          <!-- Bottom Footer with Digital Stamp & Signatures -->
-          <div class="relative z-10 pt-4 border-t border-[#C88A3C]/30 flex items-center justify-between text-left text-[10px] text-slate-600">
-            <div>
-              <span class="font-bold block text-slate-900">Dr. Tariq Al-Sayed</span>
-              <span class="text-[9px] text-slate-500">Chief Festival Director</span>
+          <!-- Formal Academic Signatures & Digital Verification -->
+          <div class="relative z-10 pt-4 border-t border-[#C88A3C]/30 flex items-end justify-between text-left text-[11px] text-slate-700">
+            <div class="space-y-0.5">
+              <div class="w-28 border-b border-slate-400 mb-1"></div>
+              <span class="font-bold block text-slate-900 leading-tight">Dr. Tariq Al-Sayed</span>
+              <span class="text-[10px] text-slate-500 block leading-tight">Chief Festival Director</span>
             </div>
             
-            <div class="text-center">
-              <span class="font-mono text-[9px] text-slate-400 block" id="cert-verification-code">VERIFIED • ALM-CERT-2026</span>
-              <span class="font-bold text-[#C88A3C] text-[9px]">OFFICIAL FESTIVAL SEAL</span>
+            <div class="text-center px-4">
+              <div class="w-10 h-10 mx-auto rounded-full border border-[#C88A3C]/40 bg-white/80 p-1 flex items-center justify-center mb-1">
+                <span class="material-symbols-outlined text-[20px] text-[#C88A3C]">verified</span>
+              </div>
+              <span class="font-mono text-[9px] text-slate-400 block" id="cert-verification-code">HASH: ALM-2026-CERT</span>
+              <span class="font-bold text-[#C88A3C] text-[9px] tracking-wider uppercase">Official Academic Seal</span>
             </div>
 
-            <div class="text-right">
-              <span class="font-bold block text-slate-900">Jury Board</span>
-              <span class="text-[9px] text-slate-500">Grand Academic Circle</span>
+            <div class="text-right space-y-0.5">
+              <div class="w-28 border-b border-slate-400 ml-auto mb-1"></div>
+              <span class="font-bold block text-slate-900 leading-tight">Grand Jury Panel</span>
+              <span class="text-[10px] text-slate-500 block leading-tight">Board of Adjudication</span>
             </div>
           </div>
 
         </div>
+      </div>
       </div>
 
       <div class="modal-footer p-4 bg-white flex items-center justify-between">

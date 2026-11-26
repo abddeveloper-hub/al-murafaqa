@@ -166,7 +166,7 @@ function setupEventListeners() {
       try {
         db.grantAdminAccess({ email: 'admin@almurafaqa.com' });
         document.getElementById('auth-overlay').classList.add('hidden');
-        showToast('⚡ Master Administrator privileges granted! All festival controls unlocked.', 'success');
+        showToast('Master Administrator privileges granted! All festival controls unlocked.', 'success');
         updateCloudIndicator();
         await loadAllData();
       } catch (err) {
@@ -736,7 +736,7 @@ function updateSwitchLabels() {
     lblTicker.textContent = swTicker.checked ? 'Ticker active on front page' : 'Ticker hidden on front page';
   }
   if (lblMaint && swMaint) {
-    lblMaint.textContent = swMaint.checked ? '⚠️ Front page in Maintenance Mode' : 'Site operates normally';
+    lblMaint.textContent = swMaint.checked ? 'Front page in Maintenance Mode (Active)' : 'Site operates normally';
     lblMaint.style.color = swMaint.checked ? 'var(--fest-red)' : 'var(--text-muted)';
   }
 }
@@ -862,7 +862,7 @@ function renderAnnouncementsTab() {
         <td style="max-width: 380px;">${escapeHtml(anc.message)}</td>
         <td>
           <span class="badge" style="background: ${anc.is_urgent ? '#FEE2E2' : '#E0E7FF'}; color: ${anc.is_urgent ? '#B91C1C' : '#4338CA'};">
-            ${anc.is_urgent ? '🚨 Urgent' : 'General'}
+            ${anc.is_urgent ? 'Urgent' : 'General'}
           </span>
         </td>
         <td>
@@ -1298,7 +1298,7 @@ function renderRegistrationsTab() {
         <td>${escapeHtml(r.college_name)}</td>
         <td>
           <span class="badge ${r.checked_in ? 'checked' : ''}" style="${!r.checked_in ? 'background: #FEF3C7; color: #92400E;' : ''}">
-            ${r.checked_in ? '✓ Admitted' : 'Pending Check-In'}
+            ${r.checked_in ? 'Admitted' : 'Pending Check-In'}
           </span>
         </td>
         <td style="text-align: right;">
@@ -1618,7 +1618,7 @@ function displayAttendeeCheckInCard(reg) {
   const badgeContainer = document.getElementById('res-status-badge-container');
   badgeContainer.innerHTML = `
     <span class="badge ${reg.checked_in ? 'checked' : 'pending'}" style="font-size: 0.85rem; padding: 6px 12px; ${!reg.checked_in ? 'background: #FEF3C7; color: #92400E;' : ''}">
-      ${reg.checked_in ? '✓ ADMITTED' : 'READY FOR CHECK-IN'}
+      ${reg.checked_in ? 'ADMITTED' : 'READY FOR CHECK-IN'}
     </span>
   `;
 
@@ -1692,7 +1692,7 @@ function renderWinnersTab() {
     .map((evtId) => {
       const evt = cachedEvents.find((e) => e.id === evtId);
       const list = byEvent[evtId].sort((a, b) => a.position - b.position);
-      const medals = { 1: '🥇 1st', 2: '🥈 2nd', 3: '🥉 3rd' };
+      const medals = { 1: '1st: 1st', 2: '2nd: 2nd', 3: '3rd: 3rd' };
 
       return `
       <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; background: #FFFBF9;">
@@ -1850,7 +1850,7 @@ function escapeHtml(str) {
 }
 
 // ==============================================================================
-// 11. MODULE 8: ROLE-BASED ACCESS CONTROL (RBAC) & AUDIT TRAIL
+// 11. ROLE-BASED ACCESS CONTROL (RBAC) & AUDIT TRAIL
 // ==============================================================================
 
 function setupRoleSelector() {
@@ -1893,10 +1893,10 @@ function updateRoleBadge(role) {
   if (!badge) return;
 
   const roleStyles = {
-    superadmin: { text: 'Super', class: 'bg-red-100 text-red-800' },
-    jury: { text: 'Jury', class: 'bg-amber-100 text-amber-800' },
-    marshal: { text: 'Marshal', class: 'bg-blue-100 text-blue-800' },
-    stageops: { text: 'Director', class: 'bg-purple-100 text-purple-800' },
+    superadmin: { text: 'Executive Admin', class: 'bg-red-50 text-red-700 border border-red-200 font-bold' },
+    jury: { text: 'Adjudicator', class: 'bg-amber-50 text-amber-800 border border-amber-200 font-bold' },
+    marshal: { text: 'Accreditation', class: 'bg-slate-100 text-slate-800 border border-slate-300 font-bold' },
+    stageops: { text: 'Stage Director', class: 'bg-slate-900 text-white font-bold' },
   };
 
   const current = roleStyles[role] || roleStyles.superadmin;
@@ -1995,7 +1995,7 @@ function exportAuditCSV() {
 
 
 // ==============================================================================
-// 12. MODULE 3: STAGE OPERATIONS & RUN-OF-SHOW CONTROLLER
+// 12. STAGE OPERATIONS & RUN-OF-SHOW CONTROLLER
 // ==============================================================================
 
 let currentStageId = 'main';
@@ -2172,7 +2172,7 @@ function renderStageQueues() {
           <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(item.college_name)} • ${escapeHtml(item.event_title)}</span>
         </div>
         <button type="button" class="btn-move-ondeck px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold shrink-0 transition-colors" data-id="${item.id}">
-          Move On Deck →
+          Call to Wings
         </button>
       </div>
     `).join('');
@@ -2185,11 +2185,11 @@ function renderStageQueues() {
     queueOnDeck.innerHTML = onDeckItems.map((item) => `
       <div class="p-2.5 bg-amber-50/60 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between text-xs">
         <div class="min-w-0 pr-2">
-          <span class="font-bold text-amber-900 block truncate">⭐ ${escapeHtml(item.team_name)}</span>
+          <span class="font-bold text-amber-900 block truncate">${escapeHtml(item.team_name)}</span>
           <span class="text-[10px] text-amber-700 truncate block">${escapeHtml(item.college_name)} • ${escapeHtml(item.event_title)}</span>
         </div>
         <button type="button" class="btn-send-to-stage px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold shrink-0 transition-colors shadow-sm" data-id="${item.id}" data-name="${escapeHtml(item.team_name)}" data-event="${escapeHtml(item.event_title)}" data-college="${escapeHtml(item.college_name)}">
-          Put On Stage 🎤
+          Deploy to Stage
         </button>
       </div>
     `).join('');
@@ -2201,7 +2201,7 @@ function renderStageQueues() {
   } else {
     queueCompleted.innerHTML = completedItems.map((item) => `
       <div class="p-2 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
-        <span class="truncate">✓ ${escapeHtml(item.team_name)} (${escapeHtml(item.event_title)})</span>
+        <span class="truncate">${escapeHtml(item.team_name)} (${escapeHtml(item.event_title)})</span>
         <span class="text-[10px] text-slate-400 font-bold shrink-0">Done</span>
       </div>
     `).join('');
@@ -2363,7 +2363,7 @@ async function concludeStagePerformance() {
 
 
 // ==============================================================================
-// 13. MODULE 1: JURY & COMPETITOR SCORING PORTAL
+// 13. JURY & COMPETITOR SCORING PORTAL
 // ==============================================================================
 
 function setupScoringControls() {
@@ -2583,8 +2583,12 @@ async function renderScoringLeaderboard(eventId) {
   const evTitle = cachedEvents.find((e) => e.id === eventId)?.title || 'Festival Event';
 
   tbody.innerHTML = ranked.map((r, idx) => {
-    const rankIcons = ['🥇', '🥈', '🥉'];
-    const rankBadge = rankIcons[idx] || `#${idx + 1}`;
+    const rankPills = [
+      '<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold font-mono text-[10px] border border-amber-300 shadow-xs">1ST</span>',
+      '<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-bold font-mono text-[10px] border border-slate-300 shadow-xs">2ND</span>',
+      '<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 font-bold font-mono text-[10px] border border-amber-200 shadow-xs">3RD</span>',
+    ];
+    const rankBadge = rankPills[idx] || `<span class="font-mono text-slate-500 font-semibold">#${idx + 1}</span>`;
     const rankClass = idx === 0 ? 'bg-amber-50 font-bold' : idx === 1 ? 'bg-slate-50' : idx === 2 ? 'bg-orange-50/50' : '';
 
     return `
@@ -2685,7 +2689,7 @@ function openCertificateModal(recipientName, institutionName, eventTitle, rank) 
   const certRank = document.getElementById('cert-rank-distinction');
   const certCode = document.getElementById('cert-verification-code');
 
-  const rankText = rank === 1 ? '1st Place (Gold Laureate)' : rank === 2 ? '2nd Place (Silver Laureate)' : rank === 3 ? '3rd Place (Bronze Laureate)' : 'Distinguished Participation';
+  const rankText = rank === 1 ? 'First Place Distinction (Gold Laureate)' : rank === 2 ? 'Second Place Distinction (Silver Laureate)' : rank === 3 ? 'Third Place Distinction (Bronze Laureate)' : 'Distinguished Academic Participation';
 
   if (certTitle) certTitle.textContent = rank <= 3 ? 'CERTIFICATE OF MERIT' : 'CERTIFICATE OF PARTICIPATION';
   if (certName) certName.textContent = recipientName;
@@ -2699,7 +2703,7 @@ function openCertificateModal(recipientName, institutionName, eventTitle, rank) 
 
 
 // ==============================================================================
-// 14. MODULE 2: LIVE CAMERA QR SCANNER & ACCREDITATION
+// 14. LIVE CAMERA QR SCANNER & ACCREDITATION
 // ==============================================================================
 
 function setupCameraScanner() {
@@ -2813,7 +2817,7 @@ async function onQrCodeScanned(decodedText) {
           renderOverview();
           const gateZone = document.getElementById('checkin-zone-select')?.value || 'main';
           logAudit('QR_CAMERA_CHECKIN', `Admitted ${found.ticket_code} (${found.leader_name}) at ${gateZone.toUpperCase()} gate`);
-          showToast(`✓ Gate Accreditation Confirmed: ${found.leader_name}`, 'success');
+          showToast(`Gate Accreditation Confirmed: ${found.leader_name}`, 'success');
         } catch (e) {
           console.error('Check-in error:', e);
         }
@@ -2896,7 +2900,7 @@ function openBatchBadgesModal() {
 
 
 // ==============================================================================
-// 15. MODULE 7: DATA INTELLIGENCE, ANALYTICS & BACKUP
+// 15. DATA INTELLIGENCE, ANALYTICS & BACKUP
 // ==============================================================================
 
 function setupAnalyticsControls() {
@@ -3000,8 +3004,12 @@ async function renderAnalyticsTab() {
   }
 
   tbody.innerHTML = rankedColleges.map((c, idx) => {
-    const medals = ['🥇', '🥈', '🥉'];
-    const badge = medals[idx] || `#${idx + 1}`;
+    const rankPills = [
+      '<span class="inline-flex items-center justify-center px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold font-mono text-[11px] border border-amber-300 shadow-xs">1ST</span>',
+      '<span class="inline-flex items-center justify-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-bold font-mono text-[11px] border border-slate-300 shadow-xs">2ND</span>',
+      '<span class="inline-flex items-center justify-center px-2 py-0.5 rounded bg-amber-50 text-amber-900 font-bold font-mono text-[11px] border border-amber-200 shadow-xs">3RD</span>',
+    ];
+    const badge = rankPills[idx] || `<span class="font-mono text-slate-500 font-semibold">#${idx + 1}</span>`;
     const rowClass = idx === 0 ? 'bg-amber-50/70 font-bold' : idx === 1 ? 'bg-slate-50' : idx === 2 ? 'bg-orange-50/40' : '';
 
     return `
