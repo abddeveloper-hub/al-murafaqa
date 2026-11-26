@@ -254,7 +254,80 @@
 
     const DEFAULT_PARTICIPANTS = [
       {
-        id: 'p-1',
+        id: 'p-101',
+        name: 'Zaid Al-Mansoor',
+        code: 'STU-1001',
+        chest_number: 'CH-01',
+        ticket_code: 'ALM-STU-1001',
+        institution: 'Qurtuba Academic Complex',
+        category: 'Senior',
+        assigned_events: [
+          { event_title: 'Grand Andalusian Debate Championship', day_number: 1, time_slot: '10:00 AM - 12:00 PM', venue: 'Grand Andalusian Dome' },
+          { event_title: 'Classical Arabic Poetry Recital', day_number: 2, time_slot: '02:00 PM - 04:30 PM', venue: 'Patio Mayor' }
+        ]
+      },
+      {
+        id: 'p-102',
+        name: 'Fathima Nuha',
+        code: 'STU-1002',
+        chest_number: 'CH-02',
+        ticket_code: 'ALM-STU-1002',
+        institution: 'Markaz Garden Campus',
+        category: 'Junior',
+        assigned_events: [
+          { event_title: 'Traditional Arts & Master Calligraphy', day_number: 1, time_slot: '02:30 PM - 05:00 PM', venue: 'Sala Ámbar' }
+        ]
+      },
+      {
+        id: 'p-103',
+        name: 'Muhammad Bilal',
+        code: 'STU-1003',
+        chest_number: 'CH-03',
+        ticket_code: 'ALM-STU-1003',
+        institution: 'Darul Huda Islamic University',
+        category: 'Senior',
+        assigned_events: [
+          { event_title: 'Qur’anic Tafsir & Hermeneutics Colloquium', day_number: 2, time_slot: '09:00 AM - 11:30 AM', venue: 'Al-Hambra Hall' }
+        ]
+      },
+      {
+        id: 'p-104',
+        name: 'Amina Zahra',
+        code: 'STU-1004',
+        chest_number: 'CH-04',
+        ticket_code: 'ALM-STU-1004',
+        institution: 'Al Jamia Arts & Shariah College',
+        category: 'Sub-Junior',
+        assigned_events: [
+          { event_title: 'Junior Elocution & Public Oratory', day_number: 1, time_slot: '11:00 AM - 01:00 PM', venue: 'Stage 03' }
+        ]
+      },
+      {
+        id: 'p-105',
+        name: 'Hamza Farooqi',
+        code: 'STU-1005',
+        chest_number: 'CH-05',
+        ticket_code: 'ALM-STU-1005',
+        institution: 'Madeenathunnoor College of Islamic Science',
+        category: 'Senior',
+        assigned_events: [
+          { event_title: 'Mystic Poetry Recital & Qurtuba Ensemble', day_number: 3, time_slot: '06:00 PM - 08:30 PM', venue: 'Grand Andalusian Dome' }
+        ]
+      },
+      {
+        id: 'p-106',
+        name: 'Rayan Kabeer',
+        code: 'STU-1006',
+        chest_number: 'CH-06',
+        ticket_code: 'ALM-STU-1006',
+        institution: 'Ma\'din Academy of Excellence',
+        category: 'Junior',
+        assigned_events: [
+          { event_title: 'Islamic History & Andalusian Heritage Quiz', day_number: 2, time_slot: '03:00 PM - 05:00 PM', venue: 'Conference Hall B' }
+        ]
+      },
+      {
+        id: 'p-107',
         name: 'Ammar Qureshi',
         code: 'STU-102',
         chest_number: 'CH-102',
@@ -267,7 +340,7 @@
         ]
       },
       {
-        id: 'p-2',
+        id: 'p-108',
         name: 'Tariq Mansoor',
         code: 'STU-104',
         chest_number: 'CH-104',
@@ -279,31 +352,7 @@
         ]
       },
       {
-        id: 'p-3',
-        name: 'Bilal Farooqui',
-        code: 'STU-201',
-        chest_number: 'CH-201',
-        ticket_code: 'ALM-1045',
-        institution: 'Seville Institute of Fine Arts & Calligraphy',
-        category: 'General',
-        assigned_events: [
-          { event_title: 'Traditional Calligraphy Showcase', day_number: 1, time_slot: '11:30 AM', venue: 'Patio Mayor' }
-        ]
-      },
-      {
-        id: 'p-4',
-        name: 'Hamza Al-Sayed',
-        code: 'STU-202',
-        chest_number: 'CH-202',
-        ticket_code: 'ALM-1046',
-        institution: 'Seville Institute of Fine Arts & Calligraphy',
-        category: 'General',
-        assigned_events: [
-          { event_title: 'Andalusian Architectural Modeling', day_number: 3, time_slot: '04:00 PM', venue: 'Grand Dome' }
-        ]
-      },
-      {
-        id: 'p-5',
+        id: 'p-109',
         name: 'Sofia Benali',
         code: 'STU-103',
         chest_number: 'CH-103',
@@ -407,11 +456,20 @@
           });
         }
 
-        if (list.length === 0) list = DEFAULT_PARTICIPANTS;
+        if (list.length === 0) {
+          list = [...DEFAULT_PARTICIPANTS];
+        } else {
+          // Always merge default participants so standard and demo contenders are never missing
+          DEFAULT_PARTICIPANTS.forEach((dp) => {
+            if (!list.some((item) => String(item.code || '').toLowerCase() === String(dp.code || '').toLowerCase() || String(item.name || '').toLowerCase() === String(dp.name || '').toLowerCase())) {
+              list.push(dp);
+            }
+          });
+        }
         return list;
       } catch (err) {
         console.warn('Could not fetch remote participants, using seed list:', err);
-        return DEFAULT_PARTICIPANTS;
+        return [...DEFAULT_PARTICIPANTS];
       }
     }
 
@@ -421,12 +479,15 @@
       const card = document.getElementById('profile-card');
 
       const urlParams = new URLSearchParams(window.location.search);
-      const queryId = (urlParams.get('id') || urlParams.get('code') || urlParams.get('chest') || urlParams.get('ticket') || '').trim().toLowerCase();
+      const rawQuery = (urlParams.get('id') || urlParams.get('code') || urlParams.get('chest') || urlParams.get('ticket') || '').trim();
+      const queryId = rawQuery.toLowerCase();
+      const cleanQuery = queryId.replace(/^(alm-|stu-|ch-|reg-|#)/i, '').trim();
 
       const participants = await loadAllParticipants();
 
       let p = null;
       if (queryId) {
+        // 1. Exact match on id, code, chest_number, ticket_code, or full name
         p = participants.find((item) =>
           String(item.id || '').toLowerCase() === queryId ||
           String(item.code || '').toLowerCase() === queryId ||
@@ -434,8 +495,30 @@
           String(item.ticket_code || '').toLowerCase() === queryId ||
           String(item.name || '').toLowerCase() === queryId
         );
-      } else if (participants.length > 0) {
-        // Fallback to first participant if opened with no parameter
+
+        // 2. Prefix-stripped match (e.g. '1001' or '01' matches 'STU-1001' or 'CH-01')
+        if (!p && cleanQuery) {
+          p = participants.find((item) => {
+            const cCode = String(item.code || '').toLowerCase().replace(/^(alm-|stu-|ch-|reg-|#)/i, '');
+            const cChest = String(item.chest_number || '').toLowerCase().replace(/^(alm-|stu-|ch-|reg-|#)/i, '');
+            const cTicket = String(item.ticket_code || '').toLowerCase().replace(/^(alm-|stu-|ch-|reg-|#)/i, '');
+            return cCode === cleanQuery || cChest === cleanQuery || cTicket === cleanQuery;
+          });
+        }
+
+        // 3. Partial substring match
+        if (!p && queryId.length >= 2) {
+          p = participants.find((item) =>
+            String(item.name || '').toLowerCase().includes(queryId) ||
+            String(item.code || '').toLowerCase().includes(queryId) ||
+            String(item.chest_number || '').toLowerCase().includes(queryId) ||
+            String(item.ticket_code || '').toLowerCase().includes(queryId)
+          );
+        }
+      }
+
+      // If still no participant matched or no param provided, fall back to the first participant
+      if (!p && participants.length > 0) {
         p = participants[0];
       }
 
