@@ -12,7 +12,17 @@ let cachedEvents = [];
 let cachedRegistrations = [];
 let cachedAnnouncements = [];
 let cachedWinners = [];
+let cachedScores = [];
+let cachedStageOps = null;
+let cachedAuditLogs = [];
+let activeRole = 'superadmin'; // 'superadmin' | 'jury' | 'marshal' | 'stageops'
 let currentAttendeeLookup = null;
+let html5QrScanner = null;
+let isCameraScanning = false;
+let audioChimeEnabled = true;
+let stageTimerInterval = null;
+let stageTimerSeconds = 0;
+let stageTimerRunning = false;
 
 // ==============================================================================
 // 1. INITIALIZATION & AUTHENTICATION
@@ -323,6 +333,13 @@ function setupEventListeners() {
   // Winners Form
   setupWinnersControls();
 
+  // MODULE CONTROLS (1, 2, 3, 7, 8)
+  setupRoleSelector();
+  setupStageOpsControls();
+  setupScoringControls();
+  setupAnalyticsControls();
+  setupCameraScanner();
+
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -357,6 +374,12 @@ function switchTab(tabId) {
     pane.classList.toggle('hidden', !isTarget);
   });
 
+  // Render reactive tab views when switched
+  if (tabId === 'stageops') renderStageOpsTab();
+  if (tabId === 'scoring') renderScoringTab();
+  if (tabId === 'analytics') renderAnalyticsTab();
+  if (tabId === 'settings') renderAuditLog();
+
   initLucide();
 }
 window.switchTab = switchTab;
@@ -367,12 +390,15 @@ window.switchTab = switchTab;
 
 async function loadAllData() {
   try {
-    const [settings, events, registrations, announcements, winners] = await Promise.all([
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs] = await Promise.all([
       db.getSettings(),
       db.getEvents(),
       db.getRegistrations(),
       db.getAnnouncements(),
       db.getWinners(),
+      db.getScores ? db.getScores() : [],
+      db.getStageOps ? db.getStageOps() : null,
+      db.getAuditLogs ? db.getAuditLogs() : [],
     ]);
 
     cachedSettings = settings;
@@ -380,6 +406,9 @@ async function loadAllData() {
     cachedRegistrations = registrations;
     cachedAnnouncements = announcements;
     cachedWinners = winners;
+    cachedScores = scores || [];
+    cachedStageOps = stageOps;
+    cachedAuditLogs = auditLogs || [];
 
     renderOverview();
     renderAnnouncementsTab();
@@ -387,6 +416,10 @@ async function loadAllData() {
     renderRegistrationsTab();
     renderCheckInTab();
     renderWinnersTab();
+    renderStageOpsTab();
+    renderScoringTab();
+    renderAnalyticsTab();
+    renderAuditLog();
 
     initLucide();
   } catch (err) {
@@ -1814,4 +1847,1284 @@ function showToast(message, type = 'info') {
 function escapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str.replace(/[&<>'"]/g, (tag) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+}
+
+// ==============================================================================
+// 11. MODULE 8: ROLE-BASED ACCESS CONTROL (RBAC) & AUDIT TRAIL
+// ==============================================================================
+
+function setupRoleSelector() {
+  const roleSelect = document.getElementById('admin-role-selector');
+  if (!roleSelect) return;
+
+  roleSelect.value = activeRole;
+  updateRoleBadge(activeRole);
+
+  roleSelect.addEventListener('change', (e) => {
+    setActiveRole(e.target.value);
+  });
+
+  const auditFilter = document.getElementById('audit-filter-input');
+  if (auditFilter) {
+    auditFilter.addEventListener('input', (e) => renderAuditLog(e.target.value));
+  }
+
+  const btnExportAudit = document.getElementById('btn-export-audit-csv');
+  if (btnExportAudit) {
+    btnExportAudit.addEventListener('click', exportAuditCSV);
+  }
+}
+
+function setActiveRole(role) {
+  activeRole = role;
+  updateRoleBadge(role);
+  logAudit('ROLE_SWITCH', `Switched active operator view to ${role.toUpperCase()}`);
+
+  // Auto-focus tabs based on role
+  if (role === 'jury') switchTab('scoring');
+  else if (role === 'marshal') switchTab('checkin');
+  else if (role === 'stageops') switchTab('stageops');
+
+  showToast(`Switched active view to ${role.toUpperCase()}`, 'info');
+}
+
+function updateRoleBadge(role) {
+  const badge = document.getElementById('admin-role-badge');
+  if (!badge) return;
+
+  const roleStyles = {
+    superadmin: { text: 'Super', class: 'bg-red-100 text-red-800' },
+    jury: { text: 'Jury', class: 'bg-amber-100 text-amber-800' },
+    marshal: { text: 'Marshal', class: 'bg-blue-100 text-blue-800' },
+    stageops: { text: 'Director', class: 'bg-purple-100 text-purple-800' },
+  };
+
+  const current = roleStyles[role] || roleStyles.superadmin;
+  badge.textContent = current.text;
+  badge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${current.class}`;
+}
+
+async function logAudit(action, details) {
+  try {
+    const entry = await db.addAuditLog(action, details, activeRole);
+    if (!cachedAuditLogs) cachedAuditLogs = [];
+    cachedAuditLogs.unshift(entry);
+    renderAuditLog();
+  } catch (e) {
+    console.warn('Failed to log audit event:', e);
+  }
+}
+
+function renderAuditLog(filterText = '') {
+  const tbody = document.getElementById('audit-log-body');
+  if (!tbody) return;
+
+  const logs = cachedAuditLogs || [];
+  const query = (filterText || '').toLowerCase().trim();
+
+  const filtered = logs.filter((log) => {
+    if (!query) return true;
+    return (
+      (log.action || '').toLowerCase().includes(query) ||
+      (log.details || '').toLowerCase().includes(query) ||
+      (log.role || '').toLowerCase().includes(query)
+    );
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="py-6 text-center text-slate-400">
+          No audit entries recorded yet. Administrative events appear here in real time.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.slice(0, 50).map((log) => {
+    const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '—';
+    const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleDateString() : '—';
+    return `
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="py-2.5 px-4 text-slate-500 whitespace-nowrap">
+          <span class="font-bold text-slate-800">${timeStr}</span>
+          <span class="text-[10px] text-slate-400 block">${dateStr}</span>
+        </td>
+        <td class="py-2.5 px-3">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 uppercase">
+            ${escapeHtml(log.role || 'Super Admin')}
+          </span>
+        </td>
+        <td class="py-2.5 px-3 font-bold text-slate-800">
+          ${escapeHtml(log.action || 'OPERATION')}
+        </td>
+        <td class="py-2.5 px-4 text-slate-600 font-normal">
+          ${escapeHtml(log.details || '')}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function exportAuditCSV() {
+  const logs = cachedAuditLogs || [];
+  if (logs.length === 0) {
+    showToast('No audit log entries to export', 'warning');
+    return;
+  }
+
+  const headers = ['Timestamp', 'Role', 'Action', 'Details'];
+  const rows = logs.map((l) => [
+    csvCell(l.timestamp),
+    csvCell(l.role),
+    csvCell(l.action),
+    csvCell(l.details),
+  ]);
+
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `almurafaqa_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Audit log exported successfully', 'success');
+}
+
+
+// ==============================================================================
+// 12. MODULE 3: STAGE OPERATIONS & RUN-OF-SHOW CONTROLLER
+// ==============================================================================
+
+let currentStageId = 'main';
+
+function setupStageOpsControls() {
+  // Stage Selector Pills
+  document.querySelectorAll('.stage-pill-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.stage-pill-btn').forEach((b) => {
+        b.classList.remove('active', 'bg-white', 'text-slate-900', 'shadow-sm');
+        b.classList.add('text-slate-600');
+      });
+      btn.classList.add('active', 'bg-white', 'text-slate-900', 'shadow-sm');
+      btn.classList.remove('text-slate-600');
+      currentStageId = btn.getAttribute('data-stage') || 'main';
+      renderStageOpsTab();
+    });
+  });
+
+  // Timer Buttons
+  const btnToggleTimer = document.getElementById('btn-toggle-stage-timer');
+  if (btnToggleTimer) {
+    btnToggleTimer.addEventListener('click', toggleStageTimer);
+  }
+
+  const btnResetTimer = document.getElementById('btn-reset-stage-timer');
+  if (btnResetTimer) {
+    btnResetTimer.addEventListener('click', resetStageTimer);
+  }
+
+  // Live Site Sync Button
+  const btnSyncLive = document.getElementById('btn-sync-live-site');
+  if (btnSyncLive) {
+    btnSyncLive.addEventListener('click', syncPerformerToLiveSite);
+  }
+
+  // Conclude Performance Button
+  const btnConclude = document.getElementById('btn-conclude-stage');
+  if (btnConclude) {
+    btnConclude.addEventListener('click', concludeStagePerformance);
+  }
+
+  // Delay Buttons
+  document.querySelectorAll('.btn-stage-delay').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const minutes = parseInt(btn.getAttribute('data-minutes') || '0', 10);
+      handleStageDelay(minutes);
+    });
+  });
+
+  // Save AV Notes
+  const btnSaveAvNotes = document.getElementById('btn-save-av-notes');
+  if (btnSaveAvNotes) {
+    btnSaveAvNotes.addEventListener('click', async () => {
+      const notes = (document.getElementById('stageops-av-notes')?.value || '').trim();
+      if (!cachedStageOps) cachedStageOps = await db.getStageOps();
+      if (cachedStageOps.stages && cachedStageOps.stages[currentStageId]) {
+        cachedStageOps.stages[currentStageId].av_notes = notes;
+        await db.updateStageOps(cachedStageOps);
+        logAudit('AV_CUES_SAVED', `Updated sound and cue sheet notes for ${cachedStageOps.stages[currentStageId].name}`);
+        showToast('AV cue sheet saved successfully', 'success');
+      }
+    });
+  }
+
+  // Refresh Button
+  const btnRefresh = document.getElementById('btn-refresh-stageops');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', async () => {
+      cachedStageOps = await db.getStageOps();
+      renderStageOpsTab();
+      showToast('Stage operations queue refreshed', 'info');
+    });
+  }
+}
+
+async function renderStageOpsTab() {
+  if (!cachedStageOps) cachedStageOps = await db.getStageOps();
+  const ops = cachedStageOps;
+  const stage = ops.stages?.[currentStageId] || { name: 'Main Dome', active_performer: '', delay_minutes: 0, av_notes: '' };
+
+  // Update Venue Badge
+  const venueBadge = document.getElementById('stageops-venue-badge');
+  if (venueBadge) venueBadge.textContent = stage.name;
+
+  // Update Performer Info
+  const perfEl = document.getElementById('stageops-current-performer');
+  if (perfEl) perfEl.textContent = stage.active_performer || 'No Performer Currently On Stage';
+
+  const evEl = document.getElementById('stageops-current-event');
+  if (evEl) evEl.textContent = stage.active_event_title || 'Select event from queue';
+
+  const colEl = document.getElementById('stageops-current-college');
+  if (colEl) colEl.textContent = stage.active_college || '—';
+
+  // Update Delay Pill
+  const delayPill = document.getElementById('stageops-active-delay-pill');
+  if (delayPill) {
+    if (stage.delay_minutes > 0) {
+      delayPill.textContent = `Delay Active (+${stage.delay_minutes}m)`;
+      delayPill.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800';
+    } else {
+      delayPill.textContent = 'On Schedule (0m)';
+      delayPill.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700';
+    }
+  }
+
+  // AV Notes
+  const avNotes = document.getElementById('stageops-av-notes');
+  if (avNotes && !avNotes.matches(':focus')) {
+    avNotes.value = stage.av_notes || '';
+  }
+
+  // Render Kanban Queues from Registrations & Stage Queue
+  renderStageQueues();
+}
+
+function renderStageQueues() {
+  const queueGreen = document.getElementById('queue-green-room');
+  const queueOnDeck = document.getElementById('queue-on-deck');
+  const queueCompleted = document.getElementById('queue-completed');
+
+  if (!queueGreen || !queueOnDeck || !queueCompleted) return;
+
+  const regs = cachedRegistrations || [];
+  // Registrations that are checked in:
+  const checkedInRegs = regs.filter((r) => r.checked_in);
+
+  const opsQueue = cachedStageOps?.queue || [];
+
+  // Group into statuses
+  const greenRoomItems = [];
+  const onDeckItems = [];
+  const completedItems = [];
+
+  // Populate from checkedInRegs
+  checkedInRegs.forEach((r) => {
+    const queueEntry = opsQueue.find((q) => q.registration_id === r.id);
+    const status = queueEntry ? queueEntry.status : 'green_room';
+
+    const item = {
+      id: r.id,
+      team_name: r.team_name || r.leader_name,
+      college_name: r.college_name,
+      ticket_code: r.ticket_code,
+      event_id: r.event_id,
+      event_title: r.events?.title || 'Festival Event',
+      status,
+    };
+
+    if (status === 'on_deck') onDeckItems.push(item);
+    else if (status === 'completed') completedItems.push(item);
+    else greenRoomItems.push(item);
+  });
+
+  // Update counts
+  const cGreen = document.getElementById('badge-count-greenroom');
+  if (cGreen) cGreen.textContent = greenRoomItems.length;
+
+  const cDeck = document.getElementById('badge-count-ondeck');
+  if (cDeck) cDeck.textContent = onDeckItems.length;
+
+  const cComp = document.getElementById('badge-count-completed');
+  if (cComp) cComp.textContent = completedItems.length;
+
+  // Render Green Room
+  if (greenRoomItems.length === 0) {
+    queueGreen.innerHTML = '<div class="text-center py-4 text-xs text-slate-400">No teams currently in green room.</div>';
+  } else {
+    queueGreen.innerHTML = greenRoomItems.map((item) => `
+      <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-xs hover:border-emerald-500 transition-colors">
+        <div class="min-w-0 pr-2">
+          <span class="font-bold text-slate-900 block truncate">${escapeHtml(item.team_name)}</span>
+          <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(item.college_name)} • ${escapeHtml(item.event_title)}</span>
+        </div>
+        <button type="button" class="btn-move-ondeck px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold shrink-0 transition-colors" data-id="${item.id}">
+          Move On Deck →
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // Render On Deck
+  if (onDeckItems.length === 0) {
+    queueOnDeck.innerHTML = '<div class="text-center py-4 text-xs text-slate-400">No teams currently on deck.</div>';
+  } else {
+    queueOnDeck.innerHTML = onDeckItems.map((item) => `
+      <div class="p-2.5 bg-amber-50/60 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between text-xs">
+        <div class="min-w-0 pr-2">
+          <span class="font-bold text-amber-900 block truncate">⭐ ${escapeHtml(item.team_name)}</span>
+          <span class="text-[10px] text-amber-700 truncate block">${escapeHtml(item.college_name)} • ${escapeHtml(item.event_title)}</span>
+        </div>
+        <button type="button" class="btn-send-to-stage px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold shrink-0 transition-colors shadow-sm" data-id="${item.id}" data-name="${escapeHtml(item.team_name)}" data-event="${escapeHtml(item.event_title)}" data-college="${escapeHtml(item.college_name)}">
+          Put On Stage 🎤
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // Render Completed
+  if (completedItems.length === 0) {
+    queueCompleted.innerHTML = '<div class="text-center py-3 text-xs text-slate-400">No concluded performances yet.</div>';
+  } else {
+    queueCompleted.innerHTML = completedItems.map((item) => `
+      <div class="p-2 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
+        <span class="truncate">✓ ${escapeHtml(item.team_name)} (${escapeHtml(item.event_title)})</span>
+        <span class="text-[10px] text-slate-400 font-bold shrink-0">Done</span>
+      </div>
+    `).join('');
+  }
+
+  // Attach Queue Button Handlers
+  document.querySelectorAll('.btn-move-ondeck').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const regId = btn.getAttribute('data-id');
+      advanceQueueItem(regId, 'on_deck');
+    });
+  });
+
+  document.querySelectorAll('.btn-send-to-stage').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const regId = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name');
+      const eventTitle = btn.getAttribute('data-event');
+      const college = btn.getAttribute('data-college');
+
+      if (!cachedStageOps) cachedStageOps = await db.getStageOps();
+      if (cachedStageOps.stages && cachedStageOps.stages[currentStageId]) {
+        cachedStageOps.stages[currentStageId].active_performer = name;
+        cachedStageOps.stages[currentStageId].active_event_title = eventTitle;
+        cachedStageOps.stages[currentStageId].active_college = college;
+        cachedStageOps.stages[currentStageId].started_at = new Date().toISOString();
+        cachedStageOps.stages[currentStageId].status = 'live';
+
+        await db.updateStageOps(cachedStageOps);
+        await advanceQueueItem(regId, 'on_stage');
+
+        // Reset and start timer
+        stageTimerSeconds = 0;
+        startStageTimer();
+
+        logAudit('STAGE_PERFORMER_STARTED', `${name} (${college}) called to stage for ${eventTitle}`);
+        showToast(`${name} is now LIVE on stage!`, 'success');
+        renderStageOpsTab();
+      }
+    });
+  });
+}
+
+async function advanceQueueItem(regId, newStatus) {
+  if (!cachedStageOps) cachedStageOps = await db.getStageOps();
+  if (!cachedStageOps.queue) cachedStageOps.queue = [];
+
+  const existingIdx = cachedStageOps.queue.findIndex((q) => q.registration_id === regId);
+  if (existingIdx >= 0) {
+    cachedStageOps.queue[existingIdx].status = newStatus;
+  } else {
+    cachedStageOps.queue.push({
+      registration_id: regId,
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  await db.updateStageOps(cachedStageOps);
+  renderStageQueues();
+}
+
+async function handleStageDelay(minutes) {
+  if (!cachedStageOps) cachedStageOps = await db.getStageOps();
+  const stageName = cachedStageOps.stages?.[currentStageId]?.name || 'Stage';
+  await db.setStageDelay(currentStageId, minutes);
+  cachedStageOps = await db.getStageOps();
+
+  logAudit('STAGE_DELAY_ADJUSTED', `Adjusted schedule delay on ${stageName} to +${minutes} minutes`);
+  showToast(`Schedule buffer set to ${minutes} mins for ${stageName}`, minutes > 0 ? 'warning' : 'info');
+  renderStageOpsTab();
+}
+
+function toggleStageTimer() {
+  const btn = document.getElementById('btn-toggle-stage-timer');
+  if (stageTimerRunning) {
+    clearInterval(stageTimerInterval);
+    stageTimerRunning = false;
+    if (btn) btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span>';
+    showToast('Stage stopwatch paused', 'info');
+  } else {
+    startStageTimer();
+    showToast('Stage stopwatch active', 'info');
+  }
+}
+
+function startStageTimer() {
+  const btn = document.getElementById('btn-toggle-stage-timer');
+  clearInterval(stageTimerInterval);
+  stageTimerRunning = true;
+  if (btn) btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">pause</span>';
+
+  stageTimerInterval = setInterval(() => {
+    stageTimerSeconds++;
+    updateStageStopwatchDisplay();
+  }, 1000);
+}
+
+function resetStageTimer() {
+  clearInterval(stageTimerInterval);
+  stageTimerRunning = false;
+  stageTimerSeconds = 0;
+  updateStageStopwatchDisplay();
+  const btn = document.getElementById('btn-toggle-stage-timer');
+  if (btn) btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span>';
+}
+
+function updateStageStopwatchDisplay() {
+  const el = document.getElementById('stageops-stopwatch');
+  if (!el) return;
+  const mins = Math.floor(stageTimerSeconds / 60);
+  const secs = stageTimerSeconds % 60;
+  el.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+async function syncPerformerToLiveSite() {
+  const stage = cachedStageOps?.stages?.[currentStageId];
+  if (!stage || !stage.active_performer) {
+    showToast('No performer currently active on this stage to broadcast', 'warning');
+    return;
+  }
+
+  try {
+    const settings = await db.getSettings();
+    settings.video_title = `${stage.active_performer} • ${stage.active_event_title || 'Live Performance'}`;
+    settings.video_venue = stage.name.toUpperCase();
+    settings.video_is_live = true;
+
+    await db.updateSettings(settings);
+    cachedSettings = settings;
+
+    logAudit('LIVE_SITE_BROADCAST', `Pushed ${stage.active_performer} to public homepage broadcast`);
+    showToast(`Broadcasted ${stage.active_performer} to public website frontpage!`, 'success');
+  } catch (err) {
+    showToast('Failed to sync with live site: ' + err.message, 'error');
+  }
+}
+
+async function concludeStagePerformance() {
+  const stage = cachedStageOps?.stages?.[currentStageId];
+  if (!stage || !stage.active_performer) {
+    showToast('No performer active to conclude', 'warning');
+    return;
+  }
+
+  const finishedName = stage.active_performer;
+  stage.active_performer = '';
+  stage.active_event_title = '';
+  stage.active_college = '';
+  stage.status = 'idle';
+
+  await db.updateStageOps(cachedStageOps);
+  resetStageTimer();
+
+  logAudit('STAGE_PERFORMANCE_CONCLUDED', `Concluded performance for ${finishedName}`);
+  showToast(`Performance for ${finishedName} concluded. Next team ready.`, 'success');
+  renderStageOpsTab();
+}
+
+
+// ==============================================================================
+// 13. MODULE 1: JURY & COMPETITOR SCORING PORTAL
+// ==============================================================================
+
+function setupScoringControls() {
+  const evSelect = document.getElementById('scoring-event-select');
+  if (evSelect) {
+    evSelect.addEventListener('change', () => {
+      populateScoringTeams(evSelect.value);
+      renderScoringLeaderboard(evSelect.value);
+    });
+  }
+
+  // Rubric Sliders
+  ['rubric-crit-1', 'rubric-crit-2', 'rubric-crit-3', 'rubric-crit-4'].forEach((id, idx) => {
+    const slider = document.getElementById(id);
+    if (slider) {
+      slider.addEventListener('input', () => {
+        const valEl = document.getElementById(`score-val-${idx + 1}`);
+        const max = idx < 2 ? 30 : 20;
+        if (valEl) valEl.textContent = `${slider.value} / ${max}`;
+        updateFinalScoreCalculation();
+      });
+    }
+  });
+
+  // Penalty Buttons
+  let currentPenaltyPoints = 0;
+  document.querySelectorAll('.btn-penalty').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const pts = parseInt(btn.getAttribute('data-points') || '0', 10);
+      const reason = btn.getAttribute('data-reason') || '';
+      currentPenaltyPoints = pts;
+
+      const pDisplay = document.getElementById('score-penalty-display');
+      if (pDisplay) pDisplay.textContent = `${pts} Pts Deducted`;
+
+      const pReason = document.getElementById('score-penalty-reason');
+      if (pReason) pReason.value = reason;
+
+      updateFinalScoreCalculation();
+    });
+  });
+
+  const btnResetPenalty = document.getElementById('btn-reset-penalties');
+  if (btnResetPenalty) {
+    btnResetPenalty.addEventListener('click', () => {
+      currentPenaltyPoints = 0;
+      const pDisplay = document.getElementById('score-penalty-display');
+      if (pDisplay) pDisplay.textContent = '0 Pts Deducted';
+      const pReason = document.getElementById('score-penalty-reason');
+      if (pReason) pReason.value = '';
+      updateFinalScoreCalculation();
+    });
+  }
+
+  // Submit Score Button
+  const btnSubmitScore = document.getElementById('btn-submit-score');
+  if (btnSubmitScore) {
+    btnSubmitScore.addEventListener('click', submitScorecard);
+  }
+
+  // Push to Podium Button
+  const btnPushPodium = document.getElementById('btn-push-to-podium');
+  if (btnPushPodium) {
+    btnPushPodium.addEventListener('click', pushLeaderboardToPodium);
+  }
+
+  // Print Certificate Button in Modal
+  const btnPrintCert = document.getElementById('btn-print-certificate');
+  if (btnPrintCert) {
+    btnPrintCert.addEventListener('click', () => window.print());
+  }
+}
+
+function updateFinalScoreCalculation() {
+  const c1 = parseInt(document.getElementById('rubric-crit-1')?.value || '0', 10);
+  const c2 = parseInt(document.getElementById('rubric-crit-2')?.value || '0', 10);
+  const c3 = parseInt(document.getElementById('rubric-crit-3')?.value || '0', 10);
+  const c4 = parseInt(document.getElementById('rubric-crit-4')?.value || '0', 10);
+
+  const penaltyText = document.getElementById('score-penalty-display')?.textContent || '0';
+  const penalty = parseInt(penaltyText, 10) || 0;
+
+  const total = Math.max(0, c1 + c2 + c3 + c4 - penalty);
+  const totalEl = document.getElementById('score-final-total');
+  if (totalEl) totalEl.textContent = total;
+}
+
+async function renderScoringTab() {
+  const evSelect = document.getElementById('scoring-event-select');
+  if (!evSelect) return;
+
+  const events = cachedEvents || [];
+  evSelect.innerHTML = events.map((e) => `
+    <option value="${e.id}">${escapeHtml(e.title)} (${escapeHtml(e.category)})</option>
+  `).join('');
+
+  if (events.length > 0) {
+    populateScoringTeams(events[0].id);
+    renderScoringLeaderboard(events[0].id);
+  }
+}
+
+function populateScoringTeams(eventId) {
+  const teamSelect = document.getElementById('scoring-team-select');
+  if (!teamSelect) return;
+
+  const regs = (cachedRegistrations || []).filter((r) => r.event_id === eventId);
+  if (regs.length === 0) {
+    teamSelect.innerHTML = '<option value="">No registered teams for this track</option>';
+    return;
+  }
+
+  teamSelect.innerHTML = regs.map((r) => `
+    <option value="${r.id}" data-name="${escapeHtml(r.team_name || r.leader_name)}" data-college="${escapeHtml(r.college_name)}">
+      ${escapeHtml(r.team_name || r.leader_name)} (${escapeHtml(r.college_name)})
+    </option>
+  `).join('');
+}
+
+async function submitScorecard() {
+  const evSelect = document.getElementById('scoring-event-select');
+  const teamSelect = document.getElementById('scoring-team-select');
+  const judgeInput = document.getElementById('scoring-judge-name');
+
+  const eventId = evSelect?.value;
+  const regId = teamSelect?.value;
+  const judgeName = (judgeInput?.value || 'Judge 1').trim();
+
+  if (!eventId || !regId) {
+    showToast('Please select both a competition track and a competitor', 'warning');
+    return;
+  }
+
+  const selectedOpt = teamSelect.options[teamSelect.selectedIndex];
+  const teamName = selectedOpt.getAttribute('data-name') || 'Competitor';
+  const collegeName = selectedOpt.getAttribute('data-college') || '';
+
+  const c1 = parseInt(document.getElementById('rubric-crit-1')?.value || '0', 10);
+  const c2 = parseInt(document.getElementById('rubric-crit-2')?.value || '0', 10);
+  const c3 = parseInt(document.getElementById('rubric-crit-3')?.value || '0', 10);
+  const c4 = parseInt(document.getElementById('rubric-crit-4')?.value || '0', 10);
+
+  const penaltyText = document.getElementById('score-penalty-display')?.textContent || '0';
+  const penalty = parseInt(penaltyText, 10) || 0;
+  const reason = (document.getElementById('score-penalty-reason')?.value || '').trim();
+  const total = Math.max(0, c1 + c2 + c3 + c4 - penalty);
+
+  const scoreObj = {
+    event_id: eventId,
+    registration_id: regId,
+    team_name: teamName,
+    college_name: collegeName,
+    judge_name: judgeName,
+    criterion_technical: c1,
+    criterion_andalusian: c2,
+    criterion_creative: c3,
+    criterion_decorum: c4,
+    penalty_points: penalty,
+    penalty_reason: reason,
+    total_score: total,
+  };
+
+  try {
+    await db.saveScore(scoreObj);
+    cachedScores = await db.getScores();
+
+    logAudit('SCORE_SUBMITTED', `${judgeName} awarded ${total}/100 to ${teamName} (${collegeName})`);
+    showToast(`Scorecard of ${total} pts submitted for ${teamName}!`, 'success');
+
+    renderScoringLeaderboard(eventId);
+    renderAnalyticsTab();
+  } catch (err) {
+    showToast('Failed to save score: ' + err.message, 'error');
+  }
+}
+
+async function renderScoringLeaderboard(eventId) {
+  const tbody = document.getElementById('scoring-leaderboard-body');
+  if (!tbody) return;
+
+  if (!cachedScores) cachedScores = await db.getScores();
+  const scores = (cachedScores || []).filter((s) => s.event_id === eventId);
+
+  if (scores.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="py-8 text-center text-slate-400">
+          No scores entered yet for this competition track.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Aggregate by registration_id
+  const aggregated = {};
+  scores.forEach((s) => {
+    if (!aggregated[s.registration_id]) {
+      aggregated[s.registration_id] = {
+        registration_id: s.registration_id,
+        team_name: s.team_name,
+        college_name: s.college_name,
+        total_score: 0,
+        judge_count: 0,
+        penalty_points: s.penalty_points || 0,
+      };
+    }
+    aggregated[s.registration_id].total_score += s.total_score;
+    aggregated[s.registration_id].judge_count += 1;
+  });
+
+  const ranked = Object.values(aggregated).map((item) => ({
+    ...item,
+    avg_score: Math.round(item.total_score / item.judge_count),
+  })).sort((a, b) => b.avg_score - a.avg_score);
+
+  const evTitle = cachedEvents.find((e) => e.id === eventId)?.title || 'Festival Event';
+
+  tbody.innerHTML = ranked.map((r, idx) => {
+    const rankIcons = ['🥇', '🥈', '🥉'];
+    const rankBadge = rankIcons[idx] || `#${idx + 1}`;
+    const rankClass = idx === 0 ? 'bg-amber-50 font-bold' : idx === 1 ? 'bg-slate-50' : idx === 2 ? 'bg-orange-50/50' : '';
+
+    return `
+      <tr class="${rankClass} hover:bg-slate-50/80 transition-colors">
+        <td class="py-2.5 px-3 text-sm font-extrabold whitespace-nowrap">
+          ${rankBadge}
+        </td>
+        <td class="py-2.5 px-3 min-w-0">
+          <strong class="text-slate-900 block truncate">${escapeHtml(r.team_name)}</strong>
+          <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(r.college_name)} • ${r.judge_count} Judge(s)</span>
+        </td>
+        <td class="py-2.5 px-2 text-right font-mono font-bold text-red-600 text-sm whitespace-nowrap">
+          ${r.avg_score}
+        </td>
+        <td class="py-2.5 px-2 text-center whitespace-nowrap">
+          <button type="button" class="btn-cert-gen p-1 text-slate-400 hover:text-amber-600 transition-colors" title="Print Certificate" data-name="${escapeHtml(r.team_name)}" data-college="${escapeHtml(r.college_name)}" data-event="${escapeHtml(evTitle)}" data-rank="${idx + 1}">
+            <span class="material-symbols-outlined text-[18px]">workspace_premium</span>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Attach Certificate click handlers
+  document.querySelectorAll('.btn-cert-gen').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const college = btn.getAttribute('data-college');
+      const event = btn.getAttribute('data-event');
+      const rank = parseInt(btn.getAttribute('data-rank') || '1', 10);
+      openCertificateModal(name, college, event, rank);
+    });
+  });
+}
+
+async function pushLeaderboardToPodium() {
+  const evSelect = document.getElementById('scoring-event-select');
+  const eventId = evSelect?.value;
+  if (!eventId) {
+    showToast('Please select a competition track first', 'warning');
+    return;
+  }
+
+  const scores = (cachedScores || []).filter((s) => s.event_id === eventId);
+  if (scores.length === 0) {
+    showToast('No scored teams available to push to podium', 'warning');
+    return;
+  }
+
+  // Aggregate
+  const aggregated = {};
+  scores.forEach((s) => {
+    if (!aggregated[s.registration_id]) {
+      aggregated[s.registration_id] = {
+        winner_name: s.team_name,
+        college_name: s.college_name,
+        total: 0,
+        count: 0,
+      };
+    }
+    aggregated[s.registration_id].total += s.total_score;
+    aggregated[s.registration_id].count += 1;
+  });
+
+  const ranked = Object.values(aggregated).map((i) => ({
+    ...i,
+    avg: Math.round(i.total / i.count),
+  })).sort((a, b) => b.avg - a.avg);
+
+  const winnersArray = ranked.slice(0, 3).map((r, idx) => ({
+    position: idx + 1,
+    winner_name: r.winner_name,
+    college_name: r.college_name,
+  }));
+
+  try {
+    await db.saveWinners(eventId, winnersArray, true);
+    cachedWinners = await db.getWinners();
+    renderWinnersTab();
+    renderAnalyticsTab();
+
+    const evTitle = cachedEvents.find((e) => e.id === eventId)?.title || 'Event';
+    logAudit('PODIUM_PUSHED_FROM_JURY', `Pushed top ${winnersArray.length} scored laureates to official podium for ${evTitle}`);
+    showToast(`Top ${winnersArray.length} laureates pushed directly to Official Podium!`, 'success');
+  } catch (err) {
+    showToast('Failed to push winners: ' + err.message, 'error');
+  }
+}
+
+function openCertificateModal(recipientName, institutionName, eventTitle, rank) {
+  const modal = document.getElementById('modal-certificate');
+  if (!modal) return;
+
+  const certTitle = document.getElementById('cert-title-type');
+  const certName = document.getElementById('cert-recipient-name');
+  const certInst = document.getElementById('cert-institution-name');
+  const certEvent = document.getElementById('cert-event-title');
+  const certRank = document.getElementById('cert-rank-distinction');
+  const certCode = document.getElementById('cert-verification-code');
+
+  const rankText = rank === 1 ? '1st Place (Gold Laureate)' : rank === 2 ? '2nd Place (Silver Laureate)' : rank === 3 ? '3rd Place (Bronze Laureate)' : 'Distinguished Participation';
+
+  if (certTitle) certTitle.textContent = rank <= 3 ? 'CERTIFICATE OF MERIT' : 'CERTIFICATE OF PARTICIPATION';
+  if (certName) certName.textContent = recipientName;
+  if (certInst) certInst.textContent = institutionName;
+  if (certEvent) certEvent.textContent = eventTitle;
+  if (certRank) certRank.textContent = rankText;
+  if (certCode) certCode.textContent = `VERIFIED • ALM-CERT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+  modal.classList.add('show');
+}
+
+
+// ==============================================================================
+// 14. MODULE 2: LIVE CAMERA QR SCANNER & ACCREDITATION
+// ==============================================================================
+
+function setupCameraScanner() {
+  const btnOpen = document.getElementById('btn-open-qr-scanner');
+  if (btnOpen) {
+    btnOpen.addEventListener('click', startLiveCameraScanner);
+  }
+
+  const btnBatchBadges = document.getElementById('btn-open-batch-badges');
+  if (btnBatchBadges) {
+    btnBatchBadges.addEventListener('click', openBatchBadgesModal);
+  }
+
+  const btnPrintBadges = document.getElementById('btn-trigger-print-badges');
+  if (btnPrintBadges) {
+    btnPrintBadges.addEventListener('click', () => window.print());
+  }
+
+  const btnToggleAudio = document.getElementById('btn-toggle-camera-audio');
+  if (btnToggleAudio) {
+    btnToggleAudio.addEventListener('click', () => {
+      audioChimeEnabled = !audioChimeEnabled;
+      btnToggleAudio.innerHTML = audioChimeEnabled
+        ? '<span class="material-symbols-outlined text-[16px]">volume_up</span><span>Audio Chime Enabled</span>'
+        : '<span class="material-symbols-outlined text-[16px]">volume_off</span><span>Audio Chime Muted</span>';
+      showToast(audioChimeEnabled ? 'Camera audio chime enabled' : 'Camera audio chime muted', 'info');
+    });
+  }
+}
+
+async function startLiveCameraScanner() {
+  const modal = document.getElementById('modal-qr-scanner');
+  if (!modal) return;
+  modal.classList.add('show');
+
+  if (typeof Html5Qrcode === 'undefined') {
+    showToast('QR Scanner engine loading. Please try again in a moment.', 'warning');
+    return;
+  }
+
+  try {
+    if (!html5QrScanner) {
+      html5QrScanner = new Html5Qrcode('qr-camera-viewport');
+    }
+
+    const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+    await html5QrScanner.start(
+      { facingMode: 'environment' },
+      config,
+      (decodedText) => onQrCodeScanned(decodedText),
+      () => {} // silent frame error handler
+    );
+    isCameraScanning = true;
+  } catch (err) {
+    console.warn('Failed to access camera:', err);
+    showToast('Camera access permission denied or unavailable. You can also enter the code manually.', 'error');
+  }
+}
+
+async function stopLiveCameraScanner() {
+  if (html5QrScanner && isCameraScanning) {
+    try {
+      await html5QrScanner.stop();
+    } catch (e) {}
+    isCameraScanning = false;
+  }
+}
+
+// Hook modal close to stop camera
+document.addEventListener('click', (e) => {
+  if (e.target && (e.target.matches('.btn-close-modal') || e.target.id === 'modal-qr-scanner')) {
+    stopLiveCameraScanner();
+  }
+});
+
+async function onQrCodeScanned(decodedText) {
+  if (!decodedText) return;
+  const rawCode = decodedText.trim().toUpperCase();
+  // Match code e.g. ALM-XXXX or pure code
+  const match = rawCode.match(/[A-Z0-9]{3,4}-[A-Z0-9]{3,6}/) || [rawCode];
+  const ticketCode = match[0];
+
+  // Play audio chime
+  if (audioChimeEnabled) playSuccessChime();
+
+  // Find registration
+  const regs = cachedRegistrations || [];
+  const found = regs.find((r) => r.ticket_code?.toUpperCase() === ticketCode);
+
+  const resultBox = document.getElementById('qr-modal-result');
+  const codeEl = document.getElementById('qr-modal-code');
+  const nameEl = document.getElementById('qr-modal-name');
+  const evEl = document.getElementById('qr-modal-event');
+
+  if (resultBox && codeEl) {
+    resultBox.classList.remove('hidden');
+    codeEl.textContent = ticketCode;
+
+    if (found) {
+      nameEl.textContent = `${found.leader_name} (${found.college_name})`;
+      evEl.textContent = `Event: ${found.events?.title || 'Festival Event'}`;
+      resultBox.className = 'p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left space-y-1';
+
+      // Auto check-in
+      if (!found.checked_in) {
+        try {
+          await db.checkIn(found.ticket_code);
+          found.checked_in = true;
+          found.checked_in_at = new Date().toISOString();
+          renderCheckInTab();
+          renderOverview();
+          const gateZone = document.getElementById('checkin-zone-select')?.value || 'main';
+          logAudit('QR_CAMERA_CHECKIN', `Admitted ${found.ticket_code} (${found.leader_name}) at ${gateZone.toUpperCase()} gate`);
+          showToast(`✓ Gate Accreditation Confirmed: ${found.leader_name}`, 'success');
+        } catch (e) {
+          console.error('Check-in error:', e);
+        }
+      } else {
+        showToast(`Pass ${ticketCode} already checked in.`, 'info');
+      }
+    } else {
+      nameEl.textContent = 'Unregistered or External Ticket';
+      evEl.textContent = 'Code not found in official festival registry.';
+      resultBox.className = 'p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-left space-y-1';
+      showToast(`Scanned Code: ${ticketCode}`, 'warning');
+    }
+  }
+
+  // Also populate the main ticket input for quick reference
+  const checkinInput = document.getElementById('checkin-ticket-input');
+  if (checkinInput) checkinInput.value = ticketCode;
+}
+
+function playSuccessChime() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+    osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.08); // E6
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+  } catch (e) {}
+}
+
+function openBatchBadgesModal() {
+  const modal = document.getElementById('modal-batch-badges');
+  const container = document.getElementById('batch-badges-container');
+  if (!modal || !container) return;
+
+  const regs = cachedRegistrations || [];
+  if (regs.length === 0) {
+    container.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-400">No registered attendees available to print.</div>';
+    modal.classList.add('show');
+    return;
+  }
+
+  container.innerHTML = regs.slice(0, 18).map((r) => `
+    <div class="bg-white p-4 rounded-2xl border-2 border-slate-300 shadow-sm flex flex-col justify-between text-center relative overflow-hidden" style="break-inside: avoid;">
+      <div class="absolute top-2 left-2 flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-red-600"></span>
+        <span class="text-[9px] font-bold tracking-widest text-[#7F011F] uppercase">AL MURAFAQA</span>
+      </div>
+      
+      <div class="my-4">
+        <div class="w-14 h-14 mx-auto bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center font-mono font-bold text-xs text-slate-700 mb-2">
+          QR: ${escapeHtml(r.ticket_code)}
+        </div>
+        <h4 class="font-headline-sm text-base font-extrabold text-slate-900 truncate">${escapeHtml(r.team_name || r.leader_name)}</h4>
+        <p class="text-xs text-slate-600 truncate">${escapeHtml(r.college_name)}</p>
+        <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+          ${escapeHtml(r.events?.category || 'Delegate Pass')}
+        </span>
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-500 font-mono">
+        <span>${escapeHtml(r.ticket_code)}</span>
+        <span class="text-emerald-700 font-bold">${r.payment_status === 'verified' ? 'ACCREDITED' : 'PENDING'}</span>
+      </div>
+    </div>
+  `).join('');
+
+  modal.classList.add('show');
+}
+
+
+// ==============================================================================
+// 15. MODULE 7: DATA INTELLIGENCE, ANALYTICS & BACKUP
+// ==============================================================================
+
+function setupAnalyticsControls() {
+  const btnTrophyReport = document.getElementById('btn-export-trophy-report');
+  if (btnTrophyReport) {
+    btnTrophyReport.addEventListener('click', () => window.print());
+  }
+
+  const btnExportRegs = document.getElementById('btn-export-regs-csv');
+  if (btnExportRegs) {
+    btnExportRegs.addEventListener('click', exportRegistrationsCSV);
+  }
+
+  const btnExportScores = document.getElementById('btn-export-scores-csv');
+  if (btnExportScores) {
+    btnExportScores.addEventListener('click', exportScoresCSV);
+  }
+
+  const btnExportWinners = document.getElementById('btn-export-winners-csv');
+  if (btnExportWinners) {
+    btnExportWinners.addEventListener('click', exportWinnersCSV);
+  }
+
+  const btnDownloadBackup = document.getElementById('btn-download-backup-json');
+  if (btnDownloadBackup) {
+    btnDownloadBackup.addEventListener('click', downloadJsonBackup);
+  }
+
+  const btnTriggerRestore = document.getElementById('btn-trigger-restore');
+  if (btnTriggerRestore) {
+    btnTriggerRestore.addEventListener('click', handleJsonRestore);
+  }
+}
+
+async function renderAnalyticsTab() {
+  const tbody = document.getElementById('championship-table-body');
+  if (!tbody) return;
+
+  const winners = cachedWinners || [];
+  const regs = cachedRegistrations || [];
+  const scores = cachedScores || [];
+
+  // Update Top KPIs
+  const kpiScored = document.getElementById('kpi-scored-count');
+  if (kpiScored) kpiScored.textContent = scores.length;
+
+  const kpiMedals = document.getElementById('kpi-medals-awarded');
+  if (kpiMedals) kpiMedals.textContent = winners.length;
+
+  const totalRegs = regs.length;
+  const checkedIn = regs.filter((r) => r.checked_in).length;
+  const ingressRate = totalRegs > 0 ? Math.round((checkedIn / totalRegs) * 100) : 0;
+
+  const kpiIngress = document.getElementById('kpi-ingress-rate');
+  if (kpiIngress) kpiIngress.textContent = `${ingressRate}%`;
+
+  // Calculate Championship Standings
+  // Points: 1st Place = 10 Pts, 2nd Place = 7 Pts, 3rd Place = 5 Pts
+  const colleges = {};
+
+  winners.forEach((w) => {
+    const col = (w.college_name || 'Autonomous Scholar').trim();
+    if (!colleges[col]) {
+      colleges[col] = { name: col, gold: 0, silver: 0, bronze: 0, points: 0 };
+    }
+
+    if (w.position === 1) {
+      colleges[col].gold += 1;
+      colleges[col].points += 10;
+    } else if (w.position === 2) {
+      colleges[col].silver += 1;
+      colleges[col].points += 7;
+    } else if (w.position === 3) {
+      colleges[col].bronze += 1;
+      colleges[col].points += 5;
+    }
+  });
+
+  const rankedColleges = Object.values(colleges).sort((a, b) => b.points - a.points);
+
+  const kpiLeader = document.getElementById('kpi-championship-leader');
+  const kpiPts = document.getElementById('kpi-championship-pts');
+
+  if (rankedColleges.length > 0) {
+    if (kpiLeader) kpiLeader.textContent = rankedColleges[0].name;
+    if (kpiPts) kpiPts.textContent = `${rankedColleges[0].points} Championship Pts`;
+  } else {
+    if (kpiLeader) kpiLeader.textContent = 'Awaiting Podium Results';
+    if (kpiPts) kpiPts.textContent = '0 Pts';
+  }
+
+  if (rankedColleges.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="py-8 text-center text-slate-400">
+          No official podium results recorded yet. Points compute automatically when results are published.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = rankedColleges.map((c, idx) => {
+    const medals = ['🥇', '🥈', '🥉'];
+    const badge = medals[idx] || `#${idx + 1}`;
+    const rowClass = idx === 0 ? 'bg-amber-50/70 font-bold' : idx === 1 ? 'bg-slate-50' : idx === 2 ? 'bg-orange-50/40' : '';
+
+    return `
+      <tr class="${rowClass} hover:bg-slate-50 transition-colors">
+        <td class="py-3 px-4 font-bold text-sm text-slate-800 whitespace-nowrap">
+          ${badge}
+        </td>
+        <td class="py-3 px-4">
+          <strong class="text-slate-900 block">${escapeHtml(c.name)}</strong>
+          <span class="text-[10px] text-slate-500 font-normal">Accredited Institution</span>
+        </td>
+        <td class="py-3 px-3 text-center font-bold text-amber-700">${c.gold}</td>
+        <td class="py-3 px-3 text-center font-bold text-slate-600">${c.silver}</td>
+        <td class="py-3 px-3 text-center font-bold text-orange-700">${c.bronze}</td>
+        <td class="py-3 px-4 text-right font-mono font-extrabold text-base text-red-600">
+          ${c.points}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function exportScoresCSV() {
+  const scores = cachedScores || [];
+  if (scores.length === 0) {
+    showToast('No score records to export', 'warning');
+    return;
+  }
+
+  const headers = ['Event ID', 'Competitor', 'Institution', 'Judge', 'Technical (30)', 'Andalusian (30)', 'Creative (20)', 'Decorum (20)', 'Penalties', 'Total (100)'];
+  const rows = scores.map((s) => [
+    csvCell(s.event_id),
+    csvCell(s.team_name),
+    csvCell(s.college_name),
+    csvCell(s.judge_name),
+    s.criterion_technical || 0,
+    s.criterion_andalusian || 0,
+    s.criterion_creative || 0,
+    s.criterion_decorum || 0,
+    s.penalty_points || 0,
+    s.total_score || 0,
+  ]);
+
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `almurafaqa_jury_scores_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Jury scorecards exported successfully', 'success');
+}
+
+function exportWinnersCSV() {
+  const winners = cachedWinners || [];
+  if (winners.length === 0) {
+    showToast('No podium winners to export', 'warning');
+    return;
+  }
+
+  const headers = ['Event Title', 'Position', 'Winner / Team', 'Institution', 'Published At'];
+  const rows = winners.map((w) => [
+    csvCell(w.events?.title || 'Competition'),
+    w.position,
+    csvCell(w.winner_name),
+    csvCell(w.college_name),
+    csvCell(w.created_at),
+  ]);
+
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `almurafaqa_official_podium_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Official podium roster exported successfully', 'success');
+}
+
+async function downloadJsonBackup() {
+  try {
+    const backup = await db.getFullBackup();
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backup, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute('href', dataStr);
+    dlAnchorElem.setAttribute('download', `almurafaqa_cloud_snapshot_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(dlAnchorElem);
+    dlAnchorElem.click();
+    document.body.removeChild(dlAnchorElem);
+
+    logAudit('DATABASE_BACKUP_DOWNLOAD', 'Exported full JSON cloud snapshot');
+    showToast('Complete festival snapshot downloaded as JSON file!', 'success');
+  } catch (err) {
+    showToast('Failed to create backup: ' + err.message, 'error');
+  }
+}
+
+async function handleJsonRestore() {
+  const fileInput = document.getElementById('restore-backup-file');
+  if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+    showToast('Please select a valid .json backup file first', 'warning');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = async (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!confirm('Are you sure you want to restore from this backup file? Existing data collections will be updated with the snapshot contents.')) {
+        return;
+      }
+
+      await db.restoreBackup(parsed);
+      await loadAllData();
+      showToast('Database successfully restored from JSON backup archive!', 'success');
+    } catch (err) {
+      showToast('Restore failed: ' + err.message, 'error');
+    }
+  };
+
+  reader.readAsText(file);
 }

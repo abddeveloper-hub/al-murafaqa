@@ -14,6 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -197,7 +198,7 @@
         </div>
       </div>
 
-      <nav class="flex-1 px-space-md space-y-space-xs">
+            <nav class="flex-1 px-space-md space-y-space-xs">
         <button type="button" aria-current="page" class="nav-item flex items-center gap-space-md px-space-md py-space-sm transition-all duration-200 group bg-red-600 text-white font-label-lg font-bold rounded-xl shadow-md shadow-red-600/25 w-full text-left active" data-tab="overview">
           <span class="material-symbols-outlined text-[20px] transition-transform group-hover:scale-110">space_dashboard</span>
           <span class="font-label-lg text-label-lg">Overview</span>
@@ -208,10 +209,39 @@
           <span class="font-label-lg text-label-lg">Programmes &amp; Schedule</span>
         </button>
 
+        <!-- MODULE 3: Stage Ops & Run-of-Show -->
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="stageops">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">dvr</span>
+          <span class="font-label-lg text-label-lg">Stage Ops &amp; Run-of-Show</span>
+        </button>
+
         <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="registrations">
           <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">groups_3</span>
           <span class="font-label-lg text-label-lg">Teams &amp; Participants</span>
           <span id="badge-pending-count" class="ml-auto px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800" style="display:none">0</span>
+        </button>
+
+        <!-- MODULE 2: Passes & Accreditation (Enhanced) -->
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="checkin">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">qr_code_scanner</span>
+          <span class="font-label-lg text-label-lg">Passes &amp; Accreditation</span>
+        </button>
+
+        <!-- MODULE 1: Jury Scoring Portal -->
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="scoring">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">gavel</span>
+          <span class="font-label-lg text-label-lg">Jury &amp; Scoring Portal</span>
+        </button>
+
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="winners">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">emoji_events</span>
+          <span class="font-label-lg text-label-lg">Results &amp; Podium</span>
+        </button>
+
+        <!-- MODULE 7: Analytics & Trophies -->
+        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="analytics">
+          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">query_stats</span>
+          <span class="font-label-lg text-label-lg">Analytics &amp; Trophies</span>
         </button>
 
         <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="announcements">
@@ -219,21 +249,11 @@
           <span class="font-label-lg text-label-lg">Live Broadcasts &amp; Stages</span>
         </button>
 
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="checkin">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">badge</span>
-          <span class="font-label-lg text-label-lg">Passes &amp; Accreditation</span>
-        </button>
-
         <div class="pt-space-md pb-space-xs">
           <div class="px-space-sm py-space-xs font-label-sm text-label-sm text-slate-400 font-bold uppercase tracking-wider">
             System
           </div>
         </div>
-
-        <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="winners">
-          <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">emoji_events</span>
-          <span class="font-label-lg text-label-lg">Results &amp; Podium</span>
-        </button>
 
         <button type="button" class="nav-item flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all duration-200 group w-full text-left" data-tab="settings">
           <span class="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-slate-700 transition-transform group-hover:scale-110">tune</span>
@@ -283,6 +303,17 @@
 
         <!-- Header Actions & Profile -->
         <div class="flex items-center gap-space-md">
+          <!-- Active Role Selector (RBAC Module 8) -->
+          <div class="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider hidden lg:inline">Role:</span>
+            <select id="admin-role-selector" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer py-1 border-0">
+              <option value="superadmin">👑 Super Admin</option>
+              <option value="jury">⚖️ Jury / Judge</option>
+              <option value="marshal">🎫 Gate Marshal</option>
+              <option value="stageops">🎬 Stage Director</option>
+            </select>
+            <span id="admin-role-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 uppercase tracking-wide">Super</span>
+          </div>
           <div class="flex items-center gap-space-xs">
             <a href="home.html" target="_blank" class="h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-1.5 transition-colors text-xs font-semibold" title="View Public Front Page">
               <span class="material-symbols-outlined text-[18px]">open_in_new</span>
@@ -910,6 +941,218 @@
           </div>
         </div>
       </section>
+      <!-- ================= TAB: STAGE OPS & RUN-OF-SHOW CONTROLLER (MODULE 3) ================= -->
+      <section id="tab-stageops" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          
+          <!-- Header Banner -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 uppercase tracking-wider">Module 3</span>
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Stage Operations &amp; Run-of-Show</h2>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">Live performance timing, backstage green room queue, emergency schedule delay cascade, and AV cue sheets.</p>
+            </div>
+            
+            <!-- Stage Selector Pills -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-auto border border-slate-200">
+              <button type="button" class="stage-pill-btn active px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm transition-all" data-stage="main">
+                🏛️ Main Dome
+              </button>
+              <button type="button" class="stage-pill-btn px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all" data-stage="stage2">
+                ✒️ Qalam Hall
+              </button>
+              <button type="button" class="stage-pill-btn px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all" data-stage="stage3">
+                📜 Diwan Pavilion
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Stage Cockpit Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Active Stage Broadcast Cockpit (7 cols) -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+              
+              <!-- Active "Now On Stage" Card -->
+              <div class="bg-gradient-to-br from-slate-900 via-neutral-900 to-[#2D101A] text-white p-6 rounded-2xl shadow-xl border border-slate-800 relative overflow-hidden">
+                <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex items-center justify-between mb-4 relative z-10">
+                  <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+                    <span class="font-bold text-xs uppercase tracking-wider text-red-400">Live Stage Broadcast</span>
+                  </div>
+                  <span id="stageops-venue-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-amber-300 border border-white/15">
+                    Grand Andalusian Dome
+                  </span>
+                </div>
+
+                <div class="space-y-3 relative z-10">
+                  <div>
+                    <span class="text-xs text-slate-400 uppercase font-semibold">Currently Performing</span>
+                    <h3 id="stageops-current-performer" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-0.5">
+                      No Performer Currently On Stage
+                    </h3>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-4 text-sm text-slate-300 pt-1">
+                    <span class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[18px] text-amber-400">theater_comedy</span>
+                      <strong id="stageops-current-event">Select event from queue</strong>
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[18px] text-blue-400">school</span>
+                      <span id="stageops-current-college">—</span>
+                    </span>
+                  </div>
+
+                  <!-- Live Performance Stopwatch & Controls -->
+                  <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                      <div class="bg-black/40 border border-white/20 rounded-xl px-4 py-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px] text-red-500 animate-pulse">timer</span>
+                        <span id="stageops-stopwatch" class="font-mono text-xl sm:text-2xl font-bold tracking-wider text-white">00:00</span>
+                      </div>
+                      <button type="button" id="btn-toggle-stage-timer" class="p-2.5 bg-white/15 hover:bg-white/25 rounded-xl text-white transition-all" title="Start/Pause Timer">
+                        <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                      </button>
+                      <button type="button" id="btn-reset-stage-timer" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-slate-300 transition-all" title="Reset Timer">
+                        <span class="material-symbols-outlined text-[20px]">restart_alt</span>
+                      </button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <button type="button" id="btn-sync-live-site" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[16px]">podium</span>
+                        <span>Broadcast to Public Site</span>
+                      </button>
+                      <button type="button" id="btn-conclude-stage" class="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1" title="Mark Done">
+                        <span class="material-symbols-outlined text-[16px]">done_all</span>
+                        <span>Conclude</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Schedule Delay Controller (Emergency Push) -->
+              <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[22px] text-amber-600">fast_forward</span>
+                    <h4 class="font-headline-sm text-lg font-bold text-slate-900">Schedule Delay Cascade</h4>
+                  </div>
+                  <span id="stageops-active-delay-pill" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                    On Schedule (0m)
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500">If early programmes run overtime, bump all subsequent time slots on this stage by adding an operational buffer:</p>
+                
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <button type="button" class="btn-stage-delay px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1 transition-all" data-minutes="10">
+                    <span>+10 Mins</span>
+                  </button>
+                  <button type="button" class="btn-stage-delay px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1 transition-all" data-minutes="15">
+                    <span>+15 Mins</span>
+                  </button>
+                  <button type="button" class="btn-stage-delay px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1 transition-all" data-minutes="30">
+                    <span>+30 Mins</span>
+                  </button>
+                  <button type="button" class="btn-stage-delay px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 transition-all" data-minutes="0">
+                    <span class="material-symbols-outlined text-[14px]">refresh</span>
+                    <span>Reset Buffer</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- AV & Tech Cue Sheet Notes -->
+              <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-headline-sm text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-600 text-[20px]">graphic_eq</span>
+                    <span>Sound &amp; Technical Cue Sheet</span>
+                  </h4>
+                  <button type="button" id="btn-save-av-notes" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-all">
+                    Save Cues
+                  </button>
+                </div>
+                <textarea id="stageops-av-notes" class="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-red-500 font-mono" placeholder="Mic count, lighting preset, presentation slides cues, acoustic monitor levels..."></textarea>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Backstage Marshal Kanban Queue (5 cols) -->
+            <div class="lg:col-span-5 flex flex-col gap-4">
+              <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex-1 flex flex-col">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                  <div>
+                    <h4 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-purple-600 text-[20px]">view_kanban</span>
+                      <span>Run-of-Show Queue</span>
+                    </h4>
+                    <span class="text-xs text-slate-500">Green room marshaling &amp; on-deck sequence</span>
+                  </div>
+                  <button type="button" id="btn-refresh-stageops" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg" title="Refresh">
+                    <span class="material-symbols-outlined text-[18px]">refresh</span>
+                  </button>
+                </div>
+
+                <!-- 3 Queue Stages -->
+                <div class="space-y-4 flex-1">
+                  
+                  <!-- Green Room (Arrived) -->
+                  <div>
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <span class="flex items-center gap-1.5 text-emerald-700">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        1. In Green Room (Arrived)
+                      </span>
+                      <span id="badge-count-greenroom" class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px]">0</span>
+                    </div>
+                    <div id="queue-green-room" class="min-h-[90px] p-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl space-y-2">
+                      <div class="text-center py-4 text-xs text-slate-400">Loading green room queue...</div>
+                    </div>
+                  </div>
+
+                  <!-- On Deck (Backstage Wings) -->
+                  <div>
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <span class="flex items-center gap-1.5 text-amber-700">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        2. On Deck (Ready at Wings)
+                      </span>
+                      <span id="badge-count-ondeck" class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px]">0</span>
+                    </div>
+                    <div id="queue-on-deck" class="min-h-[90px] p-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl space-y-2">
+                      <div class="text-center py-4 text-xs text-slate-400">No teams currently on deck.</div>
+                    </div>
+                  </div>
+
+                  <!-- Completed Performances -->
+                  <div>
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <span class="flex items-center gap-1.5 text-slate-500">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        3. Completed Performances
+                      </span>
+                      <span id="badge-count-completed" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">0</span>
+                    </div>
+                    <div id="queue-completed" class="min-h-[70px] max-h-48 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                      <!-- Rendered dynamically -->
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
 
       <!-- ================= TAB 3: TEAMS & PARTICIPANTS / REGISTRATIONS DESK ================= -->
       <section id="tab-registrations" class="tab-pane hidden">
@@ -1179,6 +1422,31 @@
             <h3 class="font-headline-sm text-2xl font-bold text-slate-900">Gate Ticket Verification</h3>
             <p class="text-sm text-slate-500 mt-1 mb-6">Enter attendee ticket code (e.g., <strong>ALM-XXXX</strong>)</p>
 
+            <!-- Quick Action Toolbar: Live Camera Scanner & Batch Badges -->
+            <div class="flex flex-wrap items-center justify-center gap-3 mb-6">
+              <button type="button" id="btn-open-qr-scanner" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm shadow-md shadow-red-600/20 flex items-center gap-2 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-[20px]">photo_camera</span>
+                <span>Launch Live Camera Scanner</span>
+              </button>
+
+              <button type="button" id="btn-open-batch-badges" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm border border-slate-300 flex items-center gap-1.5 transition-all">
+                <span class="material-symbols-outlined text-[18px]">badge</span>
+                <span>Batch Print Badges</span>
+              </button>
+
+              <!-- Access Zone Selector -->
+              <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-500">meeting_room</span>
+                <span class="text-xs font-semibold text-slate-500">Gate:</span>
+                <select id="checkin-zone-select" class="bg-transparent text-xs font-bold text-slate-800 border-0 focus:outline-none cursor-pointer">
+                  <option value="main">Main Festival Gate</option>
+                  <option value="auditorium">Auditorium Main Dome</option>
+                  <option value="backstage">Backstage & Green Room</option>
+                  <option value="vip">VIP / Jury Lounge</option>
+                </select>
+              </div>
+            </div>
+
             <form id="checkin-search-form" class="flex gap-2 max-w-md mx-auto">
               <input type="text" id="checkin-ticket-input" class="flex-1 h-12 px-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-center uppercase tracking-wider font-bold text-lg text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white" placeholder="ALM-XXXX" maxlength="10" required autofocus/>
               <button type="submit" class="px-6 h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5">
@@ -1237,6 +1505,203 @@
           </div>
         </div>
       </section>
+      <!-- ================= TAB: JURY & SCORING PORTAL (MODULE 1) ================= -->
+      <section id="tab-scoring" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          
+          <!-- Header -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">Module 1</span>
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Jury &amp; Competitor Scoring Portal</h2>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">Standardized multi-criteria rubrics, time penalties, judge mark aggregation, and certificate issuance.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                <span class="material-symbols-outlined text-[18px] text-slate-500">person</span>
+                <span class="text-xs text-slate-500">Judge:</span>
+                <input type="text" id="scoring-judge-name" class="bg-transparent text-xs font-bold text-slate-800 border-0 focus:outline-none w-28" value="Judge 1" placeholder="Judge Name">
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Scoring Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Rubric Scorecard (7 cols) -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+              
+              <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                
+                <!-- Event & Team Selector Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label for="scoring-event-select" class="block text-xs font-bold uppercase text-slate-600 mb-1">Competition Track</label>
+                    <select id="scoring-event-select" class="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-red-500">
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="scoring-team-select" class="block text-xs font-bold uppercase text-slate-600 mb-1">Competitor / Team</label>
+                    <select id="scoring-team-select" class="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-red-500">
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+
+                <!-- 4 Standardized Rubric Sliders -->
+                <div class="space-y-4 pt-2 border-t border-slate-100">
+                  <h4 class="font-headline-sm text-sm font-bold text-slate-900 uppercase tracking-wider text-slate-500">
+                    Official Evaluation Rubric (100 Pts Total)
+                  </h4>
+
+                  <!-- Criterion 1: Technical Execution (30 pts) -->
+                  <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-xs font-bold text-slate-800">1. Technical Execution &amp; Form</span>
+                      <span id="score-val-1" class="font-mono font-bold text-red-600 text-sm">26 / 30</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mb-2">Mastery of discipline, structural precision, pitch/stroke/rebuttal accuracy.</p>
+                    <input type="range" id="rubric-crit-1" min="0" max="30" value="26" class="w-full accent-red-600">
+                  </div>
+
+                  <!-- Criterion 2: Andalusian Aesthetic & Cultural Depth (30 pts) -->
+                  <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-xs font-bold text-slate-800">2. Andalusian Motif &amp; Cultural Depth</span>
+                      <span id="score-val-2" class="font-mono font-bold text-red-600 text-sm">25 / 30</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mb-2">Alignment with Quinta Edición theme, heritage nuances, authentic vocabulary.</p>
+                    <input type="range" id="rubric-crit-2" min="0" max="30" value="25" class="w-full accent-red-600">
+                  </div>
+
+                  <!-- Criterion 3: Creative Eloquence & Originality (20 pts) -->
+                  <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-xs font-bold text-slate-800">3. Creative Eloquence &amp; Originality</span>
+                      <span id="score-val-3" class="font-mono font-bold text-red-600 text-sm">17 / 20</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mb-2">Novel interpretation, artistic flair, rhetorical strength, presentation poise.</p>
+                    <input type="range" id="rubric-crit-3" min="0" max="20" value="17" class="w-full accent-red-600">
+                  </div>
+
+                  <!-- Criterion 4: Stage Decorum & Time Adherence (20 pts) -->
+                  <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-xs font-bold text-slate-800">4. Stage Decorum &amp; Discipline</span>
+                      <span id="score-val-4" class="font-mono font-bold text-red-600 text-sm">18 / 20</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mb-2">Adherence to competition timing rules, respectful conduct, audience delivery.</p>
+                    <input type="range" id="rubric-crit-4" min="0" max="20" value="18" class="w-full accent-red-600">
+                  </div>
+                </div>
+
+                <!-- Penalties & Deductions -->
+                <div class="p-4 bg-red-50/60 rounded-xl border border-red-200 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-red-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[16px]">warning</span>
+                      Deductions &amp; Rule Penalties
+                    </span>
+                    <span id="score-penalty-display" class="font-mono font-bold text-red-600 text-xs">0 Pts Deducted</span>
+                  </div>
+                  
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="btn-penalty px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-red-200 text-red-700 hover:bg-red-100 transition-colors" data-points="2" data-reason="Exceeded time limit by <60s">
+                      -2 (Time Overrun)
+                    </button>
+                    <button type="button" class="btn-penalty px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-red-200 text-red-700 hover:bg-red-100 transition-colors" data-points="5" data-reason="Minor regulation violation">
+                      -5 (Regulation)
+                    </button>
+                    <button type="button" class="btn-penalty px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-red-200 text-red-700 hover:bg-red-100 transition-colors" data-points="10" data-reason="Major misconduct / overtime">
+                      -10 (Major)
+                    </button>
+                    <button type="button" id="btn-reset-penalties" class="px-2 py-1 rounded-lg text-xs text-slate-600 hover:text-slate-900 transition-colors">
+                      Clear
+                    </button>
+                  </div>
+                  <input type="text" id="score-penalty-reason" class="w-full h-8 px-2.5 bg-white border border-red-200 rounded-lg text-xs text-slate-700 placeholder:text-slate-400" placeholder="Penalty note / reason (optional)">
+                </div>
+
+                <!-- Score Total Card & Submit Button -->
+                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-900 text-amber-400 font-extrabold flex items-center justify-center font-mono text-2xl shadow-inner border border-slate-700">
+                      <span id="score-final-total">86</span>
+                    </div>
+                    <div>
+                      <span class="text-xs font-bold text-slate-800 uppercase block">Total Final Mark</span>
+                      <span class="text-[11px] text-slate-500">Calculated sum with deductions</span>
+                    </div>
+                  </div>
+
+                  <button type="button" id="btn-submit-score" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-600/20 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">gavel</span>
+                    <span>Submit Official Score</span>
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Right Column: Live Category Leaderboard & Podium Publisher (5 cols) -->
+            <div class="lg:col-span-5 flex flex-col gap-4">
+              
+              <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex-1 flex flex-col">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                  <div>
+                    <h4 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-amber-500 text-[20px]">emoji_events</span>
+                      <span>Live Category Leaderboard</span>
+                    </h4>
+                    <span class="text-xs text-slate-500">Rankings calculated from submitted scorecards</span>
+                  </div>
+                  <button type="button" id="btn-push-to-podium" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-all" title="Send Top 3 to Official Winners">
+                    <span class="material-symbols-outlined text-[14px]">publish</span>
+                    <span>Push to Podium</span>
+                  </button>
+                </div>
+
+                <!-- Leaderboard Table -->
+                <div class="flex-1 overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase">
+                      <tr>
+                        <th class="py-2.5 px-3">Rank</th>
+                        <th class="py-2.5 px-3">Team / Performer</th>
+                        <th class="py-2.5 px-2 text-right">Score</th>
+                        <th class="py-2.5 px-2 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="scoring-leaderboard-body" class="divide-y divide-slate-100 font-medium">
+                      <tr>
+                        <td colspan="4" class="py-8 text-center text-slate-400">Select competition track to view standings</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Certificate Quick Generator Hint -->
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px] text-amber-600">workspace_premium</span>
+                    Click 📜 next to any team to generate an official Certificate.
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
 
       <!-- ================= TAB 6: RESULTS & PODIUM PUBLISHER ================= -->
       <section id="tab-winners" class="tab-pane hidden">
@@ -1319,6 +1784,151 @@
           </div>
         </div>
       </section>
+      <!-- ================= TAB: ANALYTICS & TROPHIES (MODULE 7) ================= -->
+      <section id="tab-analytics" class="tab-pane hidden">
+        <div class="flex flex-col w-full space-y-space-lg text-slate-900 mt-6">
+          
+          <!-- Header -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-wider">Module 7</span>
+                <h2 class="font-headline-md text-2xl font-bold text-slate-900">Festival Intelligence &amp; Championship Standings</h2>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">Institutional championship points calculation, automated medal tables, and 1-click comprehensive exports.</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-export-trophy-report" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all">
+                <span class="material-symbols-outlined text-[16px]">print</span>
+                <span>Print Trophy Standings</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Analytics KPI Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold uppercase text-slate-500 block">Total Teams Scored</span>
+              <span id="kpi-scored-count" class="font-headline-md text-3xl font-extrabold text-slate-900 mt-1 block">0</span>
+              <span class="text-[11px] text-emerald-600 font-semibold mt-1 block">Across all 5 disciplines</span>
+            </div>
+
+            <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold uppercase text-slate-500 block">Championship Leader</span>
+              <span id="kpi-championship-leader" class="font-headline-md text-lg font-bold text-red-600 mt-1 block truncate">Computing...</span>
+              <span id="kpi-championship-pts" class="text-[11px] text-slate-500 font-semibold mt-1 block">0 Championship Pts</span>
+            </div>
+
+            <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold uppercase text-slate-500 block">Official Podium Medals</span>
+              <span id="kpi-medals-awarded" class="font-headline-md text-3xl font-extrabold text-amber-500 mt-1 block">0</span>
+              <span class="text-[11px] text-slate-500 font-semibold mt-1 block">Gold / Silver / Bronze</span>
+            </div>
+
+            <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <span class="text-xs font-bold uppercase text-slate-500 block">Gate Ingress Rate</span>
+              <span id="kpi-ingress-rate" class="font-headline-md text-3xl font-extrabold text-blue-600 mt-1 block">0%</span>
+              <span class="text-[11px] text-slate-500 font-semibold mt-1 block">Verified attendees</span>
+            </div>
+          </div>
+
+          <!-- Championship Trophy Table & Export Center Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left: Institutional Championship Standings Table (8 cols) -->
+            <div class="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <div>
+                  <h4 class="font-headline-sm text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-500 text-[22px]">trophy</span>
+                    <span>Al Murafaqa Overall Championship Trophy</span>
+                  </h4>
+                  <p class="text-xs text-slate-500">Points weightage: 🥇 1st = 10 Pts | 🥈 2nd = 7 Pts | 🥉 3rd = 5 Pts</p>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-600 font-semibold uppercase">
+                    <tr>
+                      <th class="py-3 px-4">Rank</th>
+                      <th class="py-3 px-4">College / Institution</th>
+                      <th class="py-3 px-3 text-center">🥇 Gold</th>
+                      <th class="py-3 px-3 text-center">🥈 Silver</th>
+                      <th class="py-3 px-3 text-center">🥉 Bronze</th>
+                      <th class="py-3 px-4 text-right font-extrabold">Total Points</th>
+                    </tr>
+                  </thead>
+                  <tbody id="championship-table-body" class="divide-y divide-slate-100">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: 1-Click Export Center (4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-4">
+              
+              <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div>
+                  <h4 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-red-600 text-[20px]">download</span>
+                    <span>1-Click Festival Exports</span>
+                  </h4>
+                  <p class="text-xs text-slate-500 mt-0.5">Download full dataset sheets for coordinators &amp; press releases.</p>
+                </div>
+
+                <div class="space-y-2.5">
+                  <button type="button" id="btn-export-regs-csv" class="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs font-bold text-slate-800 flex items-center justify-between transition-colors">
+                    <span class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-red-600 text-[18px]">table_view</span>
+                      <span>Export Teams &amp; Registrations (CSV)</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">CSV</span>
+                  </button>
+
+                  <button type="button" id="btn-export-scores-csv" class="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs font-bold text-slate-800 flex items-center justify-between transition-colors">
+                    <span class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-amber-600 text-[18px]">scoreboard</span>
+                      <span>Export All Jury Scorecards (CSV)</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">CSV</span>
+                  </button>
+
+                  <button type="button" id="btn-export-winners-csv" class="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs font-bold text-slate-800 flex items-center justify-between transition-colors">
+                    <span class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-emerald-600 text-[18px]">stars</span>
+                      <span>Export Official Podium Laureates (CSV)</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Full JSON Backup & Cloud Snapshot -->
+              <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-sm space-y-3">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-amber-400 text-[20px]">cloud_sync</span>
+                  <h4 class="font-headline-sm text-sm font-bold text-white uppercase tracking-wider">Cloud Data Snapshot</h4>
+                </div>
+                <p class="text-xs text-slate-300">Create a portable JSON snapshot of events, registrations, scores, winners, and audit logs.</p>
+                
+                <div class="flex items-center gap-2 pt-2">
+                  <button type="button" id="btn-download-backup-json" class="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-[16px]">file_download</span>
+                    <span>Download Backup</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
 
       <!-- ================= TAB 7: EMERGENCY & SETTINGS ================= -->
       <section id="tab-settings" class="tab-pane hidden">
@@ -1341,7 +1951,57 @@
               </div>
             </div>
           </div>
-        </div>
+        
+          <!-- MODULE 8: Security & Operations Audit Trail -->
+          <div class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800 uppercase tracking-wider">Module 8</span>
+                  <h3 class="font-headline-sm text-lg font-bold text-slate-900">Security &amp; Operations Audit Trail</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Immutable record of every administrative action, score change, check-in, and configuration edit.</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input type="text" id="audit-filter-input" class="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="Search audit log...">
+                <button type="button" id="btn-export-audit-csv" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">
+                  Export CSV
+                </button>
+              </div>
+            </div>
+
+            <!-- Audit Trail Table -->
+            <div class="overflow-x-auto max-h-80 overflow-y-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-semibold uppercase sticky top-0">
+                  <tr>
+                    <th class="py-2.5 px-4">Timestamp</th>
+                    <th class="py-2.5 px-3">Role</th>
+                    <th class="py-2.5 px-3">Action</th>
+                    <th class="py-2.5 px-4">Event Details</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-log-body" class="divide-y divide-slate-100 font-mono text-[11px]">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- MODULE 7: Database Restore from Backup -->
+          <div class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3">
+            <h3 class="font-headline-sm text-lg font-bold text-slate-900">Restore Database from JSON Archive</h3>
+            <p class="text-xs text-slate-500">Restore your festival database from a previously downloaded .json snapshot.</p>
+            
+            <div class="flex items-center gap-3 pt-1">
+              <input type="file" id="restore-backup-file" accept=".json" class="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+              <button type="button" id="btn-trigger-restore" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                Restore Now
+              </button>
+            </div>
+          </div>
+</div>
       </section>
 
     </main>
@@ -1508,6 +2168,152 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-close-modal btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- ================= POPUP MODALS FOR MODULES 1, 2 ================= -->
+
+  <!-- Live Camera QR Scanner Modal -->
+  <div id="modal-qr-scanner" class="modal-backdrop">
+    <div class="modal-box max-w-lg">
+      <div class="modal-header">
+        <h3 class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-red-600">photo_camera</span>
+          <span>Live Gate Camera Scanner</span>
+        </h3>
+        <button type="button" class="btn-close-modal btn-icon">&times;</button>
+      </div>
+      <div class="modal-body space-y-4 text-center">
+        <!-- Camera Viewport Container -->
+        <div class="relative w-full aspect-square max-w-[360px] mx-auto rounded-2xl overflow-hidden bg-black border-2 border-red-600 shadow-xl flex items-center justify-center">
+          <div id="qr-camera-viewport" class="w-full h-full"></div>
+          <div class="absolute inset-0 border-2 border-dashed border-red-500/60 pointer-events-none m-8 rounded-xl"></div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-500 px-2">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            Camera Active
+          </span>
+          <span class="text-slate-400">Position QR pass in center frame</span>
+        </div>
+
+        <!-- Scan Result Preview in Modal -->
+        <div id="qr-modal-result" class="hidden p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left space-y-1">
+          <div class="flex justify-between items-center">
+            <strong id="qr-modal-code" class="text-emerald-800 text-sm font-bold">ALM-XXXX</strong>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-900">VERIFIED</span>
+          </div>
+          <div id="qr-modal-name" class="text-xs font-semibold text-slate-800"></div>
+          <div id="qr-modal-event" class="text-[11px] text-slate-600"></div>
+        </div>
+      </div>
+      <div class="modal-footer flex items-center justify-between">
+        <button type="button" id="btn-toggle-camera-audio" class="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">volume_up</span>
+          <span>Audio Chime Enabled</span>
+        </button>
+        <button type="button" class="btn-close-modal btn-secondary">Stop &amp; Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Official Andalusian Certificate Printable Modal -->
+  <div id="modal-certificate" class="modal-backdrop">
+    <div class="modal-box max-w-2xl bg-white p-0 overflow-hidden">
+      <div class="modal-header bg-slate-900 text-white p-4">
+        <h3 class="flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-amber-400">workspace_premium</span>
+          <span>Official Award Certificate • Al Murafaqa</span>
+        </h3>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
+      </div>
+
+      <!-- Printable Certificate Canvas -->
+      <div class="p-6 bg-amber-50/40 flex justify-center">
+        <div id="certificate-print-area" class="w-full max-w-[620px] aspect-[1.414/1] bg-[#FFFAED] text-[#2D101A] p-8 rounded-2xl border-4 border-[#C88A3C] shadow-2xl relative overflow-hidden flex flex-col justify-between text-center">
+          
+          <!-- Ornate Border Inset -->
+          <div class="absolute inset-2 border-2 border-[#C88A3C]/40 rounded-xl pointer-events-none"></div>
+          
+          <!-- Top Header with Authentic Diamond Emblem -->
+          <div class="relative z-10 flex flex-col items-center">
+            <img src="logo-symbolism.png" alt="Emblem" class="w-14 h-14 object-contain filter drop-shadow mb-1">
+            <span class="font-headline-sm text-xs font-extrabold text-[#7F011F] tracking-widest uppercase">AL MURAFAQA • QUINTA EDICIÓN</span>
+            <span class="text-[10px] tracking-widest text-[#C88A3C] font-semibold uppercase mt-0.5">Pallidars: The Primal Source of Knowledge</span>
+          </div>
+
+          <!-- Main Certificate Body -->
+          <div class="relative z-10 my-auto space-y-2">
+            <h2 id="cert-title-type" class="font-headline-md text-2xl font-extrabold text-[#7F011F] tracking-tight">
+              CERTIFICATE OF MERIT
+            </h2>
+            <p class="text-xs text-slate-600 italic">This is proudly presented to</p>
+            <h3 id="cert-recipient-name" class="font-headline-lg text-2xl font-extrabold text-slate-900 tracking-tight">
+              Student / Team Name
+            </h3>
+            <p class="text-xs text-slate-700">of <strong id="cert-institution-name">Institution Name</strong></p>
+            <p class="text-xs text-slate-600 max-w-md mx-auto pt-1">
+              for securing <strong id="cert-rank-distinction" class="text-[#7F011F]">1st Place</strong> in the official festival track of <strong id="cert-event-title">Track Name</strong>.
+            </p>
+          </div>
+
+          <!-- Bottom Footer with Digital Stamp & Signatures -->
+          <div class="relative z-10 pt-4 border-t border-[#C88A3C]/30 flex items-center justify-between text-left text-[10px] text-slate-600">
+            <div>
+              <span class="font-bold block text-slate-900">Dr. Tariq Al-Sayed</span>
+              <span class="text-[9px] text-slate-500">Chief Festival Director</span>
+            </div>
+            
+            <div class="text-center">
+              <span class="font-mono text-[9px] text-slate-400 block" id="cert-verification-code">VERIFIED • ALM-CERT-2026</span>
+              <span class="font-bold text-[#C88A3C] text-[9px]">OFFICIAL FESTIVAL SEAL</span>
+            </div>
+
+            <div class="text-right">
+              <span class="font-bold block text-slate-900">Jury Board</span>
+              <span class="text-[9px] text-slate-500">Grand Academic Circle</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer p-4 bg-white flex items-center justify-between">
+        <span class="text-xs text-slate-500">High-resolution print-ready layout</span>
+        <button type="button" id="btn-print-certificate" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 shadow-md">
+          <span class="material-symbols-outlined text-[16px]">print</span>
+          <span>Print Certificate (PDF)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch ID Badges & Lanyard Printable Modal -->
+  <div id="modal-batch-badges" class="modal-backdrop">
+    <div class="modal-box max-w-4xl bg-white p-0 overflow-hidden">
+      <div class="modal-header bg-slate-900 text-white p-4">
+        <h3 class="flex items-center gap-2 text-white">
+          <span class="material-symbols-outlined text-red-500">badge</span>
+          <span>Accreditation Pass Batch Print Preview</span>
+        </h3>
+        <button type="button" class="btn-close-modal btn-icon text-white">&times;</button>
+      </div>
+
+      <div class="p-6 max-h-[70vh] overflow-y-auto bg-slate-100">
+        <div id="batch-badges-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-footer p-4 bg-white flex items-center justify-between">
+        <span class="text-xs text-slate-500">Prints standard A4 badge sheets with lanyard cut guides</span>
+        <button type="button" id="btn-trigger-print-badges" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md">
+          <span class="material-symbols-outlined text-[16px]">print</span>
+          <span>Print All Badges</span>
+        </button>
       </div>
     </div>
   </div>

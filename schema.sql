@@ -290,3 +290,49 @@ WHERE winner_name IN ('Zaid Al-Husseini', 'Mariam Al-Khatib', 'Hassan Bilal');
 
 DELETE FROM public.announcements 
 WHERE title IN ('Oud Showcase Venue Update', 'Calligraphy Kit Collection');
+
+-- ==============================================================================
+-- MODULE EXTENSIONS (1, 2, 3, 7, 8)
+-- ==============================================================================
+
+-- 6. JURY SCORES (Module 1: Rubrics & Competitor Scoring)
+CREATE TABLE IF NOT EXISTS public.scores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    registration_id UUID NOT NULL REFERENCES public.registrations(id) ON DELETE CASCADE,
+    team_name TEXT NOT NULL,
+    college_name TEXT NOT NULL,
+    judge_name TEXT NOT NULL DEFAULT 'Judge 1',
+    criterion_technical INT NOT NULL DEFAULT 0,
+    criterion_andalusian INT NOT NULL DEFAULT 0,
+    criterion_creative INT NOT NULL DEFAULT 0,
+    criterion_decorum INT NOT NULL DEFAULT 0,
+    penalty_points INT NOT NULL DEFAULT 0,
+    penalty_reason TEXT DEFAULT '',
+    total_score INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 7. AUDIT LOGS (Module 8: Security & Operations Audit Trail)
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    role TEXT NOT NULL DEFAULT 'Super Admin',
+    action TEXT NOT NULL,
+    details TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins have full access to scores"
+    ON public.scores FOR ALL
+    TO authenticated, service_role
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admins have full access to audit_logs"
+    ON public.audit_logs FOR ALL
+    TO authenticated, service_role
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());

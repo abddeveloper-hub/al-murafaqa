@@ -560,4 +560,195 @@ export const db = {
     localStorage.setItem('almurafaqa_winners', JSON.stringify(list));
     return records;
   },
+
+  // ----------------------------------------------------------------------------
+  // MODULE 1: JURY SCORING & RUBRIC PORTAL
+  // ----------------------------------------------------------------------------
+  async getScores(eventId = null) {
+    let list = [];
+    try {
+      const raw = localStorage.getItem('almurafaqa_scores');
+      list = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      list = [];
+    }
+    if (eventId) {
+      return list.filter((s) => s.event_id === eventId);
+    }
+    return list;
+  },
+
+  async saveScore(scoreObj) {
+    const list = await this.getScores();
+    const existingIdx = list.findIndex((s) => s.id === scoreObj.id || (s.event_id === scoreObj.event_id && s.registration_id === scoreObj.registration_id && s.judge_name === scoreObj.judge_name));
+    
+    const record = {
+      ...scoreObj,
+      id: scoreObj.id || generateUuid(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (existingIdx >= 0) {
+      list[existingIdx] = record;
+    } else {
+      list.unshift(record);
+    }
+    localStorage.setItem('almurafaqa_scores', JSON.stringify(list));
+    return record;
+  },
+
+  async deleteScore(id) {
+    const list = await this.getScores();
+    const filtered = list.filter((s) => s.id !== id);
+    localStorage.setItem('almurafaqa_scores', JSON.stringify(filtered));
+    return true;
+  },
+
+  // ----------------------------------------------------------------------------
+  // MODULE 3: STAGE OPERATIONS & RUN-OF-SHOW CONTROLLER
+  // ----------------------------------------------------------------------------
+  async getStageOps() {
+    const defaultOps = {
+      active_stage: 'main',
+      stages: {
+        main: {
+          id: 'main',
+          name: 'Grand Andalusian Dome',
+          status: 'idle', // 'idle' | 'live' | 'paused'
+          active_performer: '',
+          active_event_id: '',
+          active_event_title: '',
+          started_at: null,
+          delay_minutes: 0,
+          av_notes: '4 Wireless Handheld Mics, Qalam Backing Visual Track',
+        },
+        stage2: {
+          id: 'stage2',
+          name: 'Qalam Hall',
+          status: 'idle',
+          active_performer: '',
+          active_event_id: '',
+          active_event_title: '',
+          started_at: null,
+          delay_minutes: 0,
+          av_notes: 'Podium Mic, Projection Screen Active',
+        },
+        stage3: {
+          id: 'stage3',
+          name: 'Diwan Pavilion',
+          status: 'idle',
+          active_performer: '',
+          active_event_id: '',
+          active_event_title: '',
+          started_at: null,
+          delay_minutes: 0,
+          av_notes: '2 Lapel Mics, Floor Monitors 40%',
+        },
+      },
+      queue: [],
+    };
+    try {
+      const raw = localStorage.getItem('almurafaqa_stage_ops');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return { ...defaultOps, ...parsed, stages: { ...defaultOps.stages, ...(parsed.stages || {}) } };
+      }
+    } catch (e) {}
+    return defaultOps;
+  },
+
+  async updateStageOps(opsObj) {
+    const current = await this.getStageOps();
+    const merged = { ...current, ...opsObj };
+    localStorage.setItem('almurafaqa_stage_ops', JSON.stringify(merged));
+    return merged;
+  },
+
+  async setStageDelay(stageId, minutes) {
+    const current = await this.getStageOps();
+    if (current.stages && current.stages[stageId]) {
+      current.stages[stageId].delay_minutes = minutes;
+      return await this.updateStageOps(current);
+    }
+    return current;
+  },
+
+  // ----------------------------------------------------------------------------
+  // MODULE 8: AUDIT TRAIL ENGINE
+  // ----------------------------------------------------------------------------
+  async getAuditLogs() {
+    try {
+      const raw = localStorage.getItem('almurafaqa_audit_logs');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async addAuditLog(action, details, role = 'Super Admin') {
+    const list = await this.getAuditLogs();
+    const entry = {
+      id: generateUuid(),
+      timestamp: new Date().toISOString(),
+      role: role || 'Super Admin',
+      action: action || 'OPERATION',
+      details: details || '',
+    };
+    list.unshift(entry);
+    // keep at most 500 latest entries
+    if (list.length > 500) list.length = 500;
+    localStorage.setItem('almurafaqa_audit_logs', JSON.stringify(list));
+    return entry;
+  },
+
+  // ----------------------------------------------------------------------------
+  // MODULE 7: BACKUP & DATA RESTORE
+  // ----------------------------------------------------------------------------
+  async getFullBackup() {
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs] = await Promise.all([
+      this.getSettings(),
+      this.getEvents(),
+      this.getRegistrations(),
+      this.getAnnouncements(),
+      this.getWinners(),
+      this.getScores(),
+      this.getStageOps(),
+      this.getAuditLogs(),
+    ]);
+
+    return {
+      version: '5.0',
+      export_date: new Date().toISOString(),
+      fest_name: 'Al Murafaqa • 5th Edition',
+      collections: {
+        settings,
+        events,
+        registrations,
+        announcements,
+        winners,
+        scores,
+        stageOps,
+        auditLogs,
+      },
+    };
+  },
+
+  async restoreBackup(backupData) {
+    if (!backupData || !backupData.collections) {
+      throw new Error('Invalid backup file format: missing collections payload.');
+    }
+    const { settings, events, registrations, announcements, winners, scores, stageOps, auditLogs } = backupData.collections;
+
+    if (settings) localStorage.setItem('almurafaqa_settings', JSON.stringify(settings));
+    if (Array.isArray(events)) localStorage.setItem('almurafaqa_events', JSON.stringify(events));
+    if (Array.isArray(registrations)) localStorage.setItem('almurafaqa_registrations', JSON.stringify(registrations));
+    if (Array.isArray(announcements)) localStorage.setItem('almurafaqa_announcements', JSON.stringify(announcements));
+    if (Array.isArray(winners)) localStorage.setItem('almurafaqa_winners', JSON.stringify(winners));
+    if (Array.isArray(scores)) localStorage.setItem('almurafaqa_scores', JSON.stringify(scores));
+    if (stageOps) localStorage.setItem('almurafaqa_stage_ops', JSON.stringify(stageOps));
+    if (Array.isArray(auditLogs)) localStorage.setItem('almurafaqa_audit_logs', JSON.stringify(auditLogs));
+
+    await this.addAuditLog('DATABASE_RESTORE', 'Full database restored from JSON backup archive', 'Super Admin');
+    return true;
+  },
 };
