@@ -277,40 +277,59 @@ export const db = {
 
   // Fest Settings Operations
   async getSettings() {
+    const raw = localStorage.getItem('almurafaqa_settings');
+    let cachedSettings = null;
+    try {
+      cachedSettings = raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn('[Local settings cache] Could not parse cached settings:', err);
+    }
+
     if (this.isLive()) {
       const { data, error } = await supabase.from('fest_settings').select('*').eq('id', 1).single();
-      if (!error && data) return data;
+      if (!error && data) {
+        const cloudSettings = { ...DEFAULT_SETTINGS, ...data };
+        const hasPendingLocalEdits = cachedSettings && Object.keys(cachedSettings).some((key) =>
+          key !== 'id' && key !== 'updated_at' && key in DEFAULT_SETTINGS && cachedSettings[key] !== DEFAULT_SETTINGS[key]
+        );
+        const localUpdatedAt = Date.parse(cachedSettings?.updated_at || '');
+        const cloudUpdatedAt = Date.parse(cloudSettings.updated_at || '');
+
+        // Recover settings saved by the previous local-only fallback, so an admin
+        // can publish them after the database schema has been brought up to date.
+        if (hasPendingLocalEdits && Number.isFinite(localUpdatedAt) && localUpdatedAt > cloudUpdatedAt) {
+          return { ...cloudSettings, ...cachedSettings };
+        }
+        return cloudSettings;
+      }
+      if (error) console.warn('[Supabase getSettings]', error.message);
     }
-    const raw = localStorage.getItem('almurafaqa_settings');
-    return raw ? JSON.parse(raw) : DEFAULT_SETTINGS;
+    return cachedSettings || DEFAULT_SETTINGS;
   },
 
   async updateSettings(updates) {
-    updates.updated_at = new Date().toISOString();
-    let cloudData = null;
+    const payload = { ...updates, updated_at: new Date().toISOString() };
     if (this.isLive()) {
-      try {
-        const { data, error } = await supabase.from('fest_settings').update(updates).eq('id', 1).select().single();
-        if (!error && data) {
-          cloudData = data;
-        } else if (error) {
-          console.warn('[Supabase updateSettings]', error.message);
-          // If remote table doesn't have custom columns yet, update core columns
-          const coreFields = ['fest_name', 'registrations_open', 'maintenance_mode', 'live_ticker_enabled', 'live_ticker_text', 'upi_id', 'support_phone', 'updated_at'];
-          const corePayload = {};
-          coreFields.forEach((k) => {
-            if (k in updates) corePayload[k] = updates[k];
-          });
-          if (Object.keys(corePayload).length > 0) {
-            await supabase.from('fest_settings').update(corePayload).eq('id', 1);
-          }
-        }
-      } catch (cloudErr) {
-        console.warn('[Supabase updateSettings catch]', cloudErr);
+      const { data, error } = await supabase
+        .from('fest_settings')
+        .update(payload)
+        .eq('id', 1)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[Supabase updateSettings]', error);
+        throw error;
       }
+      if (!data) throw new Error('Festival settings were not saved: the settings row was not found.');
+
+      const updated = { ...DEFAULT_SETTINGS, ...data };
+      localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
+      return updated;
     }
+
     const current = await this.getSettings();
-    const updated = { ...current, ...updates, ...(cloudData || {}) };
+    const updated = { ...DEFAULT_SETTINGS, ...current, ...payload };
     localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
     return updated;
   },

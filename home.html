@@ -1475,27 +1475,6 @@
       link.addEventListener('click', closeDrawer);
     });
 
-    // Share simulation
-    const shareBtn = document.getElementById('share-stream');
-    if (shareBtn) {
-      shareBtn.addEventListener('click', () => {
-        if (navigator.share) {
-          navigator.share({
-            title: 'Al Murafaqa - 5th Edition',
-            text: 'Live from the Al Murafaqa Cultural Gathering',
-            url: window.location.href,
-          }).catch((err) => {
-            if (err.name !== 'AbortError') showToast('Unable to share this stream right now');
-          });
-        } else if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(window.location.href)
-            .then(() => showToast('Stream link copied to clipboard'))
-            .catch(() => showToast('Copy the stream link from your browser address bar'));
-        } else {
-          showToast('Copy the stream link from your browser address bar');
-        }
-      });
-    }
   </script>
 
   <script type="module">
