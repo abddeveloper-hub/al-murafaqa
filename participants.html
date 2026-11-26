@@ -886,10 +886,14 @@
       }
     }
 
-    // Event listeners
+    // Event listeners (with Input Debouncing for Smooth Typing)
     const searchInput = document.getElementById('participants-search-input');
+    let pSearchTimer = null;
     if (searchInput) {
-      searchInput.addEventListener('input', renderParticipantsGrid);
+      searchInput.addEventListener('input', () => {
+        if (pSearchTimer) clearTimeout(pSearchTimer);
+        pSearchTimer = setTimeout(renderParticipantsGrid, 100);
+      });
     }
 
     document.querySelectorAll('.participant-cat-filter').forEach((btn) => {

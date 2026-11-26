@@ -140,33 +140,51 @@
     }
     ::-webkit-scrollbar { display: none; }
 
-    /* ================= AMBIENT BACKGROUND MOTIONS ================= */
+    /* ================= AMBIENT BACKGROUND MOTIONS (GPU HARDWARE-ACCELERATED) ================= */
     @keyframes orbDriftOne {
-      0%, 100% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(35px, 25px) scale(1.08); }
-      66% { transform: translate(-20px, 40px) scale(0.95); }
+      0%, 100% { transform: translate3d(0px, 0px, 0) scale(1); }
+      50% { transform: translate3d(20px, 15px, 0) scale(1.04); }
     }
 
     @keyframes orbDriftTwo {
-      0%, 100% { transform: translate(0px, 0px) scale(1); }
-      40% { transform: translate(-40px, -30px) scale(1.12); }
-      75% { transform: translate(25px, -15px) scale(0.96); }
+      0%, 100% { transform: translate3d(0px, 0px, 0) scale(1); }
+      50% { transform: translate3d(-20px, -15px, 0) scale(1.05); }
     }
 
     @keyframes orbDriftThree {
-      0%, 100% { transform: translate(0px, 0px) scale(1); }
-      50% { transform: translate(30px, -35px) scale(1.1); }
+      0%, 100% { transform: translate3d(0px, 0px, 0) scale(1); }
+      50% { transform: translate3d(15px, -20px, 0) scale(1.04); }
     }
 
     @keyframes emblemFloat {
-      0%, 100% { transform: translateY(48px) rotate(0deg) scale(1.02); }
-      50% { transform: translateY(28px) rotate(2.5deg) scale(1.06); }
+      0%, 100% { transform: translate3d(0, 35px, 0) scale(1.02); }
+      50% { transform: translate3d(0, 20px, 0) scale(1.04); }
     }
 
-    .animate-orb-1 { animation: orbDriftOne 14s ease-in-out infinite; }
-    .animate-orb-2 { animation: orbDriftTwo 18s ease-in-out infinite; }
-    .animate-orb-3 { animation: orbDriftThree 16s ease-in-out infinite; }
-    .animate-emblem { animation: emblemFloat 22s ease-in-out infinite; }
+    .animate-orb-1 {
+      animation: orbDriftOne 18s ease-in-out infinite;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    .animate-orb-2 {
+      animation: orbDriftTwo 22s ease-in-out infinite;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    .animate-orb-3 {
+      animation: orbDriftThree 20s ease-in-out infinite;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    .animate-emblem {
+      animation: emblemFloat 26s ease-in-out infinite;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
 
     /* ================= SLIDE & REVEAL ANIMATIONS ================= */
     .reveal-slide-up {
@@ -292,18 +310,18 @@
 </head>
 <body class="bg-white text-neutral-800 font-body antialiased min-h-screen relative overflow-x-hidden selection:bg-fest-orange/30 selection:text-fest-red">
 
-  <!-- Ambient Rich Top Atmosphere with Moving Orbs & Floating Emblem -->
+  <!-- Ambient Rich Top Atmosphere with Moving Orbs & Floating Emblem (Hardware Accelerated) -->
   <div class="absolute top-0 left-0 right-0 h-[880px] bg-gradient-to-b from-fest-red-dark via-fest-red to-[#9B1B3A] pointer-events-none z-0 overflow-hidden">
-    <div class="animate-orb-1 absolute -top-32 -left-20 w-[440px] h-[440px] rounded-full bg-fest-orange/35 blur-[95px]"></div>
-    <div class="animate-orb-2 absolute top-44 -right-24 w-[400px] h-[400px] rounded-full bg-fest-gold/30 blur-[105px]"></div>
-    <div class="animate-orb-3 absolute top-[460px] left-1/4 w-[360px] h-[360px] rounded-full bg-fest-orange-warm/25 blur-[100px]"></div>
+    <div class="animate-orb-1 absolute -top-32 -left-20 w-[440px] h-[440px] rounded-full bg-fest-orange/30 blur-3xl pointer-events-none"></div>
+    <div class="animate-orb-2 absolute top-44 -right-24 w-[400px] h-[400px] rounded-full bg-fest-gold/25 blur-3xl pointer-events-none"></div>
+    <div class="animate-orb-3 absolute top-[460px] left-1/4 w-[360px] h-[360px] rounded-full bg-fest-orange-warm/20 blur-3xl pointer-events-none"></div>
 
     <!-- Soft transition scrim into pure white lower half -->
     <div class="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-b from-transparent to-[#F5EBD0] z-10"></div>
 
     <!-- Floating Parallax Traditional Emblems Background -->
-    <div id="parallax-emblem" class="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden transition-transform duration-150 ease-out">
-      <img alt="Al Murafaqa Traditional Emblems Background" class="animate-emblem w-[112%] max-w-none opacity-25 mix-blend-screen object-contain filter contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAQhZWrvrBGD3Fhaf0WGc-8D04RAKoUiV_BaO7ch3fx0rjABRvB8TOKSfj6RTfwyN38lvIxIvALuUNy0o8OHQ_O7Z6AdtdUO36iN9tJQ4ES4FcFFclvDME8PWXi1pl0CbEqNoc2tcnA3-BNkwWuDIZ_XshJ7bWLQzfWt6WF9keE8erFb1ZUxA--H6C55Y_5Dy3v5rVgvRThICr-BfBxKLBjKp7MVezLWlxQuL0nWYpQw_YAVMGan04ZQ">
+    <div id="parallax-emblem" class="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+      <img alt="Al Murafaqa Traditional Emblems Background" class="animate-emblem w-[112%] max-w-none opacity-20 mix-blend-screen object-contain pointer-events-none" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAQhZWrvrBGD3Fhaf0WGc-8D04RAKoUiV_BaO7ch3fx0rjABRvB8TOKSfj6RTfwyN38lvIxIvALuUNy0o8OHQ_O7Z6AdtdUO36iN9tJQ4ES4FcFFclvDME8PWXi1pl0CbEqNoc2tcnA3-BNkwWuDIZ_XshJ7bWLQzfWt6WF9keE8erFb1ZUxA--H6C55Y_5Dy3v5rVgvRThICr-BfBxKLBjKp7MVezLWlxQuL0nWYpQw_YAVMGan04ZQ">
     </div>
   </div>
 
@@ -1269,13 +1287,21 @@
 
     revealElements.forEach((el) => revealObserver.observe(el));
 
-    // Subtle Parallax on Background Emblem during Scroll
+    // High-Performance Throttled Parallax on Background Emblem during Scroll
     const parallaxEmblem = document.getElementById('parallax-emblem');
+    let scrollTicking = false;
     window.addEventListener('scroll', () => {
-      if (!parallaxEmblem) return;
-      const scrollY = window.scrollY;
-      if (scrollY < 900) {
-        parallaxEmblem.style.transform = `translateY(${scrollY * 0.18}px)`;
+      if (!scrollTicking) {
+        window.requestAnimationFrame(() => {
+          if (parallaxEmblem) {
+            const scrollY = window.scrollY;
+            if (scrollY < 800) {
+              parallaxEmblem.style.transform = `translate3d(0, ${Math.round(scrollY * 0.12)}px, 0)`;
+            }
+          }
+          scrollTicking = false;
+        });
+        scrollTicking = true;
       }
     }, { passive: true });
 
@@ -1357,12 +1383,8 @@
         const filter = chip.getAttribute('data-filter');
         scheduleCards.forEach((card) => {
           const categories = card.getAttribute('data-category') || '';
-          card.classList.remove('card-slide-enter');
-          void card.offsetWidth; // trigger reflow for slide animation
-
           if (filter === 'all' || categories.includes(filter)) {
             card.classList.remove('hidden');
-            card.classList.add('card-slide-enter');
           } else {
             card.classList.add('hidden');
           }

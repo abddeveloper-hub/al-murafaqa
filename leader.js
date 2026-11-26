@@ -1143,10 +1143,19 @@ function setupEventListeners() {
   document.getElementById('form-student')?.addEventListener('submit', handleSaveStudent);
   document.getElementById('form-team-group')?.addEventListener('submit', handleSaveTeamGroup);
 
-  // Search & Filter Listeners
-  document.getElementById('search-students')?.addEventListener('input', renderStudentsTable);
+  // Search & Filter Listeners (Debounced for Silky Smooth Typing)
+  let stuSearchTimer = null;
+  document.getElementById('search-students')?.addEventListener('input', () => {
+    if (stuSearchTimer) clearTimeout(stuSearchTimer);
+    stuSearchTimer = setTimeout(renderStudentsTable, 100);
+  });
   document.getElementById('filter-student-category')?.addEventListener('change', renderStudentsTable);
-  document.getElementById('search-teams')?.addEventListener('input', renderTeamsGrid);
+
+  let teamSearchTimer = null;
+  document.getElementById('search-teams')?.addEventListener('input', () => {
+    if (teamSearchTimer) clearTimeout(teamSearchTimer);
+    teamSearchTimer = setTimeout(renderTeamsGrid, 100);
+  });
   document.getElementById('filter-team-category')?.addEventListener('change', renderTeamsGrid);
   document.getElementById('filter-programme-day')?.addEventListener('change', renderProgrammesGrid);
   document.getElementById('filter-programme-category')?.addEventListener('change', renderProgrammesGrid);

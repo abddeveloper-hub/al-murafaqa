@@ -36,10 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   await checkAuthSession();
 });
 
+let lucideDebounceTimer = null;
 function initLucide() {
-  if (window.lucide && typeof window.lucide.createIcons === 'function') {
-    window.lucide.createIcons();
-  }
+  if (lucideDebounceTimer) clearTimeout(lucideDebounceTimer);
+  lucideDebounceTimer = setTimeout(() => {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }, 60);
 }
 
 function isAdminSession(session) {
@@ -364,6 +368,23 @@ function setupEventListeners() {
   });
 }
 
+// Helper to render only the requested tab on-demand
+function renderCurrentTab(tabId = currentTab) {
+  if (tabId === 'overview') renderOverview();
+  else if (tabId === 'announcements') renderAnnouncementsTab();
+  else if (tabId === 'events') renderEventsTab();
+  else if (tabId === 'registrations') renderRegistrationsTab();
+  else if (tabId === 'checkin') renderCheckInTab();
+  else if (tabId === 'winners') renderWinnersTab();
+  else if (tabId === 'stageops') { renderStageOpsTab(); startAudioWaveSimulator(); }
+  else if (tabId === 'scoring') renderScoringTab();
+  else if (tabId === 'analytics') renderAnalyticsTab();
+  else if (tabId === 'settings') renderAuditLog();
+  else if (tabId === 'restrictions') renderRestrictionsTab();
+  else if (tabId === 'teamleaders') renderTeamLeadersTab();
+  else renderOverview();
+}
+
 // Switch Active Tab
 function switchTab(tabId) {
   currentTab = tabId;
@@ -383,14 +404,14 @@ function switchTab(tabId) {
     pane.classList.toggle('hidden', !isTarget);
   });
 
-  // Render reactive tab views when switched
-  if (tabId === 'stageops') renderStageOpsTab();
-  if (tabId === 'scoring') renderScoringTab();
-  if (tabId === 'analytics') renderAnalyticsTab();
-  if (tabId === 'settings') renderAuditLog();
-  if (tabId === 'restrictions') renderRestrictionsTab();
-  if (tabId === 'teamleaders') renderTeamLeadersTab();
+  // Pause background visualizer interval if switching away from stageops
+  if (tabId !== 'stageops' && audioVisualizerInterval) {
+    clearInterval(audioVisualizerInterval);
+    audioVisualizerInterval = null;
+  }
 
+  // Render active tab view immediately
+  renderCurrentTab(tabId);
   initLucide();
 }
 window.switchTab = switchTab;
@@ -425,20 +446,20 @@ async function loadAllData() {
     cachedRestrictions = restrictions || null;
     cachedTeamLeaders = teamLeaders || [];
 
-    renderOverview();
-    renderAnnouncementsTab();
-    renderEventsTab();
-    renderRegistrationsTab();
-    renderCheckInTab();
-    renderWinnersTab();
-    renderStageOpsTab();
-    renderScoringTab();
-    renderAnalyticsTab();
-    renderAuditLog();
-    renderRestrictionsTab();
-    renderTeamLeadersTab();
+    // Render active tab immediately for snappy responsiveness
+    renderCurrentTab();
 
-    initLucide();
+    // Render background tabs in non-blocking idle tasks so UI stays silky smooth
+    setTimeout(() => {
+      if (currentTab !== 'overview') renderOverview();
+      if (currentTab !== 'events') renderEventsTab();
+      if (currentTab !== 'registrations') renderRegistrationsTab();
+      if (currentTab !== 'announcements') renderAnnouncementsTab();
+      if (currentTab !== 'checkin') renderCheckInTab();
+      if (currentTab !== 'winners') renderWinnersTab();
+      if (currentTab !== 'teamleaders') renderTeamLeadersTab();
+      initLucide();
+    }, 100);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
     showToast('Failed to load live data. Retrying with local cache.', 'error');
@@ -3736,6 +3757,12 @@ function startAudioWaveSimulator() {
   if (audioVisualizerInterval) clearInterval(audioVisualizerInterval);
 
   audioVisualizerInterval = setInterval(() => {
+    // Only run if on stageops tab and element exists
+    if (currentTab !== 'stageops') {
+      clearInterval(audioVisualizerInterval);
+      audioVisualizerInterval = null;
+      return;
+    }
     const barsContainer = document.getElementById('stage-audio-bars');
     const dbEl = document.getElementById('stage-audio-db');
     if (!barsContainer) return;
@@ -3750,7 +3777,7 @@ function startAudioWaveSimulator() {
       const db = (-12.0 - Math.random() * 8.5).toFixed(1);
       dbEl.textContent = `${db} dB`;
     }
-  }, 180);
+  }, 400); // throttled from 180ms to 400ms to eliminate CPU spikes
 }
 
 // Enhance Podium Rendering in renderAnalyticsTab
