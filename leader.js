@@ -524,17 +524,17 @@ function renderTeamsGrid() {
     const targetEvent = cachedEvents.find((e) => e.id === team.event_id);
 
     const card = document.createElement('div');
-    card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-brand-300 transition-all';
+    card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-brand-300 transition-all overflow-hidden min-w-0';
     card.innerHTML = `
-      <div>
+      <div class="min-w-0">
         <div class="flex items-start justify-between gap-2">
-          <div>
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+          <div class="min-w-0 flex-1">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200 max-w-full truncate">
               ${escapeHtml(team.category || 'General')}
             </span>
-            <h3 class="text-base font-bold text-slate-900 mt-1">${escapeHtml(team.team_name)}</h3>
+            <h3 class="text-base font-bold text-slate-900 mt-1 truncate">${escapeHtml(team.team_name)}</h3>
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 shrink-0">
             <button 
               type="button" 
               class="p-1.5 text-slate-400 hover:text-brand-700 rounded-lg transition-colors" 
@@ -975,9 +975,9 @@ function openAllocationModal(eventId) {
         ${isChecked ? 'checked' : ''}
       />
       <div class="min-w-0 flex-1">
-        <div class="flex items-center justify-between">
-          <span class="font-bold text-slate-900 text-xs">${escapeHtml(student.student_name)}</span>
-          <span class="font-mono text-[10px] font-bold text-slate-500">${escapeHtml(student.student_code)}</span>
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-bold text-slate-900 text-xs truncate">${escapeHtml(student.student_name)}</span>
+          <span class="font-mono text-[10px] font-bold text-slate-500 shrink-0">${escapeHtml(student.student_code)}</span>
         </div>
         <div class="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
           <span>${escapeHtml(student.category)}</span>

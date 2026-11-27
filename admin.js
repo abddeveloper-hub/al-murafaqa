@@ -30,6 +30,8 @@ let cachedStageOps = null;
 let cachedAuditLogs = [];
 let cachedRestrictions = null;
 let cachedTeamLeaders = [];
+let cachedTeamStudents = [];
+let cachedTeamAssignments = [];
 let activeRole = 'superadmin'; // 'superadmin' | 'jury' | 'marshal' | 'stageops'
 let currentAttendeeLookup = null;
 let html5QrScanner = null;
@@ -437,7 +439,7 @@ window.switchTab = switchTab;
 
 async function loadAllData() {
   try {
-    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders, categories] = await Promise.all([
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders, categories, teamStudents, teamAssignments] = await Promise.all([
       db.getSettings(),
       db.getEvents(),
       db.getRegistrations(),
@@ -449,6 +451,8 @@ async function loadAllData() {
       db.getRestrictions ? db.getRestrictions() : null,
       db.getTeamLeaders ? db.getTeamLeaders() : [],
       db.getCategories ? db.getCategories() : [],
+      db.getTeamStudents ? db.getTeamStudents() : [],
+      db.getTeamAssignments ? db.getTeamAssignments() : [],
     ]);
 
     cachedSettings = settings;
@@ -462,6 +466,8 @@ async function loadAllData() {
     cachedRestrictions = restrictions || null;
     cachedTeamLeaders = teamLeaders || [];
     cachedCategories = categories || [];
+    cachedTeamStudents = teamStudents || [];
+    cachedTeamAssignments = teamAssignments || [];
     window.festivalCategories = cachedCategories;
 
     populateCategoryDropdowns();
@@ -2227,6 +2233,7 @@ function renderWinnersTab() {
 function setupWinnersControls() {
   const form = document.getElementById('winners-form');
   const select = document.getElementById('winner-event-select');
+  const btnAutoFill = document.getElementById('btn-autofill-winners-from-scores');
 
   if (select) {
     select.addEventListener('change', () => {
@@ -2247,6 +2254,49 @@ function setupWinnersControls() {
       if (pubToggle) {
         pubToggle.checked = existing.length > 0 ? Boolean(existing[0]?.published) : true;
       }
+
+      // Populate datalist autocomplete for this event's competitors
+      const datalist = document.getElementById('winner-competitors-datalist');
+      if (datalist) {
+        const comps = getEventCompetitors(eventId);
+        datalist.innerHTML = comps.map((c) => `<option value="${escapeHtml(c.name)}" data-college="${escapeHtml(c.college)}">${escapeHtml(c.college)}</option>`).join('');
+      }
+    });
+  }
+
+  // Auto-fill college name when choosing a competitor from datalist
+  [1, 2, 3].forEach((pos) => {
+    const nameEl = document.getElementById(`win-${pos}-name`);
+    const collegeEl = document.getElementById(`win-${pos}-college`);
+    if (nameEl && collegeEl) {
+      nameEl.addEventListener('change', () => {
+        const eventId = select?.value;
+        if (!eventId || collegeEl.value.trim()) return;
+        const val = nameEl.value.trim().toLowerCase();
+        const match = getEventCompetitors(eventId).find((c) => c.name.toLowerCase() === val);
+        if (match && match.college) collegeEl.value = match.college;
+      });
+    }
+  });
+
+  if (btnAutoFill) {
+    btnAutoFill.addEventListener('click', () => {
+      const eventId = select?.value;
+      if (!eventId) {
+        showToast('Select a competition first', 'warning');
+        return;
+      }
+      const ranked = getRankedScoresForEvent(eventId);
+      if (ranked.length === 0) {
+        showToast('No saved Jury Scores found for this competition yet', 'warning');
+        return;
+      }
+      [1, 2, 3].forEach((pos, idx) => {
+        const item = ranked[idx];
+        document.getElementById(`win-${pos}-name`).value = item ? item.team_name : '';
+        document.getElementById(`win-${pos}-college`).value = item ? item.college_name : '';
+      });
+      showToast(`Filled Top ${Math.min(3, ranked.length)} from Jury Scores! Click Publish to save.`, 'success');
     });
   }
 
@@ -2873,30 +2923,253 @@ async function concludeStagePerformance() {
 // 13. JURY & COMPETITOR SCORING PORTAL
 // ==============================================================================
 
+let scoringMode = 'quick'; // 'quick' | 'bulk' | 'rubric'
+let currentPenaltyPoints = 0;
+
+function getEventCompetitors(eventId) {
+  if (!eventId) return [];
+  const items = [];
+  const seen = new Set();
+
+  const addUnique = (entry) => {
+    const cleanName = (entry.name || '').trim();
+    if (!cleanName) return;
+    const normKey = `${cleanName.toLowerCase()}__${(entry.college || '').trim().toLowerCase()}`;
+    if (seen.has(normKey)) return;
+    seen.add(normKey);
+    items.push(entry);
+  };
+
+  // 1. Direct Registrations for this event
+  (cachedRegistrations || [])
+    .filter((r) => r.event_id === eventId)
+    .forEach((r) => {
+      const baseName = r.team_name || r.leader_name || 'Participant';
+      addUnique({
+        key: `reg_${r.id}`,
+        registration_id: r.id,
+        name: baseName,
+        college: r.college_name || '',
+        source: r.ticket_code ? `Reg (${r.ticket_code})` : 'Registered',
+      });
+    });
+
+  // 2. Team Leader Portal Assignments & Student Roster for this event
+  const leaderMap = new Map((cachedTeamLeaders || []).map((l) => [l.id, l]));
+  const studentMap = new Map((cachedTeamStudents || []).map((s) => [s.id, s]));
+
+  (cachedTeamAssignments || [])
+    .filter((a) => a.event_id === eventId)
+    .forEach((a) => {
+      const leader = leaderMap.get(a.team_leader_id);
+      const inst = leader?.institution_name || leader?.team_name || 'Delegation';
+      const sIds = Array.isArray(a.student_ids) ? a.student_ids : [];
+      sIds.forEach((sid) => {
+        const stu = studentMap.get(sid);
+        if (stu) {
+          addUnique({
+            key: `stu_${stu.id}`,
+            registration_id: a.registration_id || null,
+            name: stu.student_name,
+            college: inst,
+            source: stu.student_code ? `Roster (${stu.student_code})` : 'Roster',
+          });
+        }
+      });
+    });
+
+  // 3. Students whose assigned_events array mentions this eventId
+  (cachedTeamStudents || []).forEach((stu) => {
+    const evList = Array.isArray(stu.assigned_events) ? stu.assigned_events : [];
+    if (evList.some((ev) => ev && ev.event_id === eventId)) {
+      const leader = leaderMap.get(stu.team_leader_id);
+      const inst = leader?.institution_name || leader?.team_name || 'Delegation';
+      addUnique({
+        key: `stu_${stu.id}`,
+        registration_id: null,
+        name: stu.student_name,
+        college: inst,
+        source: stu.student_code ? `Roster (${stu.student_code})` : 'Roster',
+      });
+    }
+  });
+
+  return items;
+}
+
+function splitTotalToRubricCriteria(rawOutOf100) {
+  const clamped = Math.max(0, Math.min(100, Math.round(Number(rawOutOf100) || 0)));
+  const c1 = Math.min(30, Math.round(clamped * 0.3));
+  const c2 = Math.min(30, Math.round(clamped * 0.3));
+  const c3 = Math.min(20, Math.round(clamped * 0.2));
+  const c4 = Math.max(0, Math.min(20, clamped - c1 - c2 - c3));
+  return { c1, c2, c3, c4 };
+}
+
+function getScoreGroupKey(s) {
+  if (s.registration_id) return `reg_${s.registration_id}`;
+  return `name_${(s.team_name || '').trim().toLowerCase()}__${(s.college_name || '').trim().toLowerCase()}`;
+}
+
+function getRankedScoresForEvent(eventId) {
+  const scores = (cachedScores || []).filter((s) => s.event_id === eventId);
+  const aggregated = {};
+  scores.forEach((s) => {
+    const key = getScoreGroupKey(s);
+    if (!aggregated[key]) {
+      aggregated[key] = {
+        group_key: key,
+        registration_id: s.registration_id || null,
+        team_name: s.team_name,
+        college_name: s.college_name,
+        total_score: 0,
+        judge_count: 0,
+        score_ids: [],
+        last_score: s,
+      };
+    }
+    aggregated[key].total_score += Number(s.total_score || 0);
+    aggregated[key].judge_count += 1;
+    if (s.id) aggregated[key].score_ids.push(s.id);
+    aggregated[key].last_score = s;
+  });
+
+  return Object.values(aggregated)
+    .map((item) => ({
+      ...item,
+      avg_score: Math.round(item.total_score / Math.max(1, item.judge_count)),
+    }))
+    .sort((a, b) => b.avg_score - a.avg_score);
+}
+
+function setScoringMode(mode) {
+  scoringMode = mode;
+  const quickBtn = document.getElementById('btn-score-mode-quick');
+  const bulkBtn = document.getElementById('btn-score-mode-bulk');
+  const rubricBtn = document.getElementById('btn-score-mode-rubric');
+
+  const activeCls = 'px-3.5 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white shadow-xs transition-all cursor-pointer';
+  const idleCls = 'px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all cursor-pointer';
+
+  if (quickBtn) quickBtn.className = mode === 'quick' ? activeCls : idleCls;
+  if (bulkBtn) bulkBtn.className = mode === 'bulk' ? activeCls : idleCls;
+  if (rubricBtn) rubricBtn.className = mode === 'rubric' ? activeCls : idleCls;
+
+  const singlePanel = document.getElementById('scoring-single-panel');
+  const bulkPanel = document.getElementById('scoring-bulk-panel');
+  const quickSec = document.getElementById('scoring-quick-section');
+  const rubricSec = document.getElementById('scoring-rubric-section');
+
+  if (mode === 'bulk') {
+    singlePanel?.classList.add('hidden');
+    bulkPanel?.classList.remove('hidden');
+    const evId = document.getElementById('scoring-event-select')?.value;
+    renderBulkScoringSheet(evId);
+  } else {
+    singlePanel?.classList.remove('hidden');
+    bulkPanel?.classList.add('hidden');
+    if (mode === 'rubric') {
+      quickSec?.classList.add('hidden');
+      rubricSec?.classList.remove('hidden');
+    } else {
+      quickSec?.classList.remove('hidden');
+      rubricSec?.classList.add('hidden');
+    }
+    updateFinalScoreCalculation();
+  }
+}
+
 function setupScoringControls() {
   const evSelect = document.getElementById('scoring-event-select');
   if (evSelect) {
     evSelect.addEventListener('change', () => {
+      resetScoreEditState();
       populateScoringTeams(evSelect.value);
       renderScoringLeaderboard(evSelect.value);
+      if (scoringMode === 'bulk') renderBulkScoringSheet(evSelect.value);
     });
   }
 
-  // Rubric Sliders
+  // Mode Switchers
+  document.getElementById('btn-score-mode-quick')?.addEventListener('click', () => setScoringMode('quick'));
+  document.getElementById('btn-score-mode-bulk')?.addEventListener('click', () => setScoringMode('bulk'));
+  document.getElementById('btn-score-mode-rubric')?.addEventListener('click', () => setScoringMode('rubric'));
+
+  // Manual competitor toggle
+  document.getElementById('btn-toggle-manual-competitor')?.addEventListener('click', () => {
+    const box = document.getElementById('scoring-manual-competitor-box');
+    const select = document.getElementById('scoring-team-select');
+    if (!box) return;
+    const isHidden = box.classList.contains('hidden');
+    box.classList.toggle('hidden', !isHidden);
+    if (isHidden) {
+      if (select) select.value = '__manual__';
+      document.getElementById('scoring-manual-name')?.focus();
+    } else if (select && select.options.length > 0) {
+      select.selectedIndex = 0;
+    }
+  });
+
+  document.getElementById('scoring-team-select')?.addEventListener('change', (e) => {
+    const box = document.getElementById('scoring-manual-competitor-box');
+    if (box) {
+      box.classList.toggle('hidden', e.target.value !== '__manual__');
+    }
+  });
+
+  // Quick Score Input, Slider, Steppers, Presets
+  const quickInput = document.getElementById('quick-score-input');
+  const quickSlider = document.getElementById('quick-score-slider');
+  const setQuickScoreVal = (val) => {
+    const num = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+    if (quickInput) quickInput.value = num;
+    if (quickSlider) quickSlider.value = num;
+    updateFinalScoreCalculation();
+  };
+
+  quickInput?.addEventListener('input', () => {
+    const clamped = Math.max(0, Math.min(100, parseInt(quickInput.value, 10) || 0));
+    if (quickSlider) quickSlider.value = clamped;
+    updateFinalScoreCalculation();
+  });
+  quickSlider?.addEventListener('input', () => setQuickScoreVal(quickSlider.value));
+
+  document.querySelectorAll('.btn-quick-step').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const delta = parseInt(btn.getAttribute('data-delta') || '0', 10);
+      const cur = parseInt(quickInput?.value || '0', 10) || 0;
+      setQuickScoreVal(cur + delta);
+    });
+  });
+
+  document.querySelectorAll('.btn-score-preset').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setQuickScoreVal(btn.getAttribute('data-score'));
+    });
+  });
+
+  // Rubric Sliders + Number Inputs (Bidirectional)
   ['rubric-crit-1', 'rubric-crit-2', 'rubric-crit-3', 'rubric-crit-4'].forEach((id, idx) => {
     const slider = document.getElementById(id);
+    const numEl = document.getElementById(`rubric-num-${idx + 1}`);
+    const max = idx < 2 ? 30 : 20;
+
     if (slider) {
       slider.addEventListener('input', () => {
-        const valEl = document.getElementById(`score-val-${idx + 1}`);
-        const max = idx < 2 ? 30 : 20;
-        if (valEl) valEl.textContent = `${slider.value} / ${max}`;
+        if (numEl) numEl.value = slider.value;
+        updateFinalScoreCalculation();
+      });
+    }
+    if (numEl) {
+      numEl.addEventListener('input', () => {
+        const clamped = Math.max(0, Math.min(max, parseInt(numEl.value, 10) || 0));
+        if (slider) slider.value = clamped;
         updateFinalScoreCalculation();
       });
     }
   });
 
   // Penalty Buttons
-  let currentPenaltyPoints = 0;
   document.querySelectorAll('.btn-penalty').forEach((btn) => {
     btn.addEventListener('click', () => {
       const pts = parseInt(btn.getAttribute('data-points') || '0', 10);
@@ -2913,49 +3186,70 @@ function setupScoringControls() {
     });
   });
 
-  const btnResetPenalty = document.getElementById('btn-reset-penalties');
-  if (btnResetPenalty) {
-    btnResetPenalty.addEventListener('click', () => {
-      currentPenaltyPoints = 0;
-      const pDisplay = document.getElementById('score-penalty-display');
-      if (pDisplay) pDisplay.textContent = '0 Pts Deducted';
-      const pReason = document.getElementById('score-penalty-reason');
-      if (pReason) pReason.value = '';
-      updateFinalScoreCalculation();
-    });
-  }
+  document.getElementById('btn-reset-penalties')?.addEventListener('click', () => {
+    currentPenaltyPoints = 0;
+    const pDisplay = document.getElementById('score-penalty-display');
+    if (pDisplay) pDisplay.textContent = '0 Pts Deducted';
+    const pReason = document.getElementById('score-penalty-reason');
+    if (pReason) pReason.value = '';
+    updateFinalScoreCalculation();
+  });
 
-  // Submit Score Button
-  const btnSubmitScore = document.getElementById('btn-submit-score');
-  if (btnSubmitScore) {
-    btnSubmitScore.addEventListener('click', submitScorecard);
-  }
-
-  // Push to Podium Button
-  const btnPushPodium = document.getElementById('btn-push-to-podium');
-  if (btnPushPodium) {
-    btnPushPodium.addEventListener('click', pushLeaderboardToPodium);
-  }
+  // Submit / Cancel Edit / Bulk Save / Push to Podium
+  document.getElementById('btn-submit-score')?.addEventListener('click', submitScorecard);
+  document.getElementById('btn-cancel-edit-score')?.addEventListener('click', resetScoreEditState);
+  document.getElementById('btn-save-bulk-scores')?.addEventListener('click', saveBulkScores);
+  document.getElementById('btn-push-to-podium')?.addEventListener('click', pushLeaderboardToPodium);
 
   // Print Certificate Button in Modal
-  const btnPrintCert = document.getElementById('btn-print-certificate');
-  if (btnPrintCert) {
-    btnPrintCert.addEventListener('click', () => window.print());
-  }
+  document.getElementById('btn-print-certificate')?.addEventListener('click', () => window.print());
 }
 
 function updateFinalScoreCalculation() {
-  const c1 = parseInt(document.getElementById('rubric-crit-1')?.value || '0', 10);
-  const c2 = parseInt(document.getElementById('rubric-crit-2')?.value || '0', 10);
-  const c3 = parseInt(document.getElementById('rubric-crit-3')?.value || '0', 10);
-  const c4 = parseInt(document.getElementById('rubric-crit-4')?.value || '0', 10);
+  let rawTotal = 0;
+  if (scoringMode === 'rubric') {
+    const c1 = Math.max(0, Math.min(30, parseInt(document.getElementById('rubric-crit-1')?.value || '0', 10) || 0));
+    const c2 = Math.max(0, Math.min(30, parseInt(document.getElementById('rubric-crit-2')?.value || '0', 10) || 0));
+    const c3 = Math.max(0, Math.min(20, parseInt(document.getElementById('rubric-crit-3')?.value || '0', 10) || 0));
+    const c4 = Math.max(0, Math.min(20, parseInt(document.getElementById('rubric-crit-4')?.value || '0', 10) || 0));
+    rawTotal = c1 + c2 + c3 + c4;
+  } else {
+    rawTotal = Math.max(0, Math.min(100, parseInt(document.getElementById('quick-score-input')?.value || '0', 10) || 0));
+  }
 
-  const penaltyText = document.getElementById('score-penalty-display')?.textContent || '0';
-  const penalty = parseInt(penaltyText, 10) || 0;
-
-  const total = Math.max(0, c1 + c2 + c3 + c4 - penalty);
+  const total = Math.max(0, Math.min(100, rawTotal - currentPenaltyPoints));
   const totalEl = document.getElementById('score-final-total');
   if (totalEl) totalEl.textContent = total;
+
+  // Update SVG ring meter
+  const ring = document.getElementById('score-ring-circle');
+  if (ring) {
+    const circumference = 188.5;
+    ring.setAttribute('stroke-dashoffset', String((circumference - (circumference * total) / 100).toFixed(1)));
+  }
+
+  // Update Honors Tier label
+  const tierEl = document.getElementById('score-honors-tier');
+  if (tierEl) {
+    if (total >= 90) tierEl.textContent = 'Outstanding Gold Distinction';
+    else if (total >= 75) tierEl.textContent = 'First Class Distinction';
+    else if (total >= 60) tierEl.textContent = 'Merit Honours';
+    else tierEl.textContent = 'Participant Credit';
+  }
+}
+
+function resetScoreEditState() {
+  const editIdEl = document.getElementById('scoring-edit-id');
+  if (editIdEl) editIdEl.value = '';
+  const btnTxt = document.getElementById('btn-submit-score-text');
+  if (btnTxt) btnTxt.textContent = 'Save Score';
+  document.getElementById('btn-cancel-edit-score')?.classList.add('hidden');
+  currentPenaltyPoints = 0;
+  const pDisplay = document.getElementById('score-penalty-display');
+  if (pDisplay) pDisplay.textContent = '0 Pts Deducted';
+  const pReason = document.getElementById('score-penalty-reason');
+  if (pReason) pReason.value = '';
+  updateFinalScoreCalculation();
 }
 
 async function renderScoringTab() {
@@ -2963,31 +3257,151 @@ async function renderScoringTab() {
   if (!evSelect) return;
 
   const events = cachedEvents || [];
+  if (events.length === 0) {
+    evSelect.innerHTML = '<option value="">No competition tracks created yet</option>';
+    populateScoringTeams('');
+    renderScoringLeaderboard('');
+    return;
+  }
+
+  const prevSelected = evSelect.value;
   evSelect.innerHTML = events.map((e) => `
     <option value="${e.id}">${escapeHtml(e.title)} (${escapeHtml(e.category)})</option>
   `).join('');
 
-  if (events.length > 0) {
-    populateScoringTeams(events[0].id);
-    renderScoringLeaderboard(events[0].id);
-  }
+  const activeEventId = events.some((e) => e.id === prevSelected) ? prevSelected : events[0].id;
+  evSelect.value = activeEventId;
+  populateScoringTeams(activeEventId);
+  renderScoringLeaderboard(activeEventId);
+  if (scoringMode === 'bulk') renderBulkScoringSheet(activeEventId);
+  updateFinalScoreCalculation();
 }
 
 function populateScoringTeams(eventId) {
   const teamSelect = document.getElementById('scoring-team-select');
   if (!teamSelect) return;
 
-  const regs = (cachedRegistrations || []).filter((r) => r.event_id === eventId);
-  if (regs.length === 0) {
-    teamSelect.innerHTML = '<option value="">No registered teams for this track</option>';
+  const competitors = getEventCompetitors(eventId);
+  let optsHtml = competitors.map((c) => `
+    <option value="${escapeHtml(c.key)}" data-reg-id="${escapeHtml(c.registration_id || '')}" data-name="${escapeHtml(c.name)}" data-college="${escapeHtml(c.college)}">
+      ${escapeHtml(c.name)}${c.college ? ` — ${escapeHtml(c.college)}` : ''} [${escapeHtml(c.source)}]
+    </option>
+  `).join('');
+
+  optsHtml += `<option value="__manual__">+ Type Competitor Name Manually...</option>`;
+  teamSelect.innerHTML = optsHtml;
+
+  const manualBox = document.getElementById('scoring-manual-competitor-box');
+  if (competitors.length === 0) {
+    teamSelect.value = '__manual__';
+    manualBox?.classList.remove('hidden');
+  } else {
+    teamSelect.selectedIndex = 0;
+    manualBox?.classList.add('hidden');
+  }
+}
+
+function renderBulkScoringSheet(eventId) {
+  const container = document.getElementById('scoring-bulk-list');
+  if (!container) return;
+
+  const competitors = getEventCompetitors(eventId);
+  if (competitors.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500">
+        No registered or assigned competitors found for this track yet. Switch to <strong>Quick Score (Easy)</strong> and click <strong>+ Type Name Manually</strong> to grade any participant.
+      </div>
+    `;
     return;
   }
 
-  teamSelect.innerHTML = regs.map((r) => `
-    <option value="${r.id}" data-name="${escapeHtml(r.team_name || r.leader_name)}" data-college="${escapeHtml(r.college_name)}">
-      ${escapeHtml(r.team_name || r.leader_name)} (${escapeHtml(r.college_name)})
-    </option>
-  `).join('');
+  const judgeName = (document.getElementById('scoring-judge-name')?.value || 'Judge 1').trim().toLowerCase();
+  const existingScores = (cachedScores || []).filter((s) => s.event_id === eventId);
+
+  container.innerHTML = competitors.map((c) => {
+    const matchedScore = existingScores.find((s) =>
+      (s.judge_name || '').trim().toLowerCase() === judgeName &&
+      ((c.registration_id && s.registration_id === c.registration_id) ||
+       (!c.registration_id && (s.team_name || '').trim().toLowerCase() === c.name.trim().toLowerCase()))
+    );
+    const val = matchedScore ? matchedScore.total_score : '';
+
+    return `
+      <div class="bulk-score-row flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition-colors"
+           data-reg-id="${escapeHtml(c.registration_id || '')}"
+           data-name="${escapeHtml(c.name)}"
+           data-college="${escapeHtml(c.college)}"
+           data-score-id="${escapeHtml(matchedScore?.id || '')}">
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-slate-900 truncate">${escapeHtml(c.name)}</div>
+          <div class="text-[11px] text-slate-500 truncate">${escapeHtml(c.college || 'Independent')} • ${escapeHtml(c.source)}</div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <input type="number" min="0" max="100" value="${val}" placeholder="0–100" class="bulk-score-val w-20 h-9 px-2.5 bg-white border border-slate-300 focus:border-red-600 rounded-lg font-mono text-sm font-bold text-center text-slate-900 focus:outline-none">
+          <span class="text-[10px] font-bold text-slate-400">/100</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveBulkScores() {
+  const eventId = document.getElementById('scoring-event-select')?.value;
+  const judgeName = (document.getElementById('scoring-judge-name')?.value || 'Judge 1').trim();
+  if (!eventId) {
+    showToast('Please select a competition track first', 'warning');
+    return;
+  }
+
+  const rows = Array.from(document.querySelectorAll('#scoring-bulk-list .bulk-score-row'));
+  const toSave = [];
+  for (const row of rows) {
+    const rawStr = row.querySelector('.bulk-score-val')?.value?.trim();
+    if (!rawStr) continue;
+    const rawNum = Math.max(0, Math.min(100, parseInt(rawStr, 10) || 0));
+    const { c1, c2, c3, c4 } = splitTotalToRubricCriteria(rawNum);
+    const regId = row.getAttribute('data-reg-id') || null;
+    const existingId = row.getAttribute('data-score-id') || undefined;
+    toSave.push({
+      id: existingId || undefined,
+      event_id: eventId,
+      registration_id: regId || null,
+      team_name: row.getAttribute('data-name') || 'Competitor',
+      college_name: row.getAttribute('data-college') || '',
+      judge_name: judgeName,
+      criterion_technical: c1,
+      criterion_andalusian: c2,
+      criterion_creative: c3,
+      criterion_decorum: c4,
+      penalty_points: 0,
+      penalty_reason: '',
+      total_score: rawNum,
+    });
+  }
+
+  if (toSave.length === 0) {
+    showToast('Enter at least one mark (0–100) before saving', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btn-save-bulk-scores');
+  if (btn) btn.disabled = true;
+
+  try {
+    for (const scoreObj of toSave) {
+      await db.saveScore(scoreObj);
+    }
+    cachedScores = await db.getScores();
+    logAudit('BULK_SCORES_SAVED', `${judgeName} saved ${toSave.length} competitor marks`);
+    showToast(`Saved ${toSave.length} competitor score(s)!`, 'success');
+    renderBulkScoringSheet(eventId);
+    renderScoringLeaderboard(eventId);
+    renderAnalyticsTab();
+  } catch (err) {
+    showToast('Failed to save bulk scores: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function submitScorecard() {
@@ -2996,31 +3410,62 @@ async function submitScorecard() {
   const judgeInput = document.getElementById('scoring-judge-name');
 
   const eventId = evSelect?.value;
-  const regId = teamSelect?.value;
+  const teamKey = teamSelect?.value;
   const judgeName = (judgeInput?.value || 'Judge 1').trim();
 
-  if (!eventId || !regId) {
-    showToast('Please select both a competition track and a competitor', 'warning');
+  if (!eventId) {
+    showToast('Please select a competition track first', 'warning');
     return;
   }
 
-  const selectedOpt = teamSelect.options[teamSelect.selectedIndex];
-  const teamName = selectedOpt.getAttribute('data-name') || 'Competitor';
-  const collegeName = selectedOpt.getAttribute('data-college') || '';
+  let regId = null;
+  let teamName = '';
+  let collegeName = '';
 
-  const c1 = parseInt(document.getElementById('rubric-crit-1')?.value || '0', 10);
-  const c2 = parseInt(document.getElementById('rubric-crit-2')?.value || '0', 10);
-  const c3 = parseInt(document.getElementById('rubric-crit-3')?.value || '0', 10);
-  const c4 = parseInt(document.getElementById('rubric-crit-4')?.value || '0', 10);
+  if (teamKey === '__manual__' || !teamKey) {
+    teamName = (document.getElementById('scoring-manual-name')?.value || '').trim();
+    collegeName = (document.getElementById('scoring-manual-college')?.value || '').trim();
+    if (!teamName) {
+      showToast('Please enter the participant or team name', 'warning');
+      return;
+    }
+  } else {
+    const selectedOpt = teamSelect.options[teamSelect.selectedIndex];
+    regId = selectedOpt?.getAttribute('data-reg-id') || null;
+    teamName = selectedOpt?.getAttribute('data-name') || 'Competitor';
+    collegeName = selectedOpt?.getAttribute('data-college') || '';
+  }
 
-  const penaltyText = document.getElementById('score-penalty-display')?.textContent || '0';
-  const penalty = parseInt(penaltyText, 10) || 0;
+  let c1, c2, c3, c4, rawTotal;
+  if (scoringMode === 'rubric') {
+    c1 = Math.max(0, Math.min(30, parseInt(document.getElementById('rubric-crit-1')?.value || '0', 10) || 0));
+    c2 = Math.max(0, Math.min(30, parseInt(document.getElementById('rubric-crit-2')?.value || '0', 10) || 0));
+    c3 = Math.max(0, Math.min(20, parseInt(document.getElementById('rubric-crit-3')?.value || '0', 10) || 0));
+    c4 = Math.max(0, Math.min(20, parseInt(document.getElementById('rubric-crit-4')?.value || '0', 10) || 0));
+    rawTotal = c1 + c2 + c3 + c4;
+  } else {
+    rawTotal = Math.max(0, Math.min(100, parseInt(document.getElementById('quick-score-input')?.value || '0', 10) || 0));
+    ({ c1, c2, c3, c4 } = splitTotalToRubricCriteria(rawTotal));
+  }
+
+  const penalty = currentPenaltyPoints || 0;
   const reason = (document.getElementById('score-penalty-reason')?.value || '').trim();
-  const total = Math.max(0, c1 + c2 + c3 + c4 - penalty);
+  const total = Math.max(0, Math.min(100, rawTotal - penalty));
+
+  const editId = document.getElementById('scoring-edit-id')?.value || '';
+  const existingMatch = !editId
+    ? (cachedScores || []).find((s) =>
+        s.event_id === eventId &&
+        (s.judge_name || '').trim().toLowerCase() === judgeName.toLowerCase() &&
+        ((regId && s.registration_id === regId) ||
+         (!regId && (s.team_name || '').trim().toLowerCase() === teamName.toLowerCase()))
+      )
+    : null;
 
   const scoreObj = {
+    id: editId || existingMatch?.id || undefined,
     event_id: eventId,
-    registration_id: regId,
+    registration_id: regId || null,
     team_name: teamName,
     college_name: collegeName,
     judge_name: judgeName,
@@ -3037,9 +3482,16 @@ async function submitScorecard() {
     await db.saveScore(scoreObj);
     cachedScores = await db.getScores();
 
-    logAudit('SCORE_SUBMITTED', `${judgeName} awarded ${total}/100 to ${teamName} (${collegeName})`);
-    showToast(`Scorecard of ${total} pts submitted for ${teamName}!`, 'success');
+    logAudit('SCORE_SUBMITTED', `${judgeName} awarded ${total}/100 to ${teamName}${collegeName ? ` (${collegeName})` : ''}`);
+    showToast(`Saved ${total}/100 for ${teamName}!`, 'success');
 
+    resetScoreEditState();
+    if (teamKey === '__manual__') {
+      const mName = document.getElementById('scoring-manual-name');
+      const mCol = document.getElementById('scoring-manual-college');
+      if (mName) mName.value = '';
+      if (mCol) mCol.value = '';
+    }
     renderScoringLeaderboard(eventId);
     renderAnalyticsTab();
   } catch (err) {
@@ -3052,9 +3504,9 @@ async function renderScoringLeaderboard(eventId) {
   if (!tbody) return;
 
   if (!cachedScores) cachedScores = await db.getScores();
-  const scores = (cachedScores || []).filter((s) => s.event_id === eventId);
+  const ranked = eventId ? getRankedScoresForEvent(eventId) : [];
 
-  if (scores.length === 0) {
+  if (ranked.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="4" class="py-8 text-center text-slate-400">
@@ -3064,28 +3516,6 @@ async function renderScoringLeaderboard(eventId) {
     `;
     return;
   }
-
-  // Aggregate by registration_id
-  const aggregated = {};
-  scores.forEach((s) => {
-    if (!aggregated[s.registration_id]) {
-      aggregated[s.registration_id] = {
-        registration_id: s.registration_id,
-        team_name: s.team_name,
-        college_name: s.college_name,
-        total_score: 0,
-        judge_count: 0,
-        penalty_points: s.penalty_points || 0,
-      };
-    }
-    aggregated[s.registration_id].total_score += s.total_score;
-    aggregated[s.registration_id].judge_count += 1;
-  });
-
-  const ranked = Object.values(aggregated).map((item) => ({
-    ...item,
-    avg_score: Math.round(item.total_score / item.judge_count),
-  })).sort((a, b) => b.avg_score - a.avg_score);
 
   const evTitle = cachedEvents.find((e) => e.id === eventId)?.title || 'Festival Event';
 
@@ -3100,27 +3530,101 @@ async function renderScoringLeaderboard(eventId) {
 
     return `
       <tr class="${rankClass} hover:bg-slate-50/80 transition-colors">
-        <td class="py-2.5 px-3 text-sm font-extrabold whitespace-nowrap">
+        <td class="py-2.5 px-2.5 text-sm font-extrabold whitespace-nowrap">
           ${rankBadge}
         </td>
-        <td class="py-2.5 px-3 min-w-0">
+        <td class="py-2.5 px-2.5 min-w-0">
           <strong class="text-slate-900 block truncate">${escapeHtml(r.team_name)}</strong>
-          <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(r.college_name)} • ${r.judge_count} Judge(s)</span>
+          <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(r.college_name || 'Participant')} • ${r.judge_count} Judge(s)</span>
         </td>
         <td class="py-2.5 px-2 text-right font-mono font-bold text-red-600 text-sm whitespace-nowrap">
           ${r.avg_score}
         </td>
         <td class="py-2.5 px-2 text-center whitespace-nowrap">
-          <button type="button" class="btn-cert-gen p-1 text-slate-400 hover:text-amber-600 transition-colors" title="Print Certificate" data-name="${escapeHtml(r.team_name)}" data-college="${escapeHtml(r.college_name)}" data-event="${escapeHtml(evTitle)}" data-rank="${idx + 1}">
-            <span class="material-symbols-outlined text-[18px]">workspace_premium</span>
-          </button>
+          <div class="inline-flex items-center gap-0.5">
+            <button type="button" class="btn-edit-score p-1 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer" title="Edit Score" data-score-id="${escapeHtml(r.last_score?.id || '')}">
+              <span class="material-symbols-outlined text-[16px]">edit</span>
+            </button>
+            <button type="button" class="btn-cert-gen p-1 text-slate-400 hover:text-amber-600 transition-colors cursor-pointer" title="Print Certificate" data-name="${escapeHtml(r.team_name)}" data-college="${escapeHtml(r.college_name)}" data-event="${escapeHtml(evTitle)}" data-rank="${idx + 1}">
+              <span class="material-symbols-outlined text-[17px]">workspace_premium</span>
+            </button>
+            <button type="button" class="btn-del-score p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer" title="Delete Score" data-score-ids="${escapeHtml(r.score_ids.join(','))}" data-name="${escapeHtml(r.team_name)}">
+              <span class="material-symbols-outlined text-[16px]">delete</span>
+            </button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 
+  // Edit score click handlers
+  tbody.querySelectorAll('.btn-edit-score').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sid = btn.getAttribute('data-score-id');
+      const sObj = (cachedScores || []).find((s) => s.id === sid);
+      if (!sObj) return;
+
+      setScoringMode('quick');
+      document.getElementById('scoring-edit-id').value = sObj.id;
+      document.getElementById('btn-submit-score-text').textContent = 'Update Score';
+      document.getElementById('btn-cancel-edit-score')?.classList.remove('hidden');
+
+      const teamSelect = document.getElementById('scoring-team-select');
+      const manualBox = document.getElementById('scoring-manual-competitor-box');
+      let matchedOption = null;
+      if (teamSelect) {
+        matchedOption = Array.from(teamSelect.options).find((opt) =>
+          (sObj.registration_id && opt.getAttribute('data-reg-id') === sObj.registration_id) ||
+          ((opt.getAttribute('data-name') || '').toLowerCase() === (sObj.team_name || '').toLowerCase())
+        );
+      }
+      if (matchedOption) {
+        teamSelect.value = matchedOption.value;
+        manualBox?.classList.add('hidden');
+      } else if (teamSelect) {
+        teamSelect.value = '__manual__';
+        manualBox?.classList.remove('hidden');
+        document.getElementById('scoring-manual-name').value = sObj.team_name || '';
+        document.getElementById('scoring-manual-college').value = sObj.college_name || '';
+      }
+
+      if (sObj.judge_name) document.getElementById('scoring-judge-name').value = sObj.judge_name;
+      currentPenaltyPoints = Number(sObj.penalty_points || 0);
+      document.getElementById('score-penalty-display').textContent = `${currentPenaltyPoints} Pts Deducted`;
+      document.getElementById('score-penalty-reason').value = sObj.penalty_reason || '';
+
+      const rawVal = Math.min(100, Number(sObj.total_score || 0) + currentPenaltyPoints);
+      document.getElementById('quick-score-input').value = rawVal;
+      document.getElementById('quick-score-slider').value = rawVal;
+      updateFinalScoreCalculation();
+    });
+  });
+
+  // Delete score click handlers
+  tbody.querySelectorAll('.btn-del-score').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const name = btn.getAttribute('data-name') || 'this competitor';
+      const ids = (btn.getAttribute('data-score-ids') || '').split(',').filter(Boolean);
+      if (ids.length === 0) return;
+      if (!confirm(`Delete saved score(s) for "${name}"?`)) return;
+
+      try {
+        for (const id of ids) {
+          await db.deleteScore(id);
+        }
+        cachedScores = await db.getScores();
+        logAudit('SCORE_DELETED', `Deleted score entries for ${name}`);
+        showToast(`Deleted score for ${name}`, 'info');
+        renderScoringLeaderboard(eventId);
+        renderAnalyticsTab();
+      } catch (err) {
+        showToast('Failed to delete score: ' + err.message, 'error');
+      }
+    });
+  });
+
   // Attach Certificate click handlers
-  document.querySelectorAll('.btn-cert-gen').forEach((btn) => {
+  tbody.querySelectorAll('.btn-cert-gen').forEach((btn) => {
     btn.addEventListener('click', () => {
       const name = btn.getAttribute('data-name');
       const college = btn.getAttribute('data-college');
@@ -3139,35 +3643,15 @@ async function pushLeaderboardToPodium() {
     return;
   }
 
-  const scores = (cachedScores || []).filter((s) => s.event_id === eventId);
-  if (scores.length === 0) {
-    showToast('No scored teams available to push to podium', 'warning');
+  const ranked = getRankedScoresForEvent(eventId);
+  if (ranked.length === 0) {
+    showToast('No scored competitors available to publish', 'warning');
     return;
   }
 
-  // Aggregate
-  const aggregated = {};
-  scores.forEach((s) => {
-    if (!aggregated[s.registration_id]) {
-      aggregated[s.registration_id] = {
-        winner_name: s.team_name,
-        college_name: s.college_name,
-        total: 0,
-        count: 0,
-      };
-    }
-    aggregated[s.registration_id].total += s.total_score;
-    aggregated[s.registration_id].count += 1;
-  });
-
-  const ranked = Object.values(aggregated).map((i) => ({
-    ...i,
-    avg: Math.round(i.total / i.count),
-  })).sort((a, b) => b.avg - a.avg);
-
   const winnersArray = ranked.slice(0, 3).map((r, idx) => ({
     position: idx + 1,
-    winner_name: r.winner_name,
+    winner_name: r.team_name,
     college_name: r.college_name,
   }));
 
@@ -3179,7 +3663,7 @@ async function pushLeaderboardToPodium() {
 
     const evTitle = cachedEvents.find((e) => e.id === eventId)?.title || 'Event';
     logAudit('PODIUM_PUSHED_FROM_JURY', `Pushed top ${winnersArray.length} scored laureates to official podium for ${evTitle}`);
-    showToast(`Top ${winnersArray.length} laureates pushed directly to Official Podium!`, 'success');
+    showToast(`Top ${winnersArray.length} published directly to Official Results!`, 'success');
   } catch (err) {
     showToast('Failed to push winners: ' + err.message, 'error');
   }
