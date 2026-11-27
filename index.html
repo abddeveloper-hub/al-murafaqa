@@ -16,7 +16,9 @@
   <style>
     @layer base {
       html, body {
-        width: 100vw;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: clip;
         margin: 0;
         padding: 0;
         font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
@@ -193,8 +195,8 @@
         <img alt="Al Murafaqa Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
       </div>
       <div class="flex flex-col min-w-0 justify-center">
-        <span class="font-headline text-lg sm:text-xl text-white font-extrabold tracking-tight truncate leading-none">Al Murafaqa</span>
-        <span class="font-body text-[10px] sm:text-[11px] text-primary font-bold tracking-widest uppercase mt-0.5">QUINTA EDICION • Live</span>
+        <span class="font-headline text-lg sm:text-xl text-on-surface font-extrabold tracking-tight truncate leading-none">Al Murafaqa</span>
+        <span id="splash-live-status" class="font-body text-[10px] sm:text-[11px] text-primary font-bold tracking-widest uppercase mt-0.5">QUINTA EDICION • Cultural Fest</span>
       </div>
     </a>
 
@@ -323,6 +325,17 @@
         });
       });
     });
+  </script>
+  <script type="module">
+    import { db, evaluateFestLiveStatus } from './supabase-config.js';
+    try {
+      const settings = await db.getSettings();
+      const status = evaluateFestLiveStatus(settings?.fest_dates || []);
+      const el = document.getElementById('splash-live-status');
+      if (el && status.configured) {
+        el.textContent = `QUINTA EDICION • ${status.shortBadge}`;
+      }
+    } catch (_) {}
   </script>
 </body>
 </html>

@@ -3,7 +3,17 @@
 // Vanilla ES Module with full reactive controls and dual cloud/offline state
 // ==============================================================================
 
-import { db, isConfigured, generateLeaderToken, getShareablePortalUrl } from './supabase-config.js';
+import {
+  db,
+  isConfigured,
+  generateLeaderToken,
+  getShareablePortalUrl,
+  evaluateFestLiveStatus,
+  formatFestDateShort,
+  formatFestDateReadable,
+  formatFestTime12h,
+  normalizeFestDates,
+} from './supabase-config.js';
 
 // Global State
 let currentTab = 'overview';
@@ -356,6 +366,7 @@ function setupEventListeners() {
   setupBroadcastVideoModalControls();
   setupTeamLeaderControls();
   setupCategoryControls();
+  setupFestDatesControls();
 
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
@@ -383,7 +394,7 @@ function renderCurrentTab(tabId = currentTab) {
   else if (tabId === 'stageops') { renderStageOpsTab(); startAudioWaveSimulator(); }
   else if (tabId === 'scoring') renderScoringTab();
   else if (tabId === 'analytics') renderAnalyticsTab();
-  else if (tabId === 'settings') renderAuditLog();
+  else if (tabId === 'settings') { renderFestDatesManager(); renderAuditLog(); }
   else if (tabId === 'restrictions') renderRestrictionsTab();
   else if (tabId === 'teamleaders') renderTeamLeadersTab();
   else renderOverview();
@@ -454,8 +465,11 @@ async function loadAllData() {
     window.festivalCategories = cachedCategories;
 
     populateCategoryDropdowns();
+    populateEventDayDropdown();
     renderCategoriesManager();
     renderCategoriesSettingsPreview();
+    renderFestDatesManager();
+    updateAdminLiveDateBadges();
 
     // Auto-sync any local-only team leaders to Supabase once cloud tables are available
     if (db.isLive() && typeof db.syncLocalTeamLeadersToCloud === 'function') {
@@ -507,6 +521,7 @@ function renderOverview() {
   if (swMaint) swMaint.checked = cachedSettings.maintenance_mode;
 
   updateSwitchLabels();
+  updateAdminLiveDateBadges();
 
   // Calculate Metrics
   const totalRegs = cachedRegistrations.length;
@@ -798,6 +813,7 @@ function setupEmergencySwitches() {
     const previousValue = Boolean(cachedSettings?.[setting]);
     const nextValue = toggle.checked;
     updateSwitchLabels();
+  updateAdminLiveDateBadges();
 
     try {
       cachedSettings = await db.updateSettings({ [setting]: nextValue });
@@ -805,6 +821,7 @@ function setupEmergencySwitches() {
     } catch (err) {
       toggle.checked = previousValue;
       updateSwitchLabels();
+  updateAdminLiveDateBadges();
       showToast('Failed to save setting: ' + err.message, 'error');
     }
   };
@@ -895,6 +912,21 @@ function renderAnnouncementsTab() {
     if (videoDuration) videoDuration.value = cachedSettings.video_duration_note || '42 mins remaining';
 
     updateVideoPreview();
+
+    const syncNote = document.getElementById('admin-video-dates-sync-note');
+    if (syncNote) {
+      const liveState = evaluateFestLiveStatus(cachedSettings.fest_dates);
+      if (!liveState.configured) {
+        syncNote.textContent = 'No festival dates configured in Settings — manual toggle controls LIVE status.';
+        syncNote.className = 'text-[11px] text-slate-500 pl-6';
+      } else if (liveState.isLive) {
+        syncNote.textContent = `Active festival schedule is LIVE (${liveState.activeDay.shortDate} • Day ${liveState.activeDay.day_number}). Public page shows LIVE when checked.`;
+        syncNote.className = 'text-[11px] text-emerald-700 font-semibold pl-6';
+      } else {
+        syncNote.textContent = `Schedule status is ${liveState.bannerText} — public page shows "${liveState.shortBadge}" until an active festival date begins.`;
+        syncNote.className = 'text-[11px] text-amber-700 font-semibold pl-6';
+      }
+    }
   }
 
   const tbody = document.getElementById('announcements-table-body');
@@ -1198,8 +1230,9 @@ window.openAddProgrammeModal = function () {
   const form = document.getElementById('form-event-editor');
   if (form) form.reset();
   
-  // Ensure dropdown is populated with all configured categories
+  // Ensure dropdowns are populated with configured categories and dates
   populateCategoryDropdowns();
+  populateEventDayDropdown();
 
   const editId = document.getElementById('event-edit-id');
   if (editId) editId.value = '';
@@ -1225,7 +1258,14 @@ window.openAddProgrammeModal = function () {
   if (cap) cap.value = '30';
 
   const dayEl = document.getElementById('evt-day');
-  if (dayEl) dayEl.value = '1';
+  if (dayEl) {
+    dayEl.value = '1';
+    const configuredDay1 = getConfiguredFestDates().find((d) => Number(d.day_number) === 1);
+    const dateEl = document.getElementById('evt-date');
+    if (dateEl && configuredDay1) dateEl.value = configuredDay1.date;
+    const pill = document.getElementById('schedule-preview-pill');
+    if (pill) pill.textContent = configuredDay1 ? `Day 1 • ${formatFestDateShort(configuredDay1.date)}` : 'Day 1';
+  }
 
   const startTime = document.getElementById('evt-start-time');
   if (startTime) startTime.value = '10:00 AM';
@@ -1469,12 +1509,25 @@ function setupEventControls() {
   if (startTimeEl) startTimeEl.addEventListener('input', syncTime);
   if (endTimeEl) endTimeEl.addEventListener('input', syncTime);
 
-  // Day preview pill
+  // Day preview pill & auto-sync configured date
   const daySelect = document.getElementById('evt-day');
   if (daySelect) {
     daySelect.addEventListener('change', () => {
+      const selectedDayNum = Number(daySelect.value);
+      const matched = getConfiguredFestDates().find((d) => Number(d.day_number) === selectedDayNum);
       const pill = document.getElementById('schedule-preview-pill');
-      if (pill) pill.textContent = `Day ${daySelect.value}`;
+      if (pill) {
+        pill.textContent = matched
+          ? `Day ${selectedDayNum} • ${formatFestDateShort(matched.date)}`
+          : `Day ${daySelect.value}`;
+      }
+      const dateInput = document.getElementById('evt-date');
+      if (dateInput && matched) {
+        const isEdit = Boolean(document.getElementById('event-edit-id')?.value);
+        if (!isEdit || !dateInput.value) {
+          dateInput.value = matched.date;
+        }
+      }
     });
   }
 
@@ -1542,6 +1595,7 @@ window.openEditEventModal = function (id) {
   if (!evt) return;
 
   populateCategoryDropdowns(evt.category);
+  populateEventDayDropdown(evt.day_number || 1);
 
   document.getElementById('event-edit-id').value = evt.id;
   document.getElementById('evt-code').value = evt.code || generateProgrammeCode(evt.category);
@@ -5573,8 +5627,11 @@ async function deleteCategoryAction(id, name, linkedCount) {
     cachedCategories = await db.getCategories();
     window.festivalCategories = cachedCategories;
     populateCategoryDropdowns();
+    populateEventDayDropdown();
     renderCategoriesManager();
     renderCategoriesSettingsPreview();
+    renderFestDatesManager();
+    updateAdminLiveDateBadges();
     showToast(`Category "${name}" deleted successfully`, 'success');
   } catch (err) {
     showToast(err.message || 'Failed to delete category', 'error');
@@ -5678,6 +5735,363 @@ function setupCategoryControls() {
         }
       } catch (err) {
         showToast(err.message || 'Failed to save category', 'error');
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+    });
+  }
+}
+
+// ==============================================================================
+// FESTIVAL DATES & LIVE WINDOW MANAGER (Settings Tab + Global Live Sync)
+// ==============================================================================
+
+function getConfiguredFestDates() {
+  return normalizeFestDates(cachedSettings?.fest_dates || []);
+}
+
+function updateAdminLiveDateBadges() {
+  const days = getConfiguredFestDates();
+  const status = evaluateFestLiveStatus(days);
+
+  // 1. Overview Top Banner Live Badge
+  const overviewBadge = document.getElementById('admin-overview-live-badge');
+  const overviewDot = document.getElementById('admin-overview-live-dot');
+  const overviewText = document.getElementById('admin-overview-live-text');
+  if (overviewBadge && overviewDot && overviewText) {
+    if (!status.configured) {
+      overviewBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-label-sm text-label-sm';
+      overviewDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+      overviewText.textContent = 'Schedule Dates Not Set';
+    } else if (status.isLive) {
+      overviewBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-label-sm text-label-sm font-bold';
+      overviewDot.className = 'w-2 h-2 rounded-full bg-red-600 animate-pulse';
+      overviewText.textContent = `LIVE • Day ${status.activeDay.day_number} of ${status.totalDays} (${status.activeDay.shortDate})`;
+    } else if (status.state === 'upcoming' || status.state === 'between') {
+      overviewBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-label-sm text-label-sm font-semibold';
+      overviewDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+      overviewText.textContent = `${status.countdownText} (${status.nextDay.shortDate})`;
+    } else {
+      overviewBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-label-sm text-label-sm';
+      overviewDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+      overviewText.textContent = `Concluded (${status.dateRangeText})`;
+    }
+  }
+
+  // 2. Overview Schedule Header Pill
+  const schedPill = document.getElementById('overview-schedule-day-pill');
+  if (schedPill) {
+    if (!status.configured) {
+      schedPill.textContent = 'All Scheduled Days';
+    } else if (status.isLive) {
+      schedPill.textContent = `LIVE • Day ${status.activeDay.day_number} (${status.activeDay.shortDate})`;
+    } else if (status.nextDay) {
+      schedPill.textContent = `Next: Day ${status.nextDay.day_number} • ${status.nextDay.shortDate}`;
+    } else {
+      schedPill.textContent = `${status.totalDays} Days Completed`;
+    }
+  }
+
+  // 3. Overview Day Filter Buttons
+  const filterWrap = document.getElementById('overview-day-filter-buttons');
+  if (filterWrap) {
+    const dayItems = status.configured
+      ? status.days
+      : [{ day_number: 1 }, { day_number: 2 }, { day_number: 3 }];
+    const activeDayVal = currentOverviewDay;
+    let html = dayItems.map((d) => {
+      const isActive = String(activeDayVal) === String(d.day_number);
+      const cls = isActive
+        ? 'px-3 py-1.5 rounded-lg bg-red-600 text-white font-label-sm text-label-sm font-bold shadow-sm transition-colors'
+        : 'px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm';
+      const dateSuffix = d.shortDate ? ` • ${escapeHtml(d.shortDate)}` : '';
+      return `<button type="button" class="${cls}" onclick="window.filterOverviewByDay(${d.day_number}, this)">Day ${d.day_number}${dateSuffix}</button>`;
+    }).join('');
+    const allActive = activeDayVal === 'all';
+    const allCls = allActive
+      ? 'px-3 py-1.5 rounded-lg bg-red-600 text-white font-label-sm text-label-sm font-bold shadow-sm transition-colors'
+      : 'px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm';
+    html += `<button type="button" class="${allCls}" onclick="window.filterOverviewByDay('all', this)">All Days</button>`;
+    filterWrap.innerHTML = html;
+  }
+
+  // 4. Settings Card Live Preview Badge
+  const settingsBadge = document.getElementById('settings-fest-live-badge');
+  if (settingsBadge) {
+    if (!status.configured) {
+      settingsBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold shrink-0';
+      settingsBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400"></span><span>No Dates Configured</span>';
+    } else if (status.isLive) {
+      settingsBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-bold shrink-0';
+      settingsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span><span>LIVE NOW • Day ${status.activeDay.day_number} (${escapeHtml(status.activeDay.shortDate)})</span>`;
+    } else if (status.state === 'upcoming' || status.state === 'between') {
+      settingsBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold shrink-0';
+      settingsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>UPCOMING • ${escapeHtml(status.countdownText)} (${escapeHtml(status.nextDay.shortDate)})</span>`;
+    } else {
+      settingsBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold shrink-0';
+      settingsBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span><span>CONCLUDED • ${escapeHtml(status.dateRangeText)}</span>`;
+    }
+  }
+}
+
+function populateEventDayDropdown(selectedDay = null) {
+  const select = document.getElementById('evt-day');
+  if (!select) return;
+  const days = getConfiguredFestDates();
+  const prevValue = selectedDay !== null ? String(selectedDay) : (select.value || '1');
+
+  if (days.length > 0) {
+    select.innerHTML = days.map((d) => {
+      const labelPart = d.label ? ` — ${d.label}` : '';
+      return `<option value="${d.day_number}">Day ${d.day_number} • ${escapeHtml(d.shortDate)}${escapeHtml(labelPart)}</option>`;
+    }).join('');
+    // Preserve legacy day numbers higher than configured count if editing an existing programme
+    if (!days.some((d) => String(d.day_number) === prevValue)) {
+      const extraOpt = document.createElement('option');
+      extraOpt.value = prevValue;
+      extraOpt.textContent = `Day ${prevValue}`;
+      select.appendChild(extraOpt);
+    }
+  } else {
+    select.innerHTML = `
+      <option value="1">Day 1 • Ingress &amp; Inaugural</option>
+      <option value="2">Day 2 • Preliminary Tracks</option>
+      <option value="3">Day 3 • Championship Finals</option>
+      <option value="4">Day 4 • Special Tracks</option>
+      <option value="5">Day 5 • Grand Valedictory</option>
+    `;
+  }
+  select.value = prevValue;
+}
+
+function renderFestDatesManager() {
+  const listEl = document.getElementById('fest-dates-list');
+  if (!listEl) return;
+
+  const status = evaluateFestLiveStatus(cachedSettings?.fest_dates || []);
+  updateAdminLiveDateBadges();
+
+  if (!status.configured) {
+    listEl.innerHTML = `
+      <div class="p-6 text-center rounded-xl border border-dashed border-slate-300 bg-slate-50/70">
+        <span class="material-symbols-outlined text-[28px] text-slate-400">event_note</span>
+        <p class="text-xs font-bold text-slate-700 mt-1">No festival dates added yet</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Add your festival dates above so the portal automatically knows when it is LIVE, Upcoming, or Concluded.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const now = new Date();
+  listEl.innerHTML = status.days.map((d) => {
+    const isDayLive = status.activeDay && status.activeDay.id === d.id;
+    const isPast = d.end && now > d.end;
+
+    let badgeHtml = '';
+    if (isDayLive) {
+      badgeHtml = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold"><span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>LIVE NOW</span>';
+    } else if (isPast) {
+      badgeHtml = '<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">COMPLETED</span>';
+    } else {
+      badgeHtml = '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold">UPCOMING</span>';
+    }
+
+    const timeRange = `${formatFestTime12h(d.start_time)} – ${formatFestTime12h(d.end_time)}`;
+
+    return `
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border ${isDayLive ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'} hover:border-slate-300 transition-colors">
+        <div class="flex items-start sm:items-center gap-3 min-w-0">
+          <div class="px-2.5 py-1.5 rounded-lg ${isDayLive ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'} text-xs font-extrabold shrink-0">
+            Day ${d.day_number}
+          </div>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-bold text-slate-900">${escapeHtml(d.readableDate)}</span>
+              ${badgeHtml}
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+              <span class="font-medium text-slate-600">${escapeHtml(timeRange)}</span>
+              ${d.label ? `<span>• ${escapeHtml(d.label)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+          <button type="button" class="btn-edit-fest-date px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold inline-flex items-center gap-1 cursor-pointer" data-id="${escapeHtml(d.id)}">
+            <span class="material-symbols-outlined text-[15px]">edit</span>
+            <span>Edit</span>
+          </button>
+          <button type="button" class="btn-delete-fest-date px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold inline-flex items-center gap-1 cursor-pointer" data-id="${escapeHtml(d.id)}">
+            <span class="material-symbols-outlined text-[15px]">delete</span>
+            <span>Remove</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.btn-edit-fest-date').forEach((btn) => {
+    btn.addEventListener('click', () => editFestDate(btn.getAttribute('data-id')));
+  });
+  listEl.querySelectorAll('.btn-delete-fest-date').forEach((btn) => {
+    btn.addEventListener('click', () => deleteFestDateAction(btn.getAttribute('data-id')));
+  });
+}
+
+function resetFestDateForm() {
+  const form = document.getElementById('form-fest-date');
+  if (form) form.reset();
+  const editId = document.getElementById('fest-date-edit-id');
+  if (editId) editId.value = '';
+  const startEl = document.getElementById('fest-date-start');
+  if (startEl) startEl.value = '08:00';
+  const endEl = document.getElementById('fest-date-end');
+  if (endEl) endEl.value = '22:00';
+  const btnText = document.getElementById('btn-save-fest-date-text');
+  if (btnText) btnText.textContent = 'Add Festival Date';
+  const cancelBtn = document.getElementById('btn-cancel-fest-date');
+  if (cancelBtn) cancelBtn.classList.add('hidden');
+}
+
+function editFestDate(id) {
+  const days = getConfiguredFestDates();
+  const item = days.find((d) => d.id === id);
+  if (!item) return;
+
+  document.getElementById('fest-date-edit-id').value = item.id;
+  document.getElementById('fest-date-input').value = item.date;
+  document.getElementById('fest-date-label').value = item.label || '';
+  document.getElementById('fest-date-start').value = item.start_time || '08:00';
+  document.getElementById('fest-date-end').value = item.end_time || '22:00';
+  document.getElementById('btn-save-fest-date-text').textContent = 'Update Festival Date';
+  document.getElementById('btn-cancel-fest-date')?.classList.remove('hidden');
+  document.getElementById('fest-date-input')?.focus();
+}
+
+async function deleteFestDateAction(id) {
+  const days = getConfiguredFestDates();
+  const target = days.find((d) => d.id === id);
+  if (!target) return;
+  if (!confirm(`Remove Day ${target.day_number} (${formatFestDateReadable(target.date)}) from festival dates?`)) return;
+
+  const updatedList = days.filter((d) => d.id !== id);
+  try {
+    const saved = await db.saveFestDates(updatedList);
+    cachedSettings = { ...(cachedSettings || {}), fest_dates: saved };
+    renderFestDatesManager();
+    populateEventDayDropdown();
+    updateAdminLiveDateBadges();
+    logAudit('FEST_DATES_UPDATED', `Removed festival date ${target.date}`);
+    showToast(`Removed ${formatFestDateShort(target.date)} from festival dates`, 'info');
+  } catch (err) {
+    showToast('Failed to remove date: ' + err.message, 'error');
+  }
+}
+
+function setupFestDatesControls() {
+  const form = document.getElementById('form-fest-date');
+  const cancelBtn = document.getElementById('btn-cancel-fest-date');
+  const quickNextBtn = document.getElementById('btn-quick-next-fest-date');
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', resetFestDateForm);
+  }
+
+  if (quickNextBtn) {
+    quickNextBtn.addEventListener('click', async () => {
+      const days = getConfiguredFestDates();
+      let nextDateStr = '';
+      if (days.length > 0) {
+        const last = days[days.length - 1];
+        const [y, m, d] = last.date.split('-').map(Number);
+        const dt = new Date(y, m - 1, d + 1);
+        nextDateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      } else {
+        const today = new Date();
+        nextDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      }
+      const nextList = [
+        ...days,
+        {
+          id: `fd_${Date.now()}`,
+          date: nextDateStr,
+          label: `Day ${days.length + 1}`,
+          start_time: '08:00',
+          end_time: '22:00',
+        },
+      ];
+      try {
+        const saved = await db.saveFestDates(nextList);
+        cachedSettings = { ...(cachedSettings || {}), fest_dates: saved };
+        renderFestDatesManager();
+        populateEventDayDropdown();
+        updateAdminLiveDateBadges();
+        logAudit('FEST_DATES_UPDATED', `Quick-added festival date ${nextDateStr}`);
+        showToast(`Added Day ${saved.length} (${formatFestDateShort(nextDateStr)})`, 'success');
+      } catch (err) {
+        showToast('Failed to add next day: ' + err.message, 'error');
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const editId = document.getElementById('fest-date-edit-id')?.value || '';
+      const dateVal = document.getElementById('fest-date-input')?.value?.trim();
+      const labelVal = (document.getElementById('fest-date-label')?.value || '').trim();
+      const startVal = document.getElementById('fest-date-start')?.value || '08:00';
+      const endVal = document.getElementById('fest-date-end')?.value || '22:00';
+
+      if (!dateVal) {
+        showToast('Please select a festival date', 'warning');
+        return;
+      }
+      if (startVal && endVal && endVal < startVal) {
+        showToast('"Live Until" time must be after "Live From" time', 'warning');
+        return;
+      }
+
+      const days = getConfiguredFestDates();
+      const duplicate = days.find((d) => d.date === dateVal && d.id !== editId);
+      if (duplicate) {
+        showToast(`${formatFestDateReadable(dateVal)} is already added as Day ${duplicate.day_number}. Edit that entry instead.`, 'warning');
+        return;
+      }
+
+      let nextList;
+      if (editId) {
+        nextList = days.map((d) =>
+          d.id === editId
+            ? { ...d, date: dateVal, label: labelVal, start_time: startVal, end_time: endVal }
+            : d
+        );
+      } else {
+        nextList = [
+          ...days,
+          {
+            id: `fd_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            date: dateVal,
+            label: labelVal,
+            start_time: startVal,
+            end_time: endVal,
+          },
+        ];
+      }
+
+      const saveBtn = document.getElementById('btn-save-fest-date');
+      if (saveBtn) saveBtn.disabled = true;
+
+      try {
+        const saved = await db.saveFestDates(nextList);
+        cachedSettings = { ...(cachedSettings || {}), fest_dates: saved };
+        resetFestDateForm();
+        renderFestDatesManager();
+        populateEventDayDropdown();
+        updateAdminLiveDateBadges();
+        logAudit('FEST_DATES_UPDATED', `${editId ? 'Updated' : 'Added'} festival date ${dateVal}${labelVal ? ` (${labelVal})` : ''}`);
+        showToast(`Festival date ${formatFestDateShort(dateVal)} saved!`, 'success');
+      } catch (err) {
+        showToast('Failed to save festival date: ' + err.message, 'error');
       } finally {
         if (saveBtn) saveBtn.disabled = false;
       }

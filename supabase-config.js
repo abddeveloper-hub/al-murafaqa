@@ -127,8 +127,176 @@ const DEFAULT_SETTINGS = {
   video_is_live: true,
   video_viewer_count: '4.8k live',
   video_duration_note: '42 mins remaining',
+  fest_dates: [],
   updated_at: new Date().toISOString(),
 };
+
+// ------------------------------------------------------------------------------
+// FESTIVAL DATES & LIVE STATUS EVALUATION HELPERS
+// ------------------------------------------------------------------------------
+const FEST_MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const FEST_DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export function parseLocalFestDateTime(dateStr, timeStr = '00:00', seconds = 0) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || ''))) return null;
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  const [hh, mm] = /^\d{2}:\d{2}$/.test(String(timeStr || ''))
+    ? String(timeStr).split(':').map(Number)
+    : [0, 0];
+  return new Date(y, m - 1, d, hh, mm, seconds, seconds === 59 ? 999 : 0);
+}
+
+export function formatFestDateShort(dateStr) {
+  const dt = parseLocalFestDateTime(dateStr);
+  if (!dt) return dateStr || '';
+  return `${FEST_MONTHS_SHORT[dt.getMonth()]} ${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+export function formatFestDateReadable(dateStr) {
+  const dt = parseLocalFestDateTime(dateStr);
+  if (!dt) return dateStr || '';
+  return `${FEST_DAYS_SHORT[dt.getDay()]}, ${FEST_MONTHS_SHORT[dt.getMonth()]} ${String(dt.getDate()).padStart(2, '0')}, ${dt.getFullYear()}`;
+}
+
+export function formatFestTime12h(timeStr) {
+  if (!/^\d{2}:\d{2}$/.test(String(timeStr || ''))) return timeStr || '';
+  const [hh, mm] = String(timeStr).split(':').map(Number);
+  const period = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 || 12;
+  return `${h12}:${String(mm).padStart(2, '0')} ${period}`;
+}
+
+export function normalizeFestDates(rawList) {
+  if (!Array.isArray(rawList)) return [];
+  const valid = rawList
+    .filter((item) => item && /^\d{4}-\d{2}-\d{2}$/.test(String(item.date || '').trim()))
+    .map((item) => ({
+      id: item.id || generateUuid(),
+      date: String(item.date).trim(),
+      label: String(item.label || '').trim(),
+      start_time: /^\d{2}:\d{2}$/.test(String(item.start_time || '').trim()) ? String(item.start_time).trim() : '00:00',
+      end_time: /^\d{2}:\d{2}$/.test(String(item.end_time || '').trim()) ? String(item.end_time).trim() : '23:59',
+    }))
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return a.start_time.localeCompare(b.start_time);
+    });
+
+  return valid.map((item, idx) => ({
+    ...item,
+    day_number: idx + 1,
+  }));
+}
+
+function formatCountdownMs(ms) {
+  const safeMs = Math.max(0, ms);
+  const totalMins = Math.floor(safeMs / 60000);
+  const days = Math.floor(totalMins / (60 * 24));
+  const hours = Math.floor((totalMins % (60 * 24)) / 60);
+  const mins = totalMins % 60;
+  if (days >= 2) return `Starts in ${days} days`;
+  if (days === 1) return `Starts in 1d ${hours}h`;
+  if (hours >= 1) return `Starts in ${hours}h ${mins}m`;
+  return `Starts in ${Math.max(1, mins)}m`;
+}
+
+export function evaluateFestLiveStatus(festDates, now = new Date()) {
+  const days = normalizeFestDates(festDates).map((d) => {
+    const start = parseLocalFestDateTime(d.date, d.start_time, 0);
+    let end = parseLocalFestDateTime(d.date, d.end_time, 59);
+    if (end && start && end < start) {
+      end = parseLocalFestDateTime(d.date, '23:59', 59);
+    }
+    return {
+      ...d,
+      start,
+      end,
+      shortDate: formatFestDateShort(d.date),
+      readableDate: formatFestDateReadable(d.date),
+    };
+  });
+
+  if (days.length === 0) {
+    return {
+      configured: false,
+      state: 'unconfigured',
+      isLive: false,
+      totalDays: 0,
+      days: [],
+      activeDay: null,
+      nextDay: null,
+      currentDayNumber: null,
+      dateRangeText: '',
+      countdownText: '',
+      bannerText: 'SCHEDULE TBA',
+      shortBadge: '5TH EDITION',
+    };
+  }
+
+  const firstDay = days[0];
+  const lastDay = days[days.length - 1];
+  const firstYear = firstDay.start ? firstDay.start.getFullYear() : '';
+  const dateRangeText =
+    days.length === 1
+      ? `${firstDay.shortDate}, ${firstYear}`
+      : `${firstDay.shortDate} – ${lastDay.shortDate}, ${firstYear}`;
+
+  const activeDay = days.find((d) => d.start && d.end && now >= d.start && now <= d.end) || null;
+  if (activeDay) {
+    return {
+      configured: true,
+      state: 'live',
+      isLive: true,
+      totalDays: days.length,
+      days,
+      activeDay,
+      nextDay: null,
+      currentDayNumber: activeDay.day_number,
+      dateRangeText,
+      countdownText: `Ends ${formatFestTime12h(activeDay.end_time)}`,
+      bannerText: `LIVE • DAY ${activeDay.day_number} IN PROGRESS`,
+      shortBadge: `LIVE • DAY ${activeDay.day_number}`,
+    };
+  }
+
+  const nextDay = days.find((d) => d.start && now < d.start) || null;
+  if (nextDay) {
+    const isBeforeAll = nextDay.day_number === 1;
+    const msUntil = nextDay.start.getTime() - now.getTime();
+    const countdownText = formatCountdownMs(msUntil);
+    return {
+      configured: true,
+      state: isBeforeAll ? 'upcoming' : 'between',
+      isLive: false,
+      totalDays: days.length,
+      days,
+      activeDay: null,
+      nextDay,
+      currentDayNumber: nextDay.day_number,
+      dateRangeText,
+      countdownText,
+      bannerText: isBeforeAll
+        ? `UPCOMING • STARTS ${nextDay.shortDate.toUpperCase()}`
+        : `NEXT • DAY ${nextDay.day_number} (${nextDay.shortDate.toUpperCase()})`,
+      shortBadge: `UPCOMING • ${nextDay.shortDate.toUpperCase()}`,
+    };
+  }
+
+  return {
+    configured: true,
+    state: 'concluded',
+    isLive: false,
+    totalDays: days.length,
+    days,
+    activeDay: null,
+    nextDay: null,
+    currentDayNumber: days.length,
+    dateRangeText,
+    countdownText: `Ended ${lastDay.shortDate}`,
+    bannerText: `CONCLUDED • ${dateRangeText.toUpperCase()}`,
+    shortBadge: 'CONCLUDED',
+  };
+}
 
 const DEFAULT_EVENTS = [];
 const DEFAULT_REGISTRATIONS = [];
@@ -434,7 +602,17 @@ export const db = {
           .maybeSingle();
 
         if (!error && data) {
-          const cloudSettings = { ...DEFAULT_SETTINGS, ...data };
+          const fallbackDates = Array.isArray(data.site_restrictions?._fest_dates)
+            ? data.site_restrictions._fest_dates
+            : [];
+          const cloudDates = Array.isArray(data.fest_dates) && data.fest_dates.length > 0
+            ? data.fest_dates
+            : (Array.isArray(data.fest_dates) && fallbackDates.length === 0 ? data.fest_dates : fallbackDates);
+          const cloudSettings = {
+            ...DEFAULT_SETTINGS,
+            ...data,
+            fest_dates: normalizeFestDates(cloudDates),
+          };
           if (!cloudSettings.video_poster_url || cloudSettings.video_poster_url.includes('AB6AXuBI4u7wM1') || cloudSettings.video_poster_url.includes('googleusercontent.com/aida-public')) {
             cloudSettings.video_poster_url = 'video-poster.jpg';
             // Self-heal cloud database row if it still holds the legacy mock oud player image URL
@@ -442,9 +620,13 @@ export const db = {
               supabase.from('fest_settings').update({ video_poster_url: 'video-poster.jpg' }).eq('id', 1).then(() => {}).catch(() => {});
             }
           }
-          const hasPendingLocalEdits = cachedSettings && Object.keys(cachedSettings).some((key) =>
-            key !== 'id' && key !== 'updated_at' && key in DEFAULT_SETTINGS && cachedSettings[key] !== DEFAULT_SETTINGS[key]
-          );
+          const hasPendingLocalEdits = cachedSettings && Object.keys(cachedSettings).some((key) => {
+            if (key === 'id' || key === 'updated_at' || !(key in DEFAULT_SETTINGS)) return false;
+            if (key === 'fest_dates') {
+              return JSON.stringify(normalizeFestDates(cachedSettings.fest_dates)) !== JSON.stringify(DEFAULT_SETTINGS.fest_dates);
+            }
+            return cachedSettings[key] !== DEFAULT_SETTINGS[key];
+          });
           const localUpdatedAt = Date.parse(cachedSettings?.updated_at || '');
           const cloudUpdatedAt = Date.parse(cloudSettings.updated_at || '');
 
@@ -452,11 +634,15 @@ export const db = {
           // can publish them after the database schema has been brought up to date.
           if (hasPendingLocalEdits && Number.isFinite(localUpdatedAt) && localUpdatedAt > cloudUpdatedAt) {
             const merged = { ...cloudSettings, ...cachedSettings };
+            merged.fest_dates = normalizeFestDates(merged.fest_dates);
             if (!merged.video_poster_url || merged.video_poster_url.includes('AB6AXuBI4u7wM1') || merged.video_poster_url.includes('googleusercontent.com/aida-public')) {
               merged.video_poster_url = 'video-poster.jpg';
             }
             return merged;
           }
+          try {
+            localStorage.setItem('almurafaqa_settings', JSON.stringify(cloudSettings));
+          } catch (_) {}
           return cloudSettings;
         }
         if (error) console.warn('[Supabase getSettings]', error.message);
@@ -465,6 +651,7 @@ export const db = {
       }
     }
     if (cachedSettings) {
+      cachedSettings.fest_dates = normalizeFestDates(cachedSettings.fest_dates);
       if (!cachedSettings.video_poster_url || cachedSettings.video_poster_url.includes('AB6AXuBI4u7wM1') || cachedSettings.video_poster_url.includes('googleusercontent.com/aida-public')) {
         cachedSettings.video_poster_url = 'video-poster.jpg';
       }
@@ -475,6 +662,9 @@ export const db = {
 
   async updateSettings(updates) {
     const payload = { ...updates, updated_at: new Date().toISOString() };
+    if ('fest_dates' in payload) {
+      payload.fest_dates = normalizeFestDates(payload.fest_dates);
+    }
     if (this.isLive()) {
       try {
         // Attempt upsert with maybeSingle() so missing row 1 is created and empty results never throw PGRST116
@@ -488,7 +678,7 @@ export const db = {
         if (error) {
           console.warn('[Supabase updateSettings]', error.message || error);
 
-          // If table is missing newer columns
+          // If table is missing newer columns (e.g. fest_dates before SQL migration is run)
           const isMissingCol =
             (error.message && (error.message.includes('column') || error.message.includes('schema cache'))) ||
             error.code === 'PGRST204';
@@ -502,14 +692,53 @@ export const db = {
               'live_ticker_text',
               'upi_id',
               'support_phone',
+              'video_heading',
+              'video_title',
+              'video_description',
+              'video_venue',
+              'video_url',
+              'video_poster_url',
+              'video_is_live',
+              'video_viewer_count',
+              'video_duration_note',
+              'custom_categories',
+              'stage_ops',
+              'site_restrictions',
               'updated_at',
             ]);
             const basePayload = { id: 1 };
             for (const key of Object.keys(payload)) {
               if (baseCols.has(key)) basePayload[key] = payload[key];
             }
+            // Mirror fest_dates inside site_restrictions._fest_dates so cloud sync works before SQL migration
+            if ('fest_dates' in payload) {
+              try {
+                const { data: curRow } = await supabase
+                  .from('fest_settings')
+                  .select('site_restrictions')
+                  .eq('id', 1)
+                  .maybeSingle();
+                const prevRes = (curRow?.site_restrictions && typeof curRow.site_restrictions === 'object')
+                  ? curRow.site_restrictions
+                  : {};
+                basePayload.site_restrictions = { ...prevRes, _fest_dates: payload.fest_dates };
+              } catch (_) {}
+            }
             try {
-              await supabase.from('fest_settings').upsert(basePayload, { onConflict: 'id' });
+              const retryRes = await supabase
+                .from('fest_settings')
+                .upsert(basePayload, { onConflict: 'id' })
+                .select()
+                .maybeSingle();
+              if (!retryRes.error && retryRes.data) {
+                const merged = {
+                  ...DEFAULT_SETTINGS,
+                  ...retryRes.data,
+                  fest_dates: 'fest_dates' in payload ? payload.fest_dates : normalizeFestDates(retryRes.data.site_restrictions?._fest_dates),
+                };
+                localStorage.setItem('almurafaqa_settings', JSON.stringify(merged));
+                return merged;
+              }
             } catch (retryErr) {
               console.warn('[Supabase updateSettings base fallback]', retryErr.message);
             }
@@ -532,6 +761,10 @@ export const db = {
         }
 
         const updated = { ...DEFAULT_SETTINGS, ...data };
+        if ('fest_dates' in payload && (!Array.isArray(updated.fest_dates) || updated.fest_dates.length === 0)) {
+          updated.fest_dates = payload.fest_dates;
+        }
+        updated.fest_dates = normalizeFestDates(updated.fest_dates);
         localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
         return updated;
       } catch (liveErr) {
@@ -547,6 +780,17 @@ export const db = {
     const updated = { ...DEFAULT_SETTINGS, ...current, ...payload };
     localStorage.setItem('almurafaqa_settings', JSON.stringify(updated));
     return updated;
+  },
+
+  async getFestDates() {
+    const settings = await this.getSettings();
+    return normalizeFestDates(settings?.fest_dates || []);
+  },
+
+  async saveFestDates(datesList) {
+    const normalized = normalizeFestDates(datesList);
+    const updated = await this.updateSettings({ fest_dates: normalized });
+    return normalizeFestDates(updated?.fest_dates || normalized);
   },
 
   // Competition & Participant Categories Operations
@@ -1366,7 +1610,8 @@ export const db = {
           .eq('id', 1)
           .maybeSingle();
         if (!error && data?.site_restrictions && typeof data.site_restrictions === 'object' && Object.keys(data.site_restrictions).length > 0) {
-          const cloudRes = { ...defaultRestrictions, ...data.site_restrictions };
+          const { _fest_dates, ...cleanRes } = data.site_restrictions;
+          const cloudRes = { ...defaultRestrictions, ...cleanRes };
           localStorage.setItem('almurafaqa_restrictions', JSON.stringify(cloudRes));
           return cloudRes;
         }
@@ -1390,9 +1635,20 @@ export const db = {
 
     if (this.isLive()) {
       try {
+        let cloudPayload = { ...merged };
+        try {
+          const { data: curRow } = await supabase
+            .from('fest_settings')
+            .select('site_restrictions')
+            .eq('id', 1)
+            .maybeSingle();
+          if (curRow?.site_restrictions?._fest_dates) {
+            cloudPayload._fest_dates = curRow.site_restrictions._fest_dates;
+          }
+        } catch (_) {}
         await supabase
           .from('fest_settings')
-          .update({ site_restrictions: merged })
+          .update({ site_restrictions: cloudPayload })
           .eq('id', 1);
       } catch (err) {
         console.warn('[Supabase updateRestrictions]', err);

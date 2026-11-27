@@ -121,6 +121,8 @@
     @layer base {
       html, body {
         width: 100%;
+        max-width: 100%;
+        overflow-x: clip;
         margin: 0;
         padding: 0;
         min-height: 100%;
@@ -341,31 +343,31 @@
   </div>
 
   <!-- Top Navigation Header & Menu Bar -->
-  <header class="fixed top-0 w-full z-50 pt-safe bg-fest-red-dark/90 backdrop-blur-xl border-b border-fest-gold/25 shadow-[0_4px_24px_-4px_rgba(45,16,26,0.45)]">
-    <div class="h-20 px-4 sm:px-6 w-full flex items-center justify-between gap-4">
+  <header class="fixed top-0 left-0 right-0 w-full max-w-full z-50 pt-safe bg-fest-red-dark/90 backdrop-blur-xl border-b border-fest-gold/25 shadow-[0_4px_24px_-4px_rgba(45,16,26,0.45)]">
+    <div class="min-h-[72px] sm:h-20 px-3 sm:px-6 w-full max-w-full flex items-center justify-between gap-2 sm:gap-4 py-2 sm:py-0">
       <!-- Logo & Branding -->
-      <a href="home.html" class="flex items-center gap-3 min-w-0 group cursor-pointer">
-        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
+      <a href="home.html" class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 group cursor-pointer">
+        <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white p-1 sm:p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
           <img alt="Al Murafaqa Mini" class="w-full h-full object-contain filter drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
         </div>
-        <div class="flex flex-col min-w-0 justify-center">
-          <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-            <span class="font-headline text-[22px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
-            <span class="font-headline text-[16px] sm:text-[22px] text-fest-gold font-bold tracking-tight truncate drop-shadow-sm bg-white/10 px-3 py-1 sm:py-1.5 rounded-xl border border-fest-gold/30 leading-none">Muhyissunna Dars Ukkuda</span>
+        <div class="flex flex-col min-w-0 flex-1 justify-center">
+          <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap sm:flex-nowrap min-w-0 max-w-full">
+            <span class="font-headline text-[17px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
+            <span class="font-headline text-[11px] sm:text-[20px] text-fest-gold font-bold tracking-tight truncate max-w-full drop-shadow-sm bg-white/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-lg sm:rounded-xl border border-fest-gold/30 leading-tight">Muhyissunna Dars Ukkuda</span>
           </div>
-          <div class="flex items-center gap-1.5 mt-1">
-            <span class="font-body text-[10px] sm:text-[11px] text-fest-gold/85 font-extrabold tracking-widest uppercase truncate drop-shadow-sm">QUINTA EDICION • LIVE</span>
+          <div class="flex items-center gap-1.5 mt-0.5 sm:mt-1 min-w-0">
+            <span id="header-live-status-text" class="font-body text-[9px] sm:text-[11px] text-fest-gold/85 font-extrabold tracking-widest uppercase truncate drop-shadow-sm">QUINTA EDICION • CULTURAL FEST</span>
           </div>
         </div>
       </a>
 
       <!-- Right Corner: Navigation Menu Button -->
-      <div class="flex items-center gap-3 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <!-- Modern Luxury Menu Toggle Button -->
-        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-fest-gold/30 hover:border-fest-gold/60 text-white transition-all shadow-md group cursor-pointer active:scale-95 backdrop-blur-md">
-          <span class="font-body text-xs sm:text-sm font-bold tracking-wider uppercase text-fest-cream group-hover:text-fest-gold transition-colors">Menu</span>
-          <div class="w-7 h-7 rounded-lg bg-fest-red/40 border border-fest-gold/40 flex items-center justify-center text-fest-gold group-hover:bg-fest-red/60 transition-all">
-            <span class="material-symbols-outlined text-[18px]">menu</span>
+        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 border border-fest-gold/30 hover:border-fest-gold/60 text-white transition-all shadow-md group cursor-pointer active:scale-95 backdrop-blur-md">
+          <span class="font-body text-[11px] sm:text-sm font-bold tracking-wider uppercase text-fest-cream group-hover:text-fest-gold transition-colors">Menu</span>
+          <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-fest-red/40 border border-fest-gold/40 flex items-center justify-center text-fest-gold group-hover:bg-fest-red/60 transition-all">
+            <span class="material-symbols-outlined text-[16px] sm:text-[18px]">menu</span>
           </div>
         </button>
       </div>
@@ -466,7 +468,7 @@
               </div>
               <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Festival Schedule</span>
             </div>
-            <span class="text-[10px] text-fest-cream/80 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10">Day 3</span>
+            <span id="drawer-schedule-badge" class="text-[10px] text-fest-cream/80 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10">Schedule</span>
           </a>
 
           <!-- Official Results & Podium: Uniform Styling (No extra plate highlight, same as others) -->
@@ -477,8 +479,8 @@
               </div>
               <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Official Results &amp; Podium</span>
             </div>
-            <span class="text-[10px] text-amber-300 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Live
+            <span id="drawer-results-live-badge" class="text-[10px] text-amber-300 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Results
             </span>
           </a>
 
@@ -546,42 +548,42 @@
     <div class="flex flex-col w-full">
 
       <!-- ================= HERO & BRANDING SECTION ================= -->
-      <section class="relative w-full pt-16 sm:pt-24 md:pt-28 lg:pt-36 xl:pt-40 pb-16 sm:pb-24 md:pb-28 lg:pb-36 xl:pb-40 flex flex-col items-center">
+      <section class="relative w-full pt-8 sm:pt-20 md:pt-24 lg:pt-32 xl:pt-36 pb-10 sm:pb-20 md:pb-24 lg:pb-32 xl:pb-36 flex flex-col items-center">
 
-        <!-- Unified Central Brand Lockup (Starting from Left Edge) -->
-        <div class="reveal-slide-down relative w-full flex flex-col items-center gap-12 sm:gap-16 lg:gap-20 z-10 px-0 sm:px-2 md:px-4">
+        <!-- Unified Central Brand Lockup (Responsive Mobile + Desktop) -->
+        <div class="reveal-slide-down relative w-full max-w-full flex flex-col items-center gap-8 sm:gap-14 lg:gap-20 z-10 px-4 sm:px-6">
 
           <!-- Main Hero Row: Left Brand Lockup + Right Hanging Swinging Jar -->
-          <div class="w-full flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-10 px-2 sm:px-4 lg:px-6 xl:px-8 mb-4 sm:mb-6">
+          <div class="w-full max-w-full flex flex-col lg:flex-row items-center justify-between gap-6 sm:gap-8 lg:gap-10 px-0 sm:px-2 lg:px-6 xl:px-8 mb-2 sm:mb-6">
             
             <!-- Left Group: Emblem + Title + Calligraphy & Dates Together -->
-            <div class="flex flex-col sm:flex-row items-center sm:items-center justify-start gap-5 sm:gap-7 lg:gap-8 xl:gap-10 shrink-0">
+            <div class="w-full lg:w-auto max-w-full flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5 sm:gap-7 lg:gap-8 xl:gap-10">
               
               <!-- Diamond Motif Emblem + "al murafaqa" Typography Together -->
-              <div class="flex items-center justify-start gap-3 sm:gap-5 md:gap-6 shrink-0 pl-0">
-                <img src="hero-emblem.png" alt="Al Murafaqa Diamond Motif Emblem" class="w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 object-contain filter drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)] transition-transform duration-500 hover:scale-105 shrink-0">
+              <div class="flex items-center justify-center sm:justify-start gap-3 sm:gap-5 md:gap-6 max-w-full">
+                <img src="hero-emblem.png" alt="Al Murafaqa Diamond Motif Emblem" class="w-32 h-32 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 object-contain filter drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)] transition-transform duration-500 hover:scale-105 shrink-0">
                 <div class="flex flex-col items-start text-left shrink-0">
-                  <img src="hero-title.png" alt="Al Murafaqa Title Typography" class="h-32 sm:h-44 md:h-52 lg:h-60 xl:h-64 w-auto object-contain filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.55)] transition-transform duration-500 hover:scale-105">
+                  <img src="hero-title.png" alt="Al Murafaqa Title Typography" class="h-28 sm:h-44 md:h-52 lg:h-60 xl:h-64 w-auto object-contain filter drop-shadow-[0_14px_28px_rgba(0,0,0,0.55)] transition-transform duration-500 hover:scale-105">
                 </div>
               </div>
 
               <!-- Calligraphy & Dates/Venue (Positioned directly beside title) -->
-              <div class="flex flex-col items-center sm:items-start justify-center text-center sm:text-left shrink-0 gap-3 sm:gap-3.5 max-w-full">
-                <img src="hero-calligraphy.png" alt="ಅರಿವಿನ ಆದಿಮೂಲ ಪಳ್ಳಿ ದರ್ಸ್" class="w-full max-w-[220px] sm:max-w-[280px] md:max-w-[340px] lg:max-w-[390px] xl:max-w-[430px] object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:scale-105">
-                <img src="hero-date-venue.png" alt="2027 Jan 08,09,10 @Masjid Ground Ukkuda" class="w-full max-w-[140px] sm:max-w-[170px] md:max-w-[200px] lg:max-w-[230px] xl:max-w-[250px] object-contain filter drop-shadow-[0_5px_12px_rgba(0,0,0,0.4)] opacity-95">
+              <div class="flex flex-col items-center sm:items-start justify-center text-center sm:text-left gap-2.5 sm:gap-3.5 max-w-full">
+                <img src="hero-calligraphy.png" alt="ಅರಿವಿನ ಆದಿಮೂಲ ಪಳ್ಳಿ ದರ್ಸ್" class="w-full max-w-[230px] sm:max-w-[280px] md:max-w-[340px] lg:max-w-[390px] xl:max-w-[430px] object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:scale-105">
+                <img src="hero-date-venue.png" alt="2027 Jan 08,09,10 @Masjid Ground Ukkuda" class="w-full max-w-[160px] sm:max-w-[170px] md:max-w-[200px] lg:max-w-[230px] xl:max-w-[250px] object-contain filter drop-shadow-[0_5px_12px_rgba(0,0,0,0.4)] opacity-95">
               </div>
 
             </div>
 
-            <!-- Right Group: Hanging Traditional Jar with Rope Motion (Same height as the others) -->
-            <div class="shrink-0 flex items-center justify-center lg:justify-end pr-2 sm:pr-4 lg:pr-8 xl:pr-12 pt-2 sm:pt-0">
-              <img src="hero-hanging-jar.png" alt="Traditional Andalusian Hanging Jar" class="animate-swinging-jar h-36 sm:h-48 md:h-56 lg:h-64 xl:h-72 w-auto object-contain filter drop-shadow-[0_18px_36px_rgba(0,0,0,0.6)]">
+            <!-- Right Group: Hanging Traditional Jar with Rope Motion -->
+            <div class="shrink-0 flex items-center justify-center lg:justify-end lg:pr-8 xl:pr-12 pt-1 sm:pt-0">
+              <img src="hero-hanging-jar.png" alt="Traditional Andalusian Hanging Jar" class="animate-swinging-jar h-28 sm:h-48 md:h-56 lg:h-64 xl:h-72 w-auto object-contain filter drop-shadow-[0_18px_36px_rgba(0,0,0,0.6)]">
             </div>
 
           </div>
 
           <!-- Enhanced Subtitle & Badges Strip -->
-          <div class="relative z-10 flex flex-col items-center gap-3 w-full max-w-xl mx-auto px-4 mt-4 sm:mt-6">
+          <div class="relative z-10 flex flex-col items-center gap-3 w-full max-w-xl mx-auto px-2 sm:px-4 mt-2 sm:mt-4 text-center">
             
             <!-- Ornamental Golden Divider -->
             <div class="flex items-center gap-3 w-full">
@@ -591,18 +593,18 @@
             </div>
 
             <!-- Institution Heading with Warm Golden Gradient -->
-            <h2 class="font-headline text-[22px] sm:text-[28px] md:text-[32px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-fest-cream to-amber-100 tracking-tight drop-shadow-md">
+            <h2 class="font-headline text-[20px] sm:text-[28px] md:text-[32px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-fest-cream to-amber-100 tracking-tight drop-shadow-md text-center w-full">
               Muhyissunna Dars Ukkuda
             </h2>
 
             <!-- Elevated Festival Status Badges -->
-            <div class="flex items-center justify-center gap-3 flex-wrap">
-              <span class="inline-flex items-center gap-2 bg-black/30 hover:bg-black/40 text-fest-gold border border-fest-gold/40 shadow-lg shadow-black/25 px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold uppercase tracking-wider backdrop-blur-md transition-all">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="material-symbols-outlined text-[15px] text-fest-gold">verified</span>
-                <span>Official Gathering</span>
+            <div class="flex items-center justify-center gap-2.5 sm:gap-3 flex-wrap">
+              <span id="hero-live-status-badge" class="inline-flex items-center gap-1.5 sm:gap-2 bg-black/30 hover:bg-black/40 text-fest-gold border border-fest-gold/40 shadow-lg shadow-black/25 px-3.5 sm:px-4 py-1.5 rounded-full font-body text-[10px] sm:text-[12px] font-bold uppercase tracking-wider backdrop-blur-md transition-all">
+                <span id="hero-live-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="material-symbols-outlined text-[14px] sm:text-[15px] text-fest-gold">verified</span>
+                <span id="hero-live-status-text">Official Gathering</span>
               </span>
-              <span class="inline-flex items-center gap-1.5 bg-gradient-to-r from-fest-orange/30 to-fest-red/30 hover:from-fest-orange/40 hover:to-fest-red/40 text-fest-cream border border-fest-orange/40 shadow-lg shadow-black/25 px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold uppercase tracking-widest backdrop-blur-md transition-all">
+              <span class="inline-flex items-center gap-1.5 bg-gradient-to-r from-fest-orange/30 to-fest-red/30 hover:from-fest-orange/40 hover:to-fest-red/40 text-fest-cream border border-fest-orange/40 shadow-lg shadow-black/25 px-3.5 sm:px-4 py-1.5 rounded-full font-body text-[10px] sm:text-[12px] font-bold uppercase tracking-widest backdrop-blur-md transition-all">
                 <span>QUINTA EDICION • 5TH ED.</span>
               </span>
             </div>
@@ -615,12 +617,12 @@
             <div class="flex flex-col gap-4 relative z-10">
               
               <!-- Top Badges -->
-              <div class="flex items-center justify-between gap-3">
-                <span class="inline-flex items-center gap-2 bg-black/35 hover:bg-black/50 border border-fest-gold/50 text-fest-gold px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold tracking-wider uppercase shadow-md backdrop-blur-md transition-all">
+              <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <span class="inline-flex items-center gap-2 bg-black/35 hover:bg-black/50 border border-fest-gold/50 text-fest-gold px-3.5 sm:px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold tracking-wider uppercase shadow-md backdrop-blur-md transition-all">
                   <span class="material-symbols-outlined text-[15px] text-fest-gold animate-spin-slow">auto_awesome</span>
                   <span>Central Theme</span>
                 </span>
-                <span class="inline-flex items-center gap-1.5 bg-black/35 hover:bg-black/50 border border-fest-gold/40 text-fest-gold px-3.5 py-1.5 rounded-full text-[11px] sm:text-[12px] font-body font-semibold shadow-md backdrop-blur-md transition-all">
+                <span class="inline-flex items-center gap-1.5 bg-black/35 hover:bg-black/50 border border-fest-gold/40 text-fest-gold px-3 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-[12px] font-body font-semibold shadow-md backdrop-blur-md transition-all">
                   <span class="w-1.5 h-1.5 rounded-full bg-fest-gold"></span>
                   <span>Heritage 2025</span>
                 </span>
@@ -628,10 +630,10 @@
 
               <!-- Main Theme Headline & Description -->
               <div class="flex flex-col gap-2 mt-1">
-                <h1 class="font-headline text-[32px] sm:text-[44px] md:text-[52px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-fest-cream to-amber-200 tracking-tight leading-tight filter drop-shadow-[0_4px_16px_rgba(0,0,0,0.65)]">
+                <h1 class="font-headline text-[28px] sm:text-[44px] md:text-[52px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-fest-cream to-amber-200 tracking-tight leading-tight filter drop-shadow-[0_4px_16px_rgba(0,0,0,0.65)]">
                   Pallidars: The Primal Source of Knowledge
                 </h1>
-                <p class="font-body text-[16px] sm:text-[18px] md:text-[20px] text-fest-cream font-medium max-w-3xl leading-relaxed mt-2 filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
+                <p class="font-body text-[15px] sm:text-[18px] md:text-[20px] text-fest-cream font-medium max-w-3xl leading-relaxed mt-1 sm:mt-2 filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
                   Honoring Islamic historic mosque-based study circles as the foundational wellspring of wisdom, scholarship, literature, and enduring moral philosophy.
                 </p>
               </div>
@@ -639,17 +641,17 @@
             </div>
 
             <!-- Enhanced Key Pillars Tags -->
-            <div class="flex flex-wrap items-center gap-3 pt-5 mt-6 border-t border-white/20 relative z-10">
-              <span class="inline-flex items-center gap-2 text-[12px] sm:text-[13px] font-body text-fest-gold bg-black/35 hover:bg-black/50 border border-fest-gold/45 hover:border-fest-gold/75 px-4 py-2 rounded-full font-semibold shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 cursor-pointer">
-                <span class="text-[16px]">🕌</span>
+            <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-5 mt-6 border-t border-white/20 relative z-10">
+              <span class="inline-flex items-center gap-2 text-[11px] sm:text-[13px] font-body text-fest-gold bg-black/35 hover:bg-black/50 border border-fest-gold/45 hover:border-fest-gold/75 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 cursor-pointer">
+                <span class="text-[15px] sm:text-[16px]">🕌</span>
                 <span>Historic Mosque Circles</span>
               </span>
-              <span class="inline-flex items-center gap-2 text-[12px] sm:text-[13px] font-body text-fest-gold bg-black/35 hover:bg-black/50 border border-fest-gold/45 hover:border-fest-gold/75 px-4 py-2 rounded-full font-semibold shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 cursor-pointer">
-                <span class="text-[16px]">📜</span>
+              <span class="inline-flex items-center gap-2 text-[11px] sm:text-[13px] font-body text-fest-gold bg-black/35 hover:bg-black/50 border border-fest-gold/45 hover:border-fest-gold/75 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 cursor-pointer">
+                <span class="text-[15px] sm:text-[16px]">📜</span>
                 <span>Andalusian Manuscripts</span>
               </span>
-              <span class="inline-flex items-center gap-2 text-[12px] sm:text-[13px] font-body text-fest-gold bg-black/35 hover:bg-black/50 border border-fest-gold/45 hover:border-fest-gold/75 px-4 py-2 rounded-full font-semibold shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 cursor-pointer">
-                <span class="text-[16px]">💡</span>
+              <span class="inline-flex items-center gap-2 text-[11px] sm:text-[13px] font-body text-fest-gold bg-black/35 hover:bg-black/50 border border-fest-gold/45 hover:border-fest-gold/75 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold shadow-md backdrop-blur-md transition-all hover:-translate-y-0.5 cursor-pointer">
+                <span class="text-[15px] sm:text-[16px]">💡</span>
                 <span>Epistemology &amp; Ethics</span>
               </span>
             </div>
@@ -1028,26 +1030,26 @@
 
       <!-- ================= PALLIDARS: THE PRIMAL SOURCE OF KNOWLEDGE SECTION ================= -->
       <section class="reveal-slide-up w-full px-3 sm:px-5 mt-8 flex flex-col gap-4">
-        <div class="flex items-center justify-between px-2">
-          <div class="flex items-center gap-2.5">
-            <span class="material-symbols-outlined text-fest-red text-[24px]">auto_awesome</span>
-            <h2 class="font-headline text-[20px] sm:text-[24px] text-neutral-900 font-extrabold tracking-tight">Pallidars: The Primal Source of Knowledge</h2>
+        <div class="flex flex-wrap items-center justify-between gap-2 px-1 sm:px-2">
+          <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <span class="material-symbols-outlined text-fest-red text-[22px] sm:text-[24px] shrink-0">auto_awesome</span>
+            <h2 class="font-headline text-[18px] sm:text-[24px] text-neutral-900 font-extrabold tracking-tight leading-snug">Pallidars: The Primal Source of Knowledge</h2>
           </div>
-          <span class="font-body text-[11px] sm:text-[12px] text-[#4B0A1F] bg-fest-gold/25 border border-fest-orange/30 px-3 py-1 rounded-full font-bold uppercase tracking-wider shrink-0">
+          <span class="font-body text-[10px] sm:text-[12px] text-[#4B0A1F] bg-fest-gold/25 border border-fest-orange/30 px-2.5 sm:px-3 py-1 rounded-full font-bold uppercase tracking-wider shrink-0">
             Heritage Guide
           </span>
         </div>
 
-        <div class="relative w-full rounded-3xl bg-neutral-50/90 border border-neutral-200/90 p-6 sm:p-10 lg:p-12 flex flex-col gap-8 shadow-xl shadow-black/5">
+        <div class="relative w-full rounded-3xl bg-neutral-50/90 border border-neutral-200/90 p-5 sm:p-10 lg:p-12 flex flex-col gap-6 sm:gap-8 shadow-xl shadow-black/5 overflow-hidden">
           <!-- Top Section: Al Murafaqa Title & Narrative -->
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center gap-3 bg-gradient-to-r from-fest-red/20 via-fest-orange/15 to-transparent border-l-4 border-fest-red px-4 py-2.5 rounded-r-2xl w-fit">
-              <span class="material-symbols-outlined text-fest-red text-[26px] sm:text-[32px]">school</span>
-              <span class="font-headline text-[20px] sm:text-[30px] font-extrabold uppercase tracking-wide text-fest-red drop-shadow-sm">Muhyissunna Dars Ukkuda</span>
+          <div class="flex flex-col gap-3 min-w-0">
+            <div class="flex items-center gap-2.5 sm:gap-3 bg-gradient-to-r from-fest-red/20 via-fest-orange/15 to-transparent border-l-4 border-fest-red px-3 sm:px-4 py-2 sm:py-2.5 rounded-r-2xl w-fit max-w-full">
+              <span class="material-symbols-outlined text-fest-red text-[22px] sm:text-[32px] shrink-0">school</span>
+              <span class="font-headline text-[16px] sm:text-[30px] font-extrabold uppercase tracking-wide text-fest-red drop-shadow-sm truncate">Muhyissunna Dars Ukkuda</span>
             </div>
-            <div class="flex flex-wrap items-baseline gap-3 mt-1">
-              <h3 class="font-headline text-[38px] sm:text-[56px] font-extrabold text-[#4B0A1F] tracking-tight leading-none drop-shadow-sm">Al Murafaqa</h3>
-              <span class="text-[14px] sm:text-[16px] font-bold uppercase tracking-wider text-[#4B0A1F] bg-fest-orange/15 px-4 py-1.5 rounded-full border border-fest-orange/30 shadow-sm">QUINTA EDICION</span>
+            <div class="flex flex-wrap items-baseline gap-2.5 sm:gap-3 mt-1">
+              <h3 class="font-headline text-[32px] sm:text-[56px] font-extrabold text-[#4B0A1F] tracking-tight leading-none drop-shadow-sm">Al Murafaqa</h3>
+              <span class="text-[12px] sm:text-[16px] font-bold uppercase tracking-wider text-[#4B0A1F] bg-fest-orange/15 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-fest-orange/30 shadow-sm">QUINTA EDICION</span>
             </div>
             <p class="font-body text-[16px] sm:text-[20px] text-neutral-800 leading-relaxed font-normal mt-1">
               The Al Murafaqa (Quinta Edición) logo embodies companionship, cultural heritage, and creative expression through refined traditional Andalusian aesthetics and contemporary geometry.
@@ -1155,9 +1157,9 @@
               <span class="material-symbols-outlined text-[26px]">emoji_events</span>
             </div>
             <div>
-              <div class="flex items-center gap-2.5">
-                <h2 class="font-headline text-[22px] sm:text-[26px] text-neutral-900 font-extrabold tracking-tight">Latest Results &amp; Live Updates</h2>
-                <span class="text-[10px] bg-amber-500/20 text-amber-800 border border-amber-500/30 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">Live</span>
+              <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <h2 class="font-headline text-[20px] sm:text-[26px] text-neutral-900 font-extrabold tracking-tight">Latest Results &amp; Live Updates</h2>
+                <span class="text-[10px] bg-amber-500/20 text-amber-800 border border-amber-500/30 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse shrink-0">Live</span>
               </div>
               <p class="font-body text-xs sm:text-sm text-neutral-600 mt-0.5">
                 Recently declared winners and latest podium standings certified by the festival jury.
@@ -1260,14 +1262,14 @@
           <div class="rounded-3xl bg-fest-dark text-fest-cream p-6 sm:p-8 border border-fest-orange/25 relative overflow-hidden">
             <div class="animate-orb-1 absolute -right-12 -bottom-12 w-48 h-48 rounded-full bg-fest-red/40 blur-2xl pointer-events-none"></div>
             <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-white/10">
-              <div class="flex items-center gap-3.5">
-                <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0">
+              <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0">
                   <img alt="Al Murafaqa Emblem" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
                 </div>
-                <div>
-                  <h3 class="font-headline text-[20px] font-extrabold text-white tracking-tight">Al Murafaqa • QUINTA EDICION</h3>
-                  <p class="font-headline text-[16px] text-fest-gold font-bold mt-0.5">Muhyissunna Dars Ukkuda</p>
-                  <p class="font-body text-[12px] text-fest-cream/70 mt-0.5">Pallidars: The Primal Source of Knowledge</p>
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-headline text-[17px] sm:text-[20px] font-extrabold text-white tracking-tight truncate">Al Murafaqa • QUINTA EDICION</h3>
+                  <p class="font-headline text-[14px] sm:text-[16px] text-fest-gold font-bold mt-0.5 truncate">Muhyissunna Dars Ukkuda</p>
+                  <p class="font-body text-[11px] sm:text-[12px] text-fest-cream/70 mt-0.5 truncate">Pallidars: The Primal Source of Knowledge</p>
                 </div>
               </div>
 
@@ -1496,13 +1498,85 @@
   </script>
 
   <script type="module">
-    import { db } from './supabase-config.js';
+    import { db, evaluateFestLiveStatus, formatFestDateShort } from './supabase-config.js';
 
+    let latestSettings = null;
     let activeVideoSettings = {
       video_url: '',
       video_title: 'Mystic Poetry Recital & Qurtuba Ensemble',
       video_poster_url: 'video-poster.jpg'
     };
+
+    function hydrateLiveDateStatus(settings) {
+      const status = evaluateFestLiveStatus(settings?.fest_dates || []);
+      const headerTxt = document.getElementById('header-live-status-text');
+      const drawerSched = document.getElementById('drawer-schedule-badge');
+      const drawerRes = document.getElementById('drawer-results-live-badge');
+      const heroBadge = document.getElementById('hero-live-status-badge');
+      const heroDot = document.getElementById('hero-live-status-dot');
+      const heroTxt = document.getElementById('hero-live-status-text');
+
+      if (!status.configured) {
+        if (headerTxt) headerTxt.textContent = 'QUINTA EDICION • CULTURAL FEST';
+        if (drawerSched) drawerSched.textContent = 'Schedule';
+        if (drawerRes) {
+          drawerRes.className = 'text-[10px] text-amber-300 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center gap-1';
+          drawerRes.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Results';
+        }
+        if (heroTxt) heroTxt.textContent = 'Official Gathering';
+        return status;
+      }
+
+      if (status.isLive) {
+        if (headerTxt) headerTxt.textContent = `QUINTA EDICION • LIVE • DAY ${status.activeDay.day_number}`;
+        if (drawerSched) {
+          drawerSched.className = 'text-[10px] text-red-200 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-500/25 border border-red-400/40';
+          drawerSched.textContent = `Live • Day ${status.activeDay.day_number}`;
+        }
+        if (drawerRes) {
+          drawerRes.className = 'text-[10px] text-amber-300 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center gap-1';
+          drawerRes.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Live';
+        }
+        if (heroBadge && heroDot && heroTxt) {
+          heroBadge.className = 'inline-flex items-center gap-2 bg-red-600/85 hover:bg-red-600 text-white border border-amber-300/60 shadow-lg shadow-red-950/40 px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold uppercase tracking-wider backdrop-blur-md transition-all';
+          heroDot.className = 'w-2 h-2 rounded-full bg-white animate-ping';
+          const dayLabel = status.activeDay.label ? ` • ${status.activeDay.label}` : '';
+          heroTxt.textContent = `LIVE NOW • Day ${status.activeDay.day_number} (${status.activeDay.shortDate})${dayLabel}`;
+        }
+      } else if (status.state === 'upcoming' || status.state === 'between') {
+        if (headerTxt) headerTxt.textContent = `QUINTA EDICION • ${status.shortBadge}`;
+        if (drawerSched) {
+          drawerSched.className = 'text-[10px] text-fest-cream/80 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10';
+          drawerSched.textContent = `${status.totalDays} Days`;
+        }
+        if (drawerRes) {
+          drawerRes.className = 'text-[10px] text-fest-cream/80 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-1';
+          drawerRes.innerHTML = '<span>Podium</span>';
+        }
+        if (heroBadge && heroDot && heroTxt) {
+          heroBadge.className = 'inline-flex items-center gap-2 bg-black/35 hover:bg-black/45 text-fest-gold border border-fest-gold/45 shadow-lg shadow-black/25 px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold uppercase tracking-wider backdrop-blur-md transition-all';
+          heroDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+          heroTxt.textContent = `${status.countdownText} • ${status.dateRangeText}`;
+        }
+      } else {
+        if (headerTxt) headerTxt.textContent = 'QUINTA EDICION • CONCLUDED';
+        if (drawerSched) {
+          drawerSched.className = 'text-[10px] text-fest-cream/70 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10';
+          drawerSched.textContent = 'Archive';
+        }
+        if (drawerRes) {
+          drawerRes.className = 'text-[10px] text-amber-200 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center gap-1';
+          drawerRes.innerHTML = '<span>Final</span>';
+        }
+        if (heroBadge && heroDot && heroTxt) {
+          heroBadge.className = 'inline-flex items-center gap-2 bg-black/35 text-fest-cream border border-fest-gold/30 shadow-lg shadow-black/25 px-4 py-1.5 rounded-full font-body text-[11px] sm:text-[12px] font-bold uppercase tracking-wider backdrop-blur-md transition-all';
+          heroDot.className = 'w-2 h-2 rounded-full bg-slate-300';
+          heroTxt.textContent = `Festival Concluded • ${status.dateRangeText}`;
+        }
+      }
+
+      return status;
+    }
 
     function getEmbedUrl(rawUrl) {
       if (!rawUrl) return null;
@@ -1588,20 +1662,56 @@
         mediaBox.style.backgroundImage = `url("${posterUrl}")`;
       }
 
-      // Live status pill
+      // Live status pill (driven by configured festival dates + video_is_live toggle)
       const livePill = document.getElementById('video-overlay-live-pill');
       const liveText = document.getElementById('video-overlay-live-text');
       const liveDot = document.getElementById('video-live-dot');
-      const isLive = settings.video_is_live !== false;
+      const overlayDot = document.getElementById('video-overlay-live-dot');
+      const topBadge = document.getElementById('video-live-badge');
+      const festStatus = evaluateFestLiveStatus(settings.fest_dates || []);
+      const toggleLive = settings.video_is_live !== false;
 
-      if (isLive) {
+      if (festStatus.configured) {
+        if (festStatus.isLive && toggleLive) {
+          if (livePill) livePill.className = 'flex items-center gap-1.5 bg-fest-red/90 text-white font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
+          if (liveText) liveText.textContent = `LIVE • DAY ${festStatus.activeDay.day_number}`;
+          if (overlayDot) overlayDot.className = 'w-1.5 h-1.5 rounded-full bg-white animate-pulse';
+          if (topBadge) topBadge.className = 'font-body text-[11px] text-fest-gold bg-fest-gold/20 border border-fest-gold/30 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5';
+          if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-fest-gold animate-pulse';
+          if (viewTop) viewTop.textContent = settings.video_viewer_count || `LIVE • DAY ${festStatus.activeDay.day_number}`;
+        } else if (festStatus.state === 'upcoming' || festStatus.state === 'between') {
+          if (livePill) livePill.className = 'flex items-center gap-1.5 bg-amber-950/90 text-amber-200 border border-amber-400/30 font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
+          if (liveText) liveText.textContent = `UPCOMING • ${festStatus.nextDay.shortDate.toUpperCase()}`;
+          if (overlayDot) overlayDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+          if (topBadge) topBadge.className = 'font-body text-[11px] text-amber-200 bg-amber-500/15 border border-amber-400/30 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5';
+          if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+          if (viewTop) viewTop.textContent = festStatus.countdownText;
+        } else if (festStatus.state === 'concluded') {
+          if (livePill) livePill.className = 'flex items-center gap-1.5 bg-neutral-800/90 text-neutral-300 font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
+          if (liveText) liveText.textContent = 'ENDED • ARCHIVE';
+          if (overlayDot) overlayDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+          if (topBadge) topBadge.className = 'font-body text-[11px] text-neutral-300 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5';
+          if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+          if (viewTop) viewTop.textContent = 'CONCLUDED';
+        } else {
+          if (livePill) livePill.className = 'flex items-center gap-1.5 bg-neutral-800/90 text-neutral-300 font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
+          if (liveText) liveText.textContent = 'OFFLINE';
+          if (overlayDot) overlayDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+          if (topBadge) topBadge.className = 'font-body text-[11px] text-neutral-300 bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1.5';
+          if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+          if (viewTop) viewTop.textContent = 'OFFLINE';
+        }
+      } else if (toggleLive) {
         if (livePill) livePill.className = 'flex items-center gap-1.5 bg-fest-red/90 text-white font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
         if (liveText) liveText.textContent = 'LIVE';
+        if (overlayDot) overlayDot.className = 'w-1.5 h-1.5 rounded-full bg-white animate-pulse';
         if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-fest-gold animate-pulse';
       } else {
         if (livePill) livePill.className = 'flex items-center gap-1.5 bg-neutral-800/90 text-neutral-300 font-body text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-md';
         if (liveText) liveText.textContent = 'OFFLINE';
+        if (overlayDot) overlayDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
         if (liveDot) liveDot.className = 'w-1.5 h-1.5 rounded-full bg-neutral-400';
+        if (viewTop) viewTop.textContent = 'OFFLINE';
       }
     }
 
@@ -1643,18 +1753,25 @@
       return false;
     };
 
-    // Hydrate active settings (Video Section, Ticker & Maintenance Mode)
+    // Hydrate active settings (Video Section, Live Dates Status, Ticker & Maintenance Mode)
     try {
       const settings = await db.getSettings();
       if (settings) {
+        latestSettings = settings;
+        hydrateLiveDateStatus(settings);
         hydrateVideoSection(settings);
 
         if (settings.maintenance_mode) {
           const maint = document.getElementById('maintenance-overlay');
           if (maint) maint.classList.remove('hidden');
         }
-
       }
+      setInterval(() => {
+        if (latestSettings) {
+          hydrateLiveDateStatus(latestSettings);
+          hydrateVideoSection(latestSettings);
+        }
+      }, 60000);
     } catch (err) {
       console.warn('Could not load settings:', err);
     }

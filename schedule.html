@@ -329,8 +329,8 @@
         <span class="material-symbols-outlined text-[18px]">login</span>
         <span>Sign In to Portal</span>
       </a>
-      <span class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
-        Al Murafaqa • QUINTA EDICION • Live Gathering
+      <span id="schedule-drawer-status" class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
+        Al Murafaqa • QUINTA EDICION • Gathering
       </span>
     </div>
   </div>
@@ -344,9 +344,9 @@
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
         <span>Back to Festival Home</span>
       </a>
-      <div class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
-        <span class="w-2 h-2 rounded-full bg-fest-orange animate-ping"></span>
-        <span>LIVE • DAY 3 IN PROGRESS</span>
+      <div id="schedule-live-pill" class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
+        <span id="schedule-live-pill-dot" class="w-2 h-2 rounded-full bg-fest-orange"></span>
+        <span id="schedule-live-pill-text">OFFICIAL SCHEDULE</span>
       </div>
     </div>
 
@@ -356,32 +356,32 @@
         <span class="bg-fest-gold text-fest-dark text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
           Official Schedule
         </span>
-        <span class="bg-white/15 border border-fest-gold/30 text-fest-gold text-xs font-semibold px-3 py-1 rounded-full">
-          3 Teams • 100+ Programmes
+        <span id="schedule-dates-summary-chip" class="bg-white/15 border border-fest-gold/30 text-fest-gold text-xs font-semibold px-3 py-1 rounded-full">
+          Festival Programmes
         </span>
       </div>
       <h1 class="font-headline text-3xl sm:text-5xl font-extrabold text-white tracking-tight drop-shadow-md">
         Festival Programmes &amp; Schedule
       </h1>
-      <p class="font-body text-base sm:text-lg text-fest-cream/90 max-w-3xl leading-relaxed">
-        Browse the complete itinerary across all 3 festival days: masterclasses in Thuluth calligraphy, Andalusian oud improvisations, manuscript codices, and student team tournaments.
+      <p id="schedule-hero-subtitle" class="font-body text-base sm:text-lg text-fest-cream/90 max-w-3xl leading-relaxed">
+        Browse the complete itinerary across all festival days: masterclasses in Thuluth calligraphy, Andalusian oud improvisations, manuscript codices, and student team tournaments.
       </p>
     </div>
 
     <!-- ================= DAY SWITCHER TABS ================= -->
     <div class="bg-white/95 border border-fest-gold/30 rounded-3xl p-3 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="grid grid-cols-3 gap-2 w-full sm:w-auto">
-        <button data-day="day1" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex flex-col sm:flex-row items-center justify-center gap-1">
+      <div id="schedule-day-tabs" class="flex flex-wrap gap-2 w-full sm:w-auto">
+        <button data-day="all" class="day-tab active-day px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1">
+          <span>All Days</span>
+        </button>
+        <button data-day="day1" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex items-center justify-center gap-1">
           <span>Day 1</span>
-          <span class="text-[10px] font-normal opacity-75 hidden sm:inline">• Oct 24</span>
         </button>
-        <button data-day="day2" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex flex-col sm:flex-row items-center justify-center gap-1">
+        <button data-day="day2" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex items-center justify-center gap-1">
           <span>Day 2</span>
-          <span class="text-[10px] font-normal opacity-75 hidden sm:inline">• Oct 25</span>
         </button>
-        <button data-day="day3" class="day-tab active-day px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-center justify-center gap-1">
-          <span>Day 3 (Today)</span>
-          <span class="text-[10px] bg-fest-gold text-fest-dark px-1.5 py-0.2 rounded-full uppercase font-bold text-[9px]">Live</span>
+        <button data-day="day3" class="day-tab px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-neutral-600 hover:text-fest-red hover:bg-neutral-100 flex items-center justify-center gap-1">
+          <span>Day 3</span>
         </button>
       </div>
 
@@ -516,9 +516,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
-  <script>
+  <script type="module">
+    import { db, evaluateFestLiveStatus } from './supabase-config.js';
     // Toast Notification Helper
     const toastBanner = document.getElementById('toast-banner');
     const toastText = document.getElementById('toast-text');
@@ -611,6 +610,93 @@
     let allEvents = [];
     let currentFilter = 'all';
     let currentDay = 'all';
+    let currentFestStatus = evaluateFestLiveStatus([]);
+
+    function bindDayTabListeners() {
+      const dayTabs = document.querySelectorAll('.day-tab');
+      dayTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          dayTabs.forEach((t) => {
+            t.classList.remove('active-day');
+            t.classList.add('text-neutral-600', 'hover:text-fest-red', 'hover:bg-neutral-100');
+          });
+          tab.classList.add('active-day');
+          tab.classList.remove('text-neutral-600', 'hover:text-fest-red', 'hover:bg-neutral-100');
+          currentDay = tab.getAttribute('data-day') || 'all';
+          renderScheduleCards();
+        });
+      });
+    }
+
+    function applyScheduleFestStatus(settings) {
+      currentFestStatus = evaluateFestLiveStatus(settings?.fest_dates || []);
+
+      const drawerStatus = document.getElementById('schedule-drawer-status');
+      const livePill = document.getElementById('schedule-live-pill');
+      const liveDot = document.getElementById('schedule-live-pill-dot');
+      const liveTxt = document.getElementById('schedule-live-pill-text');
+      const summaryChip = document.getElementById('schedule-dates-summary-chip');
+      const subtitle = document.getElementById('schedule-hero-subtitle');
+      const dayTabsContainer = document.getElementById('schedule-day-tabs');
+
+      if (!currentFestStatus.configured) {
+        if (drawerStatus) drawerStatus.textContent = 'Al Murafaqa • QUINTA EDICION • Schedule';
+        if (liveTxt) liveTxt.textContent = 'OFFICIAL SCHEDULE';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-fest-gold';
+        bindDayTabListeners();
+        return;
+      }
+
+      if (currentFestStatus.isLive) {
+        if (drawerStatus) drawerStatus.textContent = `Al Murafaqa • QUINTA EDICION • LIVE DAY ${currentFestStatus.activeDay.day_number}`;
+        if (livePill) livePill.className = 'flex items-center gap-2 bg-red-600/90 border border-amber-300/50 px-3 py-1 rounded-full text-white text-[11px] font-bold shadow-md';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-white animate-ping';
+        if (liveTxt) liveTxt.textContent = `LIVE • DAY ${currentFestStatus.activeDay.day_number} (${currentFestStatus.activeDay.shortDate.toUpperCase()})`;
+        currentDay = `day${currentFestStatus.activeDay.day_number}`;
+      } else if (currentFestStatus.state === 'upcoming' || currentFestStatus.state === 'between') {
+        if (drawerStatus) drawerStatus.textContent = `Al Murafaqa • QUINTA EDICION • ${currentFestStatus.shortBadge}`;
+        if (livePill) livePill.className = 'flex items-center gap-2 bg-fest-red-dark/80 border border-fest-gold/35 px-3 py-1 rounded-full text-fest-gold text-[11px] font-bold';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        if (liveTxt) liveTxt.textContent = `${currentFestStatus.bannerText} • ${currentFestStatus.countdownText.toUpperCase()}`;
+        currentDay = 'all';
+      } else {
+        if (drawerStatus) drawerStatus.textContent = 'Al Murafaqa • QUINTA EDICION • Concluded';
+        if (livePill) livePill.className = 'flex items-center gap-2 bg-black/50 border border-white/20 px-3 py-1 rounded-full text-fest-cream/85 text-[11px] font-bold';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+        if (liveTxt) liveTxt.textContent = `CONCLUDED • ${currentFestStatus.dateRangeText.toUpperCase()}`;
+        currentDay = 'all';
+      }
+
+      if (summaryChip) {
+        summaryChip.textContent = `${currentFestStatus.totalDays} Day${currentFestStatus.totalDays === 1 ? '' : 's'} • ${currentFestStatus.dateRangeText}`;
+      }
+      if (subtitle) {
+        subtitle.textContent = `Browse the complete itinerary across ${currentFestStatus.totalDays} festival day${currentFestStatus.totalDays === 1 ? '' : 's'} (${currentFestStatus.dateRangeText}): masterclasses, stage performances, and student competitions.`;
+      }
+
+      if (dayTabsContainer) {
+        const allActive = currentDay === 'all';
+        let tabsHtml = `
+          <button data-day="all" class="day-tab ${allActive ? 'active-day' : 'text-neutral-600 hover:text-fest-red hover:bg-neutral-100'} px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1">
+            <span>All Days</span>
+          </button>
+        `;
+        tabsHtml += currentFestStatus.days.map((d) => {
+          const dayKey = `day${d.day_number}`;
+          const isDayLive = currentFestStatus.activeDay && currentFestStatus.activeDay.day_number === d.day_number;
+          const isActive = currentDay === dayKey;
+          return `
+            <button data-day="${dayKey}" class="day-tab ${isActive ? 'active-day' : 'text-neutral-600 hover:text-fest-red hover:bg-neutral-100'} px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-center justify-center gap-1">
+              <span>Day ${d.day_number}${isDayLive ? ' (Today)' : ''}</span>
+              <span class="text-[10px] font-normal opacity-80">• ${escapeHtml(d.shortDate)}</span>
+              ${isDayLive ? '<span class="text-[9px] bg-fest-gold text-fest-dark px-1.5 py-0.5 rounded-full uppercase font-bold">Live</span>' : ''}
+            </button>
+          `;
+        }).join('');
+        dayTabsContainer.innerHTML = tabsHtml;
+        bindDayTabListeners();
+      }
+    }
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -680,12 +766,17 @@
 
       container.innerHTML = filtered.map((evt) => {
         const cat = evt.category || 'General';
-        const day = `day${evt.day_number || 1}`;
-        const isLive = evt.status === 'open';
+        const dayNum = Number(evt.day_number || 1);
+        const day = `day${dayNum}`;
+        const matchedDayInfo = currentFestStatus.days.find((d) => d.day_number === dayNum);
+        const isLive = currentFestStatus.configured
+          ? (currentFestStatus.isLive && currentFestStatus.activeDay?.day_number === dayNum && evt.status === 'open')
+          : evt.status === 'open';
         const isFull = evt.status === 'full';
         const timeSlot = evt.time_slot || '20:00 - 22:00';
         const venue = evt.venue || 'Grand Andalusian Dome';
         const initial = (evt.title || 'A')[0].toUpperCase();
+        const dayLabel = matchedDayInfo ? `Day ${dayNum} • ${matchedDayInfo.shortDate}` : `Day ${dayNum}`;
 
         return `
           <div data-day="${day}" data-category="${escapeHtml(cat.toLowerCase())}" class="schedule-card relative rounded-2xl p-5 flex flex-col justify-between gap-4 overflow-hidden group bg-white border border-neutral-200/80 shadow-sm hover:shadow-md transition-all">
@@ -703,7 +794,7 @@
                 ` : isFull ? `
                   <span class="font-body text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">Capacity Full</span>
                 ` : `
-                  <span class="font-body text-[11px] text-neutral-500 font-semibold">Day ${evt.day_number || 1}</span>
+                  <span class="font-body text-[11px] text-neutral-500 font-semibold">${escapeHtml(dayLabel)}</span>
                 `}
               </div>
               <h3 class="font-headline text-[18px] text-neutral-900 font-bold group-hover:text-fest-red transition-colors mt-1">
@@ -744,11 +835,12 @@
 
     async function loadScheduleEvents() {
       try {
-        if (typeof db !== 'undefined' && db.getEvents) {
-          allEvents = await db.getEvents();
-        } else {
-          allEvents = [];
-        }
+        const [eventsData, settingsData] = await Promise.all([
+          db.getEvents ? db.getEvents() : [],
+          db.getSettings ? db.getSettings() : null,
+        ]);
+        allEvents = Array.isArray(eventsData) ? eventsData : [];
+        if (settingsData) applyScheduleFestStatus(settingsData);
       } catch (err) {
         console.error('Failed to load events:', err);
         allEvents = [];
@@ -773,15 +865,7 @@
     });
 
     // Day Switcher Tabs
-    const dayTabs = document.querySelectorAll('.day-tab');
-    dayTabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        dayTabs.forEach((t) => t.classList.remove('active-day'));
-        tab.classList.add('active-day');
-        currentDay = tab.getAttribute('data-day') || 'all';
-        renderScheduleCards();
-      });
-    });
+    bindDayTabListeners();
 
     // Search Input
     const searchInput = document.getElementById('schedule-search');

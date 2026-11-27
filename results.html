@@ -314,8 +314,8 @@
         <span class="material-symbols-outlined text-[18px]">login</span>
         <span>Sign In to Portal</span>
       </a>
-      <span class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
-        Al Murafaqa • QUINTA EDICION • Live Results
+      <span id="results-drawer-status" class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
+        Al Murafaqa • QUINTA EDICION • Results
       </span>
     </div>
   </div>
@@ -329,9 +329,9 @@
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
         <span>Back to Festival Home</span>
       </a>
-      <div class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
-        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-        <span>LIVE • JURY CERTIFIED RESULTS</span>
+      <div id="results-live-pill" class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
+        <span id="results-live-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span id="results-live-text">JURY CERTIFIED RESULTS</span>
       </div>
     </div>
 
@@ -346,8 +346,8 @@
             <h1 class="font-headline text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
               Official Results &amp; Podium
             </h1>
-            <span class="text-[11px] bg-amber-400/25 text-amber-200 border border-amber-300/40 font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-              Certified Live
+            <span id="results-hero-live-badge" class="text-[11px] bg-amber-400/25 text-amber-200 border border-amber-300/40 font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+              Certified Podium
             </span>
           </div>
           <p class="font-body text-xs sm:text-sm text-fest-cream/85 max-w-2xl mt-1 leading-relaxed">
@@ -457,7 +457,37 @@
 
   <!-- Scripts: Supabase Integration & UI Logic -->
   <script type="module">
-    import { db, supabase } from './supabase-config.js';
+    import { db, supabase, evaluateFestLiveStatus } from './supabase-config.js';
+
+    function applyResultsLiveStatus(settings) {
+      const status = evaluateFestLiveStatus(settings?.fest_dates || []);
+      const drawerStatus = document.getElementById('results-drawer-status');
+      const livePill = document.getElementById('results-live-pill');
+      const liveDot = document.getElementById('results-live-dot');
+      const liveText = document.getElementById('results-live-text');
+      const heroBadge = document.getElementById('results-hero-live-badge');
+
+      if (!status.configured) return;
+      if (status.isLive) {
+        if (drawerStatus) drawerStatus.textContent = `Al Murafaqa • QUINTA EDICION • LIVE DAY ${status.activeDay.day_number}`;
+        if (livePill) livePill.className = 'flex items-center gap-2 bg-red-600/90 border border-amber-300/50 px-3 py-1 rounded-full text-white text-[11px] font-bold shadow-md';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-amber-300 animate-ping';
+        if (liveText) liveText.textContent = `LIVE • DAY ${status.activeDay.day_number} RESULTS`;
+        if (heroBadge) heroBadge.textContent = `Live • Day ${status.activeDay.day_number}`;
+      } else if (status.state === 'upcoming' || status.state === 'between') {
+        if (drawerStatus) drawerStatus.textContent = `Al Murafaqa • QUINTA EDICION • ${status.shortBadge}`;
+        if (livePill) livePill.className = 'flex items-center gap-2 bg-fest-red-dark/80 border border-fest-gold/30 px-3 py-1 rounded-full text-fest-gold text-[11px] font-bold';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        if (liveText) liveText.textContent = `${status.bannerText} • JURY RESULTS`;
+        if (heroBadge) heroBadge.textContent = status.countdownText;
+      } else {
+        if (drawerStatus) drawerStatus.textContent = 'Al Murafaqa • QUINTA EDICION • Final Results';
+        if (livePill) livePill.className = 'flex items-center gap-2 bg-black/50 border border-amber-300/30 px-3 py-1 rounded-full text-amber-200 text-[11px] font-bold';
+        if (liveDot) liveDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        if (liveText) liveText.textContent = `FINAL • JURY CERTIFIED (${status.dateRangeText.toUpperCase()})`;
+        if (heroBadge) heroBadge.textContent = 'Final Standings';
+      }
+    }
 
     // UI Drawer Elements
     const menuToggle = document.getElementById('mobile-menu-toggle');
@@ -734,10 +764,12 @@
       const chipsContainer = document.getElementById('results-category-chips');
 
       try {
-        const [winnersData, eventsData] = await Promise.all([
+        const [winnersData, eventsData, settingsData] = await Promise.all([
           db.getWinners(),
-          db.getEvents()
+          db.getEvents(),
+          db.getSettings ? db.getSettings() : null
         ]);
+        if (settingsData) applyResultsLiveStatus(settingsData);
 
         // Map events by ID
         cachedEventsMap = {};

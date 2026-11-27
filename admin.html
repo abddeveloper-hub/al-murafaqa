@@ -416,9 +416,9 @@
                     <span class="font-label-sm text-label-sm uppercase tracking-wider text-red-700 font-bold px-2.5 py-0.5 rounded-full bg-red-50 border border-red-200">
                       QUINTA EDICION
                     </span>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-label-sm text-label-sm">
-                      <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-                      Day 3 of 5 In Progress
+                    <span id="admin-overview-live-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-label-sm text-label-sm">
+                      <span id="admin-overview-live-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                      <span id="admin-overview-live-text">Checking Schedule...</span>
                     </span>
                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-label-sm text-label-sm">
                       <span class="material-symbols-outlined text-[14px]">cell_tower</span>
@@ -663,8 +663,8 @@
               <div>
                 <div class="flex items-center gap-2">
                   <h2 class="font-headline-md text-headline-md text-slate-900 font-bold">Programme Schedule Operations</h2>
-                  <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-label-sm text-label-sm font-semibold">
-                    Day 3 • Evening Segment
+                  <span id="overview-schedule-day-pill" class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 font-label-sm text-label-sm font-semibold">
+                    Schedule Live Sync
                   </span>
                 </div>
                 <p class="font-body-md text-body-md text-slate-500 mt-0.5">
@@ -728,7 +728,7 @@
               <span id="overview-schedule-count" class="font-label-sm text-label-sm text-slate-500">
                 Showing all curated festival programmes across active hall spaces
               </span>
-              <div class="flex items-center gap-2">
+              <div id="overview-day-filter-buttons" class="flex items-center gap-2 flex-wrap">
                 <button type="button" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-label-sm text-label-sm transition-colors shadow-sm" onclick="window.filterOverviewByDay(1, this)">
                   Day 1
                 </button>
@@ -1450,11 +1450,14 @@
               </div>
 
               <!-- Live Indicator Switch -->
-              <div class="flex items-center gap-2 pt-1">
-                <input type="checkbox" id="setting-video-live" class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"/>
-                <label for="setting-video-live" class="text-xs font-bold text-slate-800 cursor-pointer">
-                  Broadcast Is Currently Live (Enables glowing red pulse badge on main page)
-                </label>
+              <div class="pt-1 space-y-1">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="setting-video-live" class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"/>
+                  <label for="setting-video-live" class="text-xs font-bold text-slate-800 cursor-pointer">
+                    Broadcast Is Currently Live (Enables glowing red pulse badge on main page)
+                  </label>
+                </div>
+                <p id="admin-video-dates-sync-note" class="text-[11px] text-slate-500 pl-6"></p>
               </div>
 
               <!-- Live Preview Card Inside Admin -->
@@ -2192,6 +2195,67 @@
             </div>
           </div>
         
+          <!-- Festival Dates & Automatic Live Window -->
+          <div id="fest-dates-settings-card" class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-red-600 text-2xl">calendar_month</span>
+                  <h3 class="font-headline-sm text-lg font-bold text-slate-900">Festival Dates &amp; Live Schedule Window</h3>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Add official festival dates and active hours. Public LIVE badges, countdowns, broadcast status, and schedule day tabs update automatically from these dates.</p>
+              </div>
+              <span id="settings-fest-live-badge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold shrink-0">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span>No Dates Configured</span>
+              </span>
+            </div>
+
+            <!-- Add / Edit Festival Date Form -->
+            <form id="form-fest-date" class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+              <input type="hidden" id="fest-date-edit-id" value="">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label for="fest-date-input" class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Festival Date *</label>
+                  <input type="date" id="fest-date-input" required class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-500">
+                </div>
+                <div>
+                  <label for="fest-date-label" class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Day Title / Label</label>
+                  <input type="text" id="fest-date-label" placeholder="e.g. Inaugural &amp; Preliminary" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-500">
+                </div>
+                <div>
+                  <label for="fest-date-start" class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Live From</label>
+                  <input type="time" id="fest-date-start" value="08:00" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-500">
+                </div>
+                <div>
+                  <label for="fest-date-end" class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Live Until</label>
+                  <input type="time" id="fest-date-end" value="22:00" class="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-red-500">
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="submit" id="btn-save-fest-date" class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                    <span id="btn-save-fest-date-text">Add Festival Date</span>
+                  </button>
+                  <button type="button" id="btn-cancel-fest-date" class="hidden inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer">
+                    <span>Cancel Edit</span>
+                  </button>
+                </div>
+                <button type="button" id="btn-quick-next-fest-date" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold transition-colors cursor-pointer" title="Add the next consecutive calendar day">
+                  <span class="material-symbols-outlined text-[15px] text-amber-600">event_repeat</span>
+                  <span>+ Quick Add Next Day</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- Configured Dates List -->
+            <div id="fest-dates-list" class="space-y-2">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
           <!-- Festival Categories & Competition Tracks -->
           <div class="p-6 bg-white border border-slate-200 rounded-xl shadow-sm space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

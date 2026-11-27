@@ -291,8 +291,8 @@
         <span class="material-symbols-outlined text-[18px]">explore</span>
         <span>Back to Main Stage</span>
       </a>
-      <span class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
-        Al Murafaqa • QUINTA EDICION • Live Gathering
+      <span id="participants-drawer-status" class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
+        Al Murafaqa • QUINTA EDICION • Directory
       </span>
     </div>
   </div>
@@ -547,7 +547,7 @@
   </script>
 
   <script type="module">
-    import { db, PRODUCTION_BASE_URL } from './supabase-config.js';
+    import { db, PRODUCTION_BASE_URL, evaluateFestLiveStatus } from './supabase-config.js';
 
     // Base URL resolution for individual profile accreditation page
     const isLocalHost = typeof window !== 'undefined' && (
@@ -775,12 +775,20 @@
           await db.syncAllDelegationData().catch(() => {});
         }
 
-        const [teamStudents, teamLeaders, registrations, events] = await Promise.all([
+        const [teamStudents, teamLeaders, registrations, events, settingsData] = await Promise.all([
           db.getTeamStudents ? db.getTeamStudents() : [],
           db.getTeamLeaders ? db.getTeamLeaders() : [],
           db.getRegistrations ? db.getRegistrations() : [],
           db.getEvents ? db.getEvents() : [],
+          db.getSettings ? db.getSettings() : null,
         ]);
+        if (settingsData) {
+          const st = evaluateFestLiveStatus(settingsData.fest_dates || []);
+          const drawerEl = document.getElementById('participants-drawer-status');
+          if (drawerEl && st.configured) {
+            drawerEl.textContent = `Al Murafaqa • QUINTA EDICION • ${st.shortBadge}`;
+          }
+        }
 
         let list = [];
 

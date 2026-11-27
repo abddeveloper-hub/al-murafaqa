@@ -45,6 +45,7 @@ ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_duration_note TE
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS custom_categories JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS stage_ops JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS site_restrictions JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS fest_dates JSONB DEFAULT '[]'::jsonb;
 
 -- ------------------------------------------------------------------------------
 -- 2. EVENTS (Competitions & Cultural Tracks)

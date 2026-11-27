@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.fest_settings (
     custom_categories JSONB DEFAULT '[]'::jsonb,
     stage_ops JSONB DEFAULT '{}'::jsonb,
     site_restrictions JSONB DEFAULT '{}'::jsonb,
+    fest_dates JSONB DEFAULT '[]'::jsonb,
     updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
     CONSTRAINT single_row_check CHECK (id = 1)
 );
@@ -43,6 +44,7 @@ ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_duration_note TE
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS custom_categories JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS stage_ops JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS site_restrictions JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS fest_dates JSONB DEFAULT '[]'::jsonb;
 
 INSERT INTO public.fest_settings (id, fest_name)
 VALUES (1, 'Al Murafaqa • 5th Edition')
