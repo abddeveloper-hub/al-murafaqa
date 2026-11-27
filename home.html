@@ -356,19 +356,6 @@
         </button>
       </div>
     </div>
-
-    <!-- Live Marquee Ticker Bar (Driven by Festival Command Center Settings) -->
-    <div id="live-ticker-container" class="hidden bg-black/25 border-t border-fest-gold/20 text-fest-cream py-1 px-4 overflow-hidden">
-      <div class="flex items-center gap-2 max-w-7xl mx-auto text-xs font-body">
-        <span class="inline-flex items-center gap-1 bg-fest-gold text-fest-dark text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wider">
-          <span class="w-1.5 h-1.5 rounded-full bg-fest-red animate-pulse"></span>
-          Bulletin
-        </span>
-        <marquee id="live-ticker-content" class="text-[12px] font-medium tracking-wide">
-          ✨ Welcome to Al Murafaqa QUINTA EDICION • Live Cultural Gathering
-        </marquee>
-      </div>
-    </div>
   </header>
 
   <!-- ================= SLIDE-OUT MOBILE NAVIGATION DRAWER ================= -->
@@ -1527,19 +1514,7 @@
           const maint = document.getElementById('maintenance-overlay');
           if (maint) maint.classList.remove('hidden');
         }
-        if (settings.live_ticker_enabled && settings.live_ticker_text) {
-          const tickerBox = document.getElementById('live-ticker-container');
-          const tickerContent = document.getElementById('live-ticker-content');
-          if (tickerBox && tickerContent) {
-            tickerContent.textContent = settings.live_ticker_text;
-            tickerBox.classList.remove('hidden');
-            const mainView = document.getElementById('explore-section');
-            if (mainView) {
-              mainView.classList.remove('pt-20');
-              mainView.classList.add('pt-28');
-            }
-          }
-        }
+
       }
     } catch (err) {
       console.warn('Could not load settings:', err);

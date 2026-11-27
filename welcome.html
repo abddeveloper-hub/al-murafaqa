@@ -243,17 +243,71 @@
     </div>
   </main>
 
+  <!-- Simple Page Loader -->
+  <div id="simple-page-loader" class="fixed inset-0 z-50 bg-[#1F000B]/90 backdrop-blur-md flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="relative flex items-center justify-center mb-4">
+      <div class="w-12 h-12 rounded-full border-2 border-amber-400/20 border-t-amber-400 animate-spin"></div>
+      <span class="material-symbols-outlined text-amber-300 text-xl absolute animate-pulse">festival</span>
+    </div>
+    <p class="text-amber-100 font-bold text-sm tracking-widest uppercase">Opening Festival...</p>
+    <div class="w-44 h-1 bg-white/10 rounded-full mt-4 overflow-hidden">
+      <div id="loader-progress-bar" class="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full w-0"></div>
+    </div>
+  </div>
+
   <script>
+    let isEntering = false;
+
     function enterSite(destination) {
+      if (isEntering) return;
+      isEntering = true;
+
       try {
         sessionStorage.setItem('almurafaqa_welcome_seen', 'true');
       } catch (e) {}
-      const target = destination || 'index.html';
+
+      // Show simple loading page overlay
+      const loader = document.getElementById('simple-page-loader');
+      const progressBar = document.getElementById('loader-progress-bar');
+      if (loader) {
+        loader.classList.remove('opacity-0', 'pointer-events-none');
+        loader.classList.add('opacity-100');
+        if (progressBar) {
+          progressBar.style.transition = 'none';
+          progressBar.style.width = '0%';
+          setTimeout(() => {
+            progressBar.style.transition = 'width 1.9s cubic-bezier(0.16, 1, 0.3, 1)';
+            progressBar.style.width = '100%';
+          }, 30);
+        }
+      }
+
+      const target = destination || 'home.html';
       const separator = target.includes('?') ? '&' : '?';
-      window.location.href = target.includes('#')
+      const finalUrl = target.includes('#')
         ? target.replace('#', separator + 'entered=true#')
         : target + separator + 'entered=true';
+
+      // 2-second smooth loading display before opening
+      setTimeout(() => {
+        window.location.href = finalUrl;
+      }, 2000);
     }
+
+    // Reset loader if user navigates back using browser history
+    window.addEventListener('pageshow', () => {
+      isEntering = false;
+      const loader = document.getElementById('simple-page-loader');
+      const progressBar = document.getElementById('loader-progress-bar');
+      if (loader) {
+        loader.classList.remove('opacity-100');
+        loader.classList.add('opacity-0', 'pointer-events-none');
+      }
+      if (progressBar) {
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0%';
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('a').forEach((link) => {

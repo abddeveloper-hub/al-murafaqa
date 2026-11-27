@@ -9,6 +9,9 @@ import { db, isConfigured, generateLeaderToken, getShareablePortalUrl } from './
 let currentTab = 'overview';
 let cachedSettings = null;
 let cachedEvents = [];
+let cachedCategories = [];
+window.festivalCategories = cachedCategories;
+let quickAddCategoryFromEventModal = false;
 let cachedRegistrations = [];
 let cachedAnnouncements = [];
 let cachedWinners = [];
@@ -352,6 +355,7 @@ function setupEventListeners() {
   setupDirectRestrictionSearch();
   setupBroadcastVideoModalControls();
   setupTeamLeaderControls();
+  setupCategoryControls();
 
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
@@ -422,7 +426,7 @@ window.switchTab = switchTab;
 
 async function loadAllData() {
   try {
-    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders] = await Promise.all([
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders, categories] = await Promise.all([
       db.getSettings(),
       db.getEvents(),
       db.getRegistrations(),
@@ -433,6 +437,7 @@ async function loadAllData() {
       db.getAuditLogs ? db.getAuditLogs() : [],
       db.getRestrictions ? db.getRestrictions() : null,
       db.getTeamLeaders ? db.getTeamLeaders() : [],
+      db.getCategories ? db.getCategories() : [],
     ]);
 
     cachedSettings = settings;
@@ -445,6 +450,12 @@ async function loadAllData() {
     cachedAuditLogs = auditLogs || [];
     cachedRestrictions = restrictions || null;
     cachedTeamLeaders = teamLeaders || [];
+    cachedCategories = categories || [];
+    window.festivalCategories = cachedCategories;
+
+    populateCategoryDropdowns();
+    renderCategoriesManager();
+    renderCategoriesSettingsPreview();
 
     // Render active tab immediately for snappy responsiveness
     renderCurrentTab();
@@ -1123,17 +1134,32 @@ window.deleteAnnouncement = async function (id) {
 
 // Programme Code Generator helper
 function generateProgrammeCode(category = 'Senior') {
-  const cat = (category || 'Senior').toUpperCase();
-  let prefix = 'PRG';
-  if (cat.includes('SENIOR')) prefix = 'PRG-SEN';
-  else if (cat.includes('SUB')) prefix = 'PRG-SUB';
-  else if (cat.includes('JUN')) prefix = 'PRG-JUN';
-  else if (cat.includes('ORA')) prefix = 'PRG-ORA';
-  else if (cat.includes('ART')) prefix = 'PRG-ART';
-  else if (cat.includes('LIT')) prefix = 'PRG-LIT';
-  else if (cat.includes('MUS')) prefix = 'PRG-MUS';
-  else if (cat.includes('GEN')) prefix = 'PRG-GEN';
-  else prefix = `PRG-${cat.replace(/[^A-Z]/g, '').slice(0, 3) || 'GEN'}`;
+  const catRaw = (category || 'Senior').trim();
+  const cat = catRaw.toUpperCase();
+  let prefix = 'PRG-GEN';
+
+  // Check dynamic categories list first
+  if (window.festivalCategories && Array.isArray(window.festivalCategories)) {
+    const matched = window.festivalCategories.find(c => c.name.toLowerCase() === catRaw.toLowerCase());
+    if (matched && matched.code) {
+      prefix = `PRG-${matched.code.toUpperCase()}`;
+    }
+  }
+
+  if (prefix === 'PRG-GEN') {
+    if (cat.includes('SENIOR') || cat.includes('SNR')) prefix = 'PRG-SNR';
+    else if (cat.includes('SUB')) prefix = 'PRG-SBJ';
+    else if (cat.includes('JUN') || cat.includes('JNR')) prefix = 'PRG-JNR';
+    else if (cat.includes('KHADIMA') || cat.includes('KHD')) prefix = 'PRG-KHD';
+    else if (cat.includes('AALIYA') || cat.includes('AAL')) prefix = 'PRG-AAL';
+    else if (cat.includes('SANAWIYYA') || cat.includes('SNW')) prefix = 'PRG-SNW';
+    else if (cat.includes('HIFZ') || cat.includes('QURAN')) prefix = 'PRG-HFZ';
+    else if (cat.includes('ORA')) prefix = 'PRG-ORA';
+    else if (cat.includes('ART')) prefix = 'PRG-ART';
+    else if (cat.includes('LIT')) prefix = 'PRG-LIT';
+    else if (cat.includes('MUS')) prefix = 'PRG-MUS';
+    else prefix = `PRG-${cat.replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'GEN'}`;
+  }
 
   // Find next sequential number for this prefix
   const existingCodes = (cachedEvents || [])
@@ -1227,15 +1253,17 @@ function renderEventsTab() {
 
   const searchVal = (document.getElementById('events-search-input')?.value || '').toLowerCase();
   const statusFilter = document.getElementById('events-status-filter')?.value || 'all';
+  const categoryFilter = document.getElementById('events-category-filter')?.value || 'all';
 
   const filtered = cachedEvents.filter((evt) => {
     const matchesSearch =
       (evt.code && evt.code.toLowerCase().includes(searchVal)) ||
       evt.title.toLowerCase().includes(searchVal) ||
-      evt.category.toLowerCase().includes(searchVal) ||
-      evt.venue.toLowerCase().includes(searchVal);
+      (evt.category && evt.category.toLowerCase().includes(searchVal)) ||
+      (evt.venue && evt.venue.toLowerCase().includes(searchVal));
     const matchesStatus = statusFilter === 'all' || evt.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCategory = categoryFilter === 'all' || (evt.category && evt.category.toLowerCase().trim() === categoryFilter.toLowerCase().trim());
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
   if (filtered.length === 0) {
@@ -5241,3 +5269,357 @@ window.viewLeaderRoster = async (leaderId) => {
     container.innerHTML = `<div class="p-4 text-xs text-red-600 font-semibold">Error loading roster: ${err.message}</div>`;
   }
 };
+
+
+/* ================= FESTIVAL CATEGORIES & SECTIONS MANAGER ================= */
+const CATEGORY_COLORS = {
+  purple: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', dot: '#9333ea', label: 'Purple' },
+  indigo: { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200', dot: '#4f46e5', label: 'Indigo' },
+  cyan: { bg: 'bg-cyan-100', text: 'text-cyan-800', border: 'border-cyan-200', dot: '#06b6d4', label: 'Cyan' },
+  emerald: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200', dot: '#10b981', label: 'Emerald' },
+  amber: { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200', dot: '#f59e0b', label: 'Amber' },
+  rose: { bg: 'bg-rose-100', text: 'text-rose-800', border: 'border-rose-200', dot: '#f43f5e', label: 'Rose' },
+  orange: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-200', dot: '#f97316', label: 'Orange' },
+  blue: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200', dot: '#3b82f6', label: 'Blue' },
+  slate: { bg: 'bg-slate-100', text: 'text-slate-800', border: 'border-slate-200', dot: '#64748b', label: 'Slate' }
+};
+
+function renderColorPickers(selectedColor = 'purple') {
+  const container = document.getElementById('cat-color-picker-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  Object.entries(CATEGORY_COLORS).forEach(([key, conf]) => {
+    const isSelected = key === selectedColor;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `w-6 h-6 rounded-full transition-transform cursor-pointer flex items-center justify-center ${isSelected ? 'ring-2 ring-offset-2 ring-slate-800 scale-110' : 'hover:scale-105'}`;
+    btn.style.backgroundColor = conf.dot;
+    btn.title = conf.label;
+    btn.innerHTML = isSelected ? '<span class="material-symbols-outlined text-[13px] text-white">check</span>' : '';
+    btn.addEventListener('click', () => {
+      document.getElementById('cat-color-input').value = key;
+      renderColorPickers(key);
+    });
+    container.appendChild(btn);
+  });
+}
+
+function populateCategoryDropdowns(selectedCategory = null) {
+  const selectEvt = document.getElementById('evt-category');
+  const selectFilter = document.getElementById('events-category-filter');
+  
+  if (selectEvt) {
+    const currentVal = selectedCategory || selectEvt.value;
+    selectEvt.innerHTML = '';
+    
+    // Group by division vs genre
+    const divisions = cachedCategories.filter(c => c.type === 'division');
+    const genres = cachedCategories.filter(c => c.type !== 'division');
+
+    if (divisions.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Student Divisions / Levels';
+      divisions.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = `${c.name} [${c.code}]`;
+        grp.appendChild(opt);
+      });
+      selectEvt.appendChild(grp);
+    }
+
+    if (genres.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Competition Tracks / Genres';
+      genres.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = `${c.name} [${c.code}]`;
+        grp.appendChild(opt);
+      });
+      selectEvt.appendChild(grp);
+    }
+
+    if (currentVal && cachedCategories.some(c => c.name.toLowerCase() === currentVal.toLowerCase())) {
+      selectEvt.value = currentVal;
+    }
+  }
+
+  if (selectFilter) {
+    const currentFilter = selectFilter.value;
+    selectFilter.innerHTML = '<option value="all">All Categories</option>';
+    cachedCategories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = `${c.name} (${c.code})`;
+      selectFilter.appendChild(opt);
+    });
+    if (currentFilter) selectFilter.value = currentFilter;
+  }
+}
+
+function renderCategoriesManager(searchTerm = '') {
+  const tbody = document.getElementById('categories-table-body');
+  const countBadge = document.getElementById('categories-count-badge');
+  if (!tbody) return;
+
+  const term = (searchTerm || '').trim().toLowerCase();
+  const list = cachedCategories.filter(c => 
+    !term || 
+    c.name.toLowerCase().includes(term) || 
+    c.code.toLowerCase().includes(term) || 
+    (c.description && c.description.toLowerCase().includes(term))
+  );
+
+  if (countBadge) {
+    countBadge.textContent = `${cachedCategories.length} categories configured (${list.length} shown)`;
+  }
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No categories match "${escapeHtml(term)}"</td></tr>`;
+    return;
+  }
+
+  // Count programmes linked to each category
+  const usageCountMap = {};
+  (cachedEvents || []).forEach(e => {
+    if (e.category) {
+      const k = e.category.toLowerCase().trim();
+      usageCountMap[k] = (usageCountMap[k] || 0) + 1;
+    }
+  });
+
+  tbody.innerHTML = list.map(c => {
+    const colorStyle = CATEGORY_COLORS[c.badge_color] || CATEGORY_COLORS.purple;
+    const linkedCount = usageCountMap[c.name.toLowerCase().trim()] || usageCountMap[c.id.toLowerCase().trim()] || 0;
+    const isDivision = c.type === 'division';
+
+    return `
+      <tr class="hover:bg-slate-50/80 transition-colors">
+        <td class="py-3 px-3">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border ${colorStyle.bg} ${colorStyle.text} ${colorStyle.border}">
+              ${escapeHtml(c.name)}
+            </span>
+            ${c.description ? `<span class="text-[11px] text-slate-400 truncate max-w-[140px]" title="${escapeHtml(c.description)}">${escapeHtml(c.description)}</span>` : ''}
+          </div>
+        </td>
+        <td class="py-3 px-2">
+          <span class="font-mono text-xs font-bold px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">${escapeHtml(c.code)}</span>
+        </td>
+        <td class="py-3 px-2">
+          <span class="text-[11px] font-semibold text-slate-600 capitalize">
+            ${isDivision ? 'Division' : 'Track'}
+          </span>
+        </td>
+        <td class="py-3 px-2 text-center">
+          <span class="inline-flex items-center gap-1 text-xs font-bold ${linkedCount > 0 ? 'text-red-700' : 'text-slate-400'}">
+            <span class="material-symbols-outlined text-[14px]">event</span>
+            <span>${linkedCount}</span>
+          </span>
+        </td>
+        <td class="py-3 px-3 text-right">
+          <div class="inline-flex items-center gap-1.5">
+            <button type="button" class="btn-edit-category p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" data-id="${escapeHtml(c.id)}" title="Edit Category">
+              <span class="material-symbols-outlined text-[16px]">edit</span>
+            </button>
+            <button type="button" class="btn-delete-category p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" data-id="${escapeHtml(c.id)}" data-name="${escapeHtml(c.name)}" data-count="${linkedCount}" title="Delete Category">
+              <span class="material-symbols-outlined text-[16px]">delete</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Attach action listeners
+  tbody.querySelectorAll('.btn-edit-category').forEach(btn => {
+    btn.addEventListener('click', () => editCategory(btn.dataset.id));
+  });
+
+  tbody.querySelectorAll('.btn-delete-category').forEach(btn => {
+    btn.addEventListener('click', () => deleteCategoryAction(btn.dataset.id, btn.dataset.name, parseInt(btn.dataset.count, 10)));
+  });
+}
+
+function renderCategoriesSettingsPreview() {
+  const container = document.getElementById('settings-categories-preview');
+  if (!container) return;
+
+  if (cachedCategories.length === 0) {
+    container.innerHTML = '<span class="text-xs text-slate-400">No custom categories configured yet.</span>';
+    return;
+  }
+
+  container.innerHTML = cachedCategories.map(c => {
+    const col = CATEGORY_COLORS[c.badge_color] || CATEGORY_COLORS.purple;
+    return `
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${col.bg} ${col.text} ${col.border}">
+        <span>${escapeHtml(c.name)}</span>
+        <span class="text-[10px] font-mono px-1 py-0.2 bg-white/70 rounded">${escapeHtml(c.code)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function openCategoriesModal(quickAdd = false) {
+  quickAddCategoryFromEventModal = quickAdd;
+  resetCategoryForm();
+  renderColorPickers('purple');
+  renderCategoriesManager();
+  const modal = document.getElementById('modal-categories-manager');
+  if (modal) modal.classList.add('show');
+}
+
+function closeCategoriesModal() {
+  const modal = document.getElementById('modal-categories-manager');
+  if (modal) modal.classList.remove('show');
+  quickAddCategoryFromEventModal = false;
+}
+
+function resetCategoryForm() {
+  const form = document.getElementById('form-category-editor');
+  if (form) form.reset();
+  const editId = document.getElementById('category-edit-id');
+  if (editId) editId.value = '';
+  const title = document.getElementById('category-form-title');
+  if (title) title.innerHTML = '<span class="material-symbols-outlined text-red-600 text-[18px]">add_circle</span><span>Add New Category</span>';
+  const saveText = document.getElementById('btn-save-category-text');
+  if (saveText) saveText.textContent = 'Save Category';
+  const resetBtn = document.getElementById('btn-reset-category-form');
+  if (resetBtn) resetBtn.classList.add('hidden');
+  renderColorPickers('purple');
+}
+
+function editCategory(id) {
+  const cat = cachedCategories.find(c => c.id === id);
+  if (!cat) return;
+
+  document.getElementById('category-edit-id').value = cat.id;
+  document.getElementById('cat-name-input').value = cat.name;
+  document.getElementById('cat-code-input').value = cat.code;
+  document.getElementById('cat-type-select').value = cat.type || 'division';
+  document.getElementById('cat-color-input').value = cat.badge_color || 'purple';
+  document.getElementById('cat-desc-input').value = cat.description || '';
+  document.getElementById('cat-max-events-input').value = cat.max_events || '';
+
+  const title = document.getElementById('category-form-title');
+  if (title) title.innerHTML = '<span class="material-symbols-outlined text-amber-600 text-[18px]">edit</span><span>Edit Category</span>';
+  const saveText = document.getElementById('btn-save-category-text');
+  if (saveText) saveText.textContent = 'Update Category';
+  const resetBtn = document.getElementById('btn-reset-category-form');
+  if (resetBtn) resetBtn.classList.remove('hidden');
+
+  renderColorPickers(cat.badge_color || 'purple');
+}
+
+async function deleteCategoryAction(id, name, linkedCount) {
+  if (linkedCount > 0) {
+    alert(`Cannot delete category "${name}" because it is currently linked to ${linkedCount} programme(s).\n\nPlease edit or reassign those programmes first.`);
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+
+  try {
+    await db.deleteCategory(id);
+    cachedCategories = await db.getCategories();
+    window.festivalCategories = cachedCategories;
+    populateCategoryDropdowns();
+    renderCategoriesManager();
+    renderCategoriesSettingsPreview();
+    showToast(`Category "${name}" deleted successfully`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Failed to delete category', 'error');
+  }
+}
+
+function setupCategoryControls() {
+  // Modal openers and closers
+  document.getElementById('btn-open-categories-modal')?.addEventListener('click', () => openCategoriesModal(false));
+  document.getElementById('btn-open-categories-from-settings')?.addEventListener('click', () => openCategoriesModal(false));
+  document.getElementById('btn-quick-add-category')?.addEventListener('click', () => openCategoriesModal(true));
+  document.getElementById('btn-close-categories-modal')?.addEventListener('click', closeCategoriesModal);
+  document.getElementById('btn-reset-category-form')?.addEventListener('click', resetCategoryForm);
+
+  // Auto-generate 3-letter uppercase code while typing category name
+  const nameInput = document.getElementById('cat-name-input');
+  const codeInput = document.getElementById('cat-code-input');
+  if (nameInput && codeInput) {
+    nameInput.addEventListener('input', () => {
+      const editId = document.getElementById('category-edit-id')?.value;
+      if (!editId) {
+        const raw = nameInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (raw.length >= 3) {
+          codeInput.value = raw.slice(0, 3);
+        } else if (raw.length > 0) {
+          codeInput.value = raw;
+        }
+      }
+    });
+  }
+
+  // Search filter inside categories manager
+  document.getElementById('categories-search-input')?.addEventListener('input', (e) => {
+    renderCategoriesManager(e.target.value);
+  });
+
+  // Category filter on programmes table
+  document.getElementById('events-category-filter')?.addEventListener('change', () => {
+    renderEventsTab();
+  });
+
+  // Category Form Submit
+  const form = document.getElementById('form-category-editor');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('btn-save-category');
+      if (saveBtn) saveBtn.disabled = true;
+
+      try {
+        const editId = document.getElementById('category-edit-id')?.value;
+        const nameVal = document.getElementById('cat-name-input')?.value.trim();
+        const codeVal = document.getElementById('cat-code-input')?.value.trim().toUpperCase();
+        const typeVal = document.getElementById('cat-type-select')?.value || 'division';
+        const colorVal = document.getElementById('cat-color-input')?.value || 'purple';
+        const descVal = document.getElementById('cat-desc-input')?.value.trim();
+        const maxEventsVal = document.getElementById('cat-max-events-input')?.value;
+
+        const payload = {
+          id: editId || undefined,
+          name: nameVal,
+          code: codeVal,
+          type: typeVal,
+          badge_color: colorVal,
+          description: descVal,
+          max_events: maxEventsVal ? parseInt(maxEventsVal, 10) : null
+        };
+
+        const saved = await db.saveCategory(payload);
+        cachedCategories = await db.getCategories();
+        window.festivalCategories = cachedCategories;
+
+        populateCategoryDropdowns(saved.name);
+        renderCategoriesManager();
+        renderCategoriesSettingsPreview();
+        showToast(`Category "${saved.name}" [${saved.code}] saved successfully!`, 'success');
+
+        if (quickAddCategoryFromEventModal) {
+          const catSelect = document.getElementById('evt-category');
+          if (catSelect) catSelect.value = saved.name;
+          const codeEl = document.getElementById('evt-code');
+          if (codeEl) codeEl.value = generateProgrammeCode(saved.name);
+          closeCategoriesModal();
+        } else {
+          resetCategoryForm();
+        }
+      } catch (err) {
+        showToast(err.message || 'Failed to save category', 'error');
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+    });
+  }
+}

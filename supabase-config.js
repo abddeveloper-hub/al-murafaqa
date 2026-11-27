@@ -500,6 +500,137 @@ export const db = {
     return updated;
   },
 
+  // Competition & Participant Categories Operations
+  async getCategories() {
+    const DEFAULT_CATEGORIES = [
+      { id: 'cat_senior', name: 'Senior', code: 'SNR', type: 'division', badge_color: 'purple', description: 'Senior Dars & Degree scholars', max_events: 5, active: true },
+      { id: 'cat_junior', name: 'Junior', code: 'JNR', type: 'division', badge_color: 'indigo', description: 'Junior Dars scholars (Class 8-10)', max_events: 5, active: true },
+      { id: 'cat_subjunior', name: 'Sub-Junior', code: 'SBJ', type: 'division', badge_color: 'cyan', description: 'Sub-Junior dars scholars', max_events: 4, active: true },
+      { id: 'cat_general', name: 'General', code: 'GEN', type: 'division', badge_color: 'emerald', description: 'Open across all divisions and participants', max_events: null, active: true },
+      { id: 'cat_khadima', name: 'Khadima', code: 'KHD', type: 'division', badge_color: 'amber', description: 'Khadima dars section', max_events: 4, active: true },
+      { id: 'cat_aaliya', name: 'Aaliya', code: 'AAL', type: 'division', badge_color: 'rose', description: 'Aaliya dars level scholars', max_events: 5, active: true },
+      { id: 'cat_sanawiyya', name: 'Sanawiyya', code: 'SNW', type: 'division', badge_color: 'orange', description: 'Sanawiyya secondary level scholars', max_events: 5, active: true },
+      { id: 'cat_hifz', name: "Qur'an & Hifz", code: 'HFZ', type: 'genre', badge_color: 'emerald', description: "Hifz, Tajweed, Tartil & Qira'at competitions", max_events: 3, active: true },
+      { id: 'cat_oratory', name: 'Oratory & Elocution', code: 'ORA', type: 'genre', badge_color: 'amber', description: 'Debates, speeches, and public addresses', max_events: 4, active: true },
+      { id: 'cat_arts', name: 'Traditional Arts & Calligraphy', code: 'ART', type: 'genre', badge_color: 'rose', description: 'Arabic calligraphy, poster painting, and craft', max_events: 4, active: true },
+      { id: 'cat_literature', name: 'Literary & Poetry', code: 'LIT', type: 'genre', badge_color: 'purple', description: 'Poetry recitation, essay composition, and translation', max_events: 4, active: true },
+      { id: 'cat_vocal', name: 'Vocal & Ensemble', code: 'MUS', type: 'genre', badge_color: 'blue', description: 'Nasheed, choir, and cultural vocal tracks', max_events: 3, active: true }
+    ];
+
+    let cached = [];
+    try {
+      const local = localStorage.getItem('almurafaqa_custom_categories');
+      if (local) cached = JSON.parse(local);
+    } catch (e) {}
+
+    let cloudCats = null;
+    if (this.isLive()) {
+      try {
+        const { data, error } = await supabase
+          .from('fest_settings')
+          .select('custom_categories')
+          .eq('id', 1)
+          .maybeSingle();
+        if (!error && data?.custom_categories && Array.isArray(data.custom_categories)) {
+          cloudCats = data.custom_categories;
+        }
+      } catch (e) {
+        console.warn('[Supabase getCategories]', e);
+      }
+    }
+
+    const source = cloudCats || (cached && cached.length > 0 ? cached : DEFAULT_CATEGORIES);
+    const mergedMap = new Map();
+    DEFAULT_CATEGORIES.forEach(c => mergedMap.set(c.name.toLowerCase(), c));
+    source.forEach(c => mergedMap.set(c.name.toLowerCase(), c));
+    const result = Array.from(mergedMap.values());
+
+    try {
+      localStorage.setItem('almurafaqa_custom_categories', JSON.stringify(result));
+    } catch (e) {}
+
+    return result;
+  },
+
+  async saveCategory(categoryData) {
+    const list = await this.getCategories();
+    const cleanName = (categoryData.name || '').trim();
+    if (!cleanName) throw new Error('Category name is required');
+
+    let cleanCode = (categoryData.code || '').trim().toUpperCase();
+    if (!cleanCode) {
+      cleanCode = cleanName.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() || 'CAT';
+    }
+
+    const id = categoryData.id || ('cat_' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_'));
+    const entry = {
+      id,
+      name: cleanName,
+      code: cleanCode,
+      type: categoryData.type || 'division',
+      badge_color: categoryData.badge_color || 'purple',
+      description: categoryData.description || '',
+      max_events: categoryData.max_events ? parseInt(categoryData.max_events, 10) : null,
+      active: categoryData.active !== false,
+      updated_at: new Date().toISOString()
+    };
+
+    const idx = list.findIndex(c => c.id === id || c.name.toLowerCase() === cleanName.toLowerCase());
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...entry };
+    } else {
+      list.push(entry);
+    }
+
+    try {
+      localStorage.setItem('almurafaqa_custom_categories', JSON.stringify(list));
+    } catch (e) {}
+
+    if (this.isLive()) {
+      try {
+        await supabase
+          .from('fest_settings')
+          .update({ custom_categories: list })
+          .eq('id', 1);
+      } catch (e) {
+        console.warn('[Supabase saveCategory]', e);
+      }
+    }
+
+    return entry;
+  },
+
+  async deleteCategory(categoryId) {
+    const list = await this.getCategories();
+    const cat = list.find(c => c.id === categoryId);
+    if (!cat) return false;
+
+    // Check if any events use this category
+    const events = await this.getEvents();
+    const inUse = events.filter(e => e.category && (e.category.toLowerCase() === cat.name.toLowerCase() || e.category.toLowerCase() === cat.id.toLowerCase()));
+    if (inUse.length > 0) {
+      throw new Error(`Cannot delete "${cat.name}" because it is currently assigned to ${inUse.length} programme(s). Please reassign those programmes first.`);
+    }
+
+    const updated = list.filter(c => c.id !== categoryId);
+    try {
+      localStorage.setItem('almurafaqa_custom_categories', JSON.stringify(updated));
+    } catch (e) {}
+
+    if (this.isLive()) {
+      try {
+        await supabase
+          .from('fest_settings')
+          .update({ custom_categories: updated })
+          .eq('id', 1);
+      } catch (e) {
+        console.warn('[Supabase deleteCategory]', e);
+      }
+    }
+
+    return true;
+  },
+
   // Events Operations
   async getEvents() {
     if (this.isLive()) {
