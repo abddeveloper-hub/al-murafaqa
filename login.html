@@ -280,16 +280,6 @@
             </button>
           </form>
 
-          <div class="relative my-3 flex items-center justify-center">
-            <div class="absolute inset-0 flex items-center"><div class="w-full h-px bg-surface-variant/25"></div></div>
-            <span class="relative px-2.5 bg-white font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold tracking-wider">or fast admin access</span>
-          </div>
-
-          <button id="btnOpenAdminMaster" class="w-full h-11 px-3 rounded-lg font-label-sm text-label-sm bg-gradient-to-r from-surface-variant/20 via-surface-variant/10 to-surface-variant/20 hover:from-secondary-container/20 hover:to-primary-container/20 text-on-surface font-bold border border-secondary-container/30 shadow-sm active:scale-[0.99] transition-all flex items-center justify-center gap-2" type="button">
-            <span class="material-symbols-outlined text-secondary-container text-body-lg">admin_panel_settings</span>
-            <span>Open Fest Command Center (Master Admin Access)</span>
-          </button>
-
           <!-- Team Leader Token Portal Link -->
           <a href="leader.html" class="w-full h-11 px-3 mt-2 rounded-lg font-label-sm text-label-sm bg-gradient-to-r from-purple-900/10 via-purple-800/15 to-purple-900/10 hover:from-purple-800/25 hover:to-purple-900/25 text-purple-950 font-bold border border-purple-300/60 shadow-sm active:scale-[0.99] transition-all flex items-center justify-center gap-2">
             <span class="material-symbols-outlined text-purple-800 text-body-lg">vpn_key</span>
@@ -372,15 +362,6 @@
         icon.textContent = 'visibility';
       }
     };
-
-    // Fast Master Admin Entry Button
-    const btnOpenAdmin = document.getElementById('btnOpenAdminMaster');
-    if (btnOpenAdmin) {
-      btnOpenAdmin.addEventListener('click', () => {
-        db.grantAdminAccess({ email: 'admin@almurafaqa.com' });
-        window.location.href = 'admin.html';
-      });
-    }
 
     // Form Submit Handler connected with Auth Engine
     const loginForm = document.getElementById('portalLoginForm');

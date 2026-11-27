@@ -11,6 +11,7 @@ let cachedStudents = [];
 let cachedEvents = [];
 let cachedAssignments = [];
 let cachedTeams = [];
+let cachedCategories = [];
 let currentTab = 'students';
 let activeAllocEvent = null;
 
@@ -117,18 +118,25 @@ async function loadDelegationData() {
   if (!activeLeader) return;
 
   try {
-    const [students, events, assignments, teams] = await Promise.all([
+    if (db.syncAllDelegationData) {
+      await db.syncAllDelegationData().catch(() => {});
+    }
+
+    const [students, events, assignments, teams, categories] = await Promise.all([
       db.getTeamStudents(activeLeader.id),
       db.getEvents(),
       db.getTeamAssignments(activeLeader.id),
       db.getTeamGroups(activeLeader.id),
+      db.getCategories ? db.getCategories() : [],
     ]);
 
     cachedStudents = students || [];
     cachedEvents = (events || []).filter((e) => e.status !== 'closed');
     cachedAssignments = assignments || [];
     cachedTeams = teams || [];
+    cachedCategories = categories || [];
 
+    populateLeaderCategoryDropdowns();
     updateTelemetry();
     renderStudentsTable();
     renderTeamsGrid();
@@ -137,6 +145,120 @@ async function loadDelegationData() {
   } catch (err) {
     console.error('Error loading delegation data:', err);
     showToast('Error syncing delegation records: ' + err.message, 'error');
+  }
+}
+
+// Populate and synchronize category dropdowns with festival settings
+function populateLeaderCategoryDropdowns(selectedStudentCategory = null, selectedTeamCategory = null) {
+  const studentCatSelect = document.getElementById('student-category');
+  const teamCatSelect = document.getElementById('team-group-category');
+  const filterStudentCat = document.getElementById('filter-student-category');
+  const filterTeamCat = document.getElementById('filter-team-category');
+  const filterProgCat = document.getElementById('filter-programme-category');
+
+  const categories = (cachedCategories && cachedCategories.length > 0) ? cachedCategories : [
+    { name: 'Senior', code: 'SNR', type: 'division' },
+    { name: 'Junior', code: 'JNR', type: 'division' },
+    { name: 'Sub-Junior', code: 'SBJ', type: 'division' },
+    { name: 'General', code: 'GEN', type: 'division' },
+  ];
+
+  // 1. Student Category in Enroll / Edit Student Modal
+  if (studentCatSelect) {
+    const curVal = selectedStudentCategory || studentCatSelect.value || 'Senior';
+    studentCatSelect.innerHTML = '';
+    const divisions = categories.filter((c) => c.type === 'division');
+    const others = categories.filter((c) => c.type !== 'division');
+
+    if (divisions.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Student Divisions / Classes';
+      divisions.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = `${c.name} [${c.code || 'CAT'}]`;
+        grp.appendChild(opt);
+      });
+      studentCatSelect.appendChild(grp);
+    }
+    if (others.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Other Tracks & Sections';
+      others.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = `${c.name} [${c.code || 'CAT'}]`;
+        grp.appendChild(opt);
+      });
+      studentCatSelect.appendChild(grp);
+    }
+    if (divisions.length === 0 && others.length === 0) {
+      categories.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        studentCatSelect.appendChild(opt);
+      });
+    }
+    const matched = categories.find((c) => c.name.toLowerCase() === curVal.toLowerCase());
+    if (matched) studentCatSelect.value = matched.name;
+  }
+
+  // 2. Team Category in Assemble Squad Modal
+  if (teamCatSelect) {
+    const curVal = selectedTeamCategory || teamCatSelect.value || 'Senior';
+    teamCatSelect.innerHTML = '';
+    categories.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = `${c.name} (${c.code || 'CAT'})`;
+      teamCatSelect.appendChild(opt);
+    });
+    const matched = categories.find((c) => c.name.toLowerCase() === curVal.toLowerCase());
+    if (matched) teamCatSelect.value = matched.name;
+  }
+
+  // 3. Filter in Student Roster
+  if (filterStudentCat) {
+    const cur = filterStudentCat.value;
+    filterStudentCat.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      filterStudentCat.appendChild(opt);
+    });
+    if (cur) filterStudentCat.value = cur;
+  }
+
+  // 4. Filter in Teams / Squads
+  if (filterTeamCat) {
+    const cur = filterTeamCat.value;
+    filterTeamCat.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      filterTeamCat.appendChild(opt);
+    });
+    if (cur) filterTeamCat.value = cur;
+  }
+
+  // 5. Filter in Programmes
+  if (filterProgCat) {
+    const cur = filterProgCat.value;
+    filterProgCat.innerHTML = '<option value="">All Categories</option>';
+    const catSet = new Set(categories.map((c) => c.name));
+    cachedEvents.forEach((e) => {
+      if (e.category) catSet.add(e.category);
+    });
+    Array.from(catSet).sort().forEach((catName) => {
+      const opt = document.createElement('option');
+      opt.value = catName;
+      opt.textContent = catName;
+      filterProgCat.appendChild(opt);
+    });
+    if (cur) filterProgCat.value = cur;
   }
 }
 
@@ -274,6 +396,7 @@ function openAddStudentModal() {
 
   const form = document.getElementById('form-student');
   if (form) form.reset();
+  populateLeaderCategoryDropdowns();
   document.getElementById('student-edit-id').value = '';
   document.getElementById('modal-student-title').textContent = 'Enroll New Student';
 
@@ -289,6 +412,7 @@ function openEditStudentModal(studentId) {
   const student = cachedStudents.find((s) => s.id === studentId);
   if (!student) return;
 
+  populateLeaderCategoryDropdowns(student.category);
   document.getElementById('student-edit-id').value = student.id;
   document.getElementById('student-name').value = student.student_name;
   document.getElementById('student-code').value = student.student_code;
@@ -478,6 +602,7 @@ function renderTeamsGrid() {
 function openAddTeamModal() {
   const form = document.getElementById('form-team-group');
   if (form) form.reset();
+  populateLeaderCategoryDropdowns();
   document.getElementById('team-group-edit-id').value = '';
   document.getElementById('modal-team-title').textContent = 'Assemble Delegation Team / Squad';
 
@@ -506,6 +631,7 @@ function openEditTeamModal(teamId) {
   const team = cachedTeams.find((t) => t.id === teamId);
   if (!team) return;
 
+  populateLeaderCategoryDropdowns(null, team.category);
   document.getElementById('team-group-edit-id').value = team.id;
   document.getElementById('modal-team-title').textContent = `Edit Team: ${team.team_name}`;
   document.getElementById('team-group-name').value = team.team_name || '';

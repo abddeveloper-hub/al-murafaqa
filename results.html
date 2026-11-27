@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+  <title>Official Results &amp; Podium Standings • Al Murafaqa QUINTA EDICION</title>
+
+  <!-- Typography & Google Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            white: "#FFFAED",
+            black: "#2D101A",
+            "fest-red": "#7F011F",
+            "fest-red-dark": "#570018",
+            "fest-red-light": "#A72A47",
+            "fest-orange": "#9C2644",
+            "fest-orange-warm": "#B3425B",
+            "fest-gold": "#F5EBD0",
+            "fest-dark": "#2D101A",
+            "fest-cream": "#F5EBD0",
+            primary: "#7F011F",
+            "primary-container": "#AC3150",
+            "secondary-container": "#6B1028"
+          },
+          fontFamily: {
+            headline: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            body: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            syne: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            sans: ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            display: ["Clash Display", "Noto Sans Arabic", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @layer base {
+      html, body {
+        overflow-x: hidden;
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      button, input, select, textarea {
+        font-family: 'Clash Display', 'Noto Sans Arabic', sans-serif;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+
+    .scrollbar-none {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Ambient Orb Drift Animations */
+    @keyframes orbDriftOne {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(35px, 25px) scale(1.08); }
+      66% { transform: translate(-20px, 40px) scale(0.95); }
+    }
+    @keyframes orbDriftTwo {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      40% { transform: translate(-40px, -30px) scale(1.12); }
+      75% { transform: translate(25px, -15px) scale(0.96); }
+    }
+    .animate-orb-1 { animation: orbDriftOne 14s ease-in-out infinite; }
+    .animate-orb-2 { animation: orbDriftTwo 18s ease-in-out infinite; }
+
+    /* Results Podium Card Micro-interactions */
+    .result-card {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FFFAED 100%);
+      box-shadow: 0 4px 20px -2px rgba(45, 16, 26, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(156, 38, 68, 0.16);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .result-card:hover {
+      box-shadow: 0 10px 28px -4px rgba(45, 16, 26, 0.12);
+      border-color: rgba(156, 38, 68, 0.4);
+      transform: translateY(-2px);
+    }
+
+    /* Filter Chips Tap Micro-interaction */
+    .filter-chip {
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .filter-chip:active {
+      transform: scale(0.92);
+    }
+    .filter-chip.active-chip {
+      background: #7F011F !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px rgba(127, 1, 31, 0.35);
+      border: 1px solid rgba(245, 235, 208, 0.4) !important;
+    }
+
+    /* Modal slide up */
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-animate {
+      animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#F5EBD0] text-neutral-800 font-body antialiased min-h-screen relative selection:bg-fest-orange/30 selection:text-fest-red">
+
+  <!-- ================= TOP ATMOSPHERE WITH GRADIENT & MOVING ORBS ================= -->
+  <div class="absolute top-0 left-0 right-0 h-[560px] bg-gradient-to-b from-fest-red-dark via-fest-red to-[#9B1B3A] pointer-events-none z-0 overflow-hidden">
+    <div class="animate-orb-1 absolute -top-28 -left-20 w-[420px] h-[420px] rounded-full bg-fest-orange/35 blur-[95px]"></div>
+    <div class="animate-orb-2 absolute top-20 -right-24 w-[380px] h-[380px] rounded-full bg-fest-gold/30 blur-[105px]"></div>
+    <div class="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-b from-transparent to-[#F5EBD0] z-10"></div>
+  </div>
+
+  <!-- ================= MAIN TOP HEADER & MENU BAR ================= -->
+  <header class="fixed top-0 w-full z-50 pt-safe bg-fest-red-dark/90 backdrop-blur-xl border-b border-fest-gold/25 shadow-[0_4px_24px_-4px_rgba(45,16,26,0.45)]">
+    <div class="h-20 px-4 sm:px-8 w-full flex items-center justify-between gap-4">
+      
+      <!-- Corner 1 (Left Corner): Brand Logo & Title -->
+      <a href="home.html" class="flex items-center gap-3 min-w-0 group cursor-pointer shrink-0">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
+          <img alt="Al Murafaqa Mini" class="w-full h-full object-contain filter drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+        </div>
+        <div class="flex flex-col min-w-0 justify-center">
+          <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            <span class="font-headline text-[22px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
+            <span class="font-headline text-[16px] sm:text-[22px] text-fest-gold font-bold tracking-tight bg-white/10 px-3 py-1 sm:py-1.5 rounded-xl border border-fest-gold/30 drop-shadow-sm leading-none">Muhyissunna Dars Ukkuda</span>
+          </div>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="font-body text-[11px] sm:text-[12px] text-fest-gold font-extrabold tracking-widest uppercase truncate drop-shadow-sm">QUINTA EDICION • RESULTS PORTAL</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Corner 2 (Right Corner): Navigation Menu Button -->
+      <div class="flex items-center gap-3 shrink-0">
+        <!-- Modern Luxury Menu Toggle Button -->
+        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-fest-gold/30 hover:border-fest-gold/60 text-white transition-all shadow-md group cursor-pointer active:scale-95 backdrop-blur-md">
+          <span class="font-body text-xs sm:text-sm font-bold tracking-wider uppercase text-fest-cream group-hover:text-fest-gold transition-colors">Menu</span>
+          <div class="w-7 h-7 rounded-lg bg-fest-red/40 border border-fest-gold/40 flex items-center justify-center text-fest-gold group-hover:bg-fest-red/60 transition-all">
+            <span class="material-symbols-outlined text-[18px]">menu</span>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= LUXURY SLIDE-OUT NAVIGATION DRAWER ================= -->
+  <div id="mobile-menu-overlay" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-300"></div>
+
+  <div id="mobile-menu-drawer" class="fixed top-0 right-0 bottom-0 w-[320px] sm:w-[380px] max-w-[88vw] z-50 bg-[#2A0813]/98 backdrop-blur-2xl border-l border-fest-gold/30 shadow-[-16px_0_48px_rgba(0,0,0,0.7)] flex flex-col justify-between transition-transform duration-300 translate-x-full overflow-hidden">
+    
+    <!-- Top Ornamental Amber Light Glow inside Drawer -->
+    <div class="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-fest-gold/15 blur-3xl pointer-events-none"></div>
+
+    <!-- Drawer Scrollable Content -->
+    <div class="flex-1 overflow-y-auto scrollbar-none p-5 sm:p-6 flex flex-col gap-6 relative z-10">
+      
+      <!-- Drawer Header with Emblem Brand -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-200/20 via-fest-red/40 to-black/60 p-1.5 flex items-center justify-center shadow-lg border border-fest-gold/40 shrink-0">
+            <img src="hero-emblem.png" alt="Emblem" class="w-full h-full object-contain filter drop-shadow-sm">
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-headline text-lg sm:text-xl font-extrabold text-white leading-tight tracking-tight">Al Murafaqa</span>
+            <span class="font-headline text-[13px] sm:text-[14px] text-fest-gold font-bold truncate mt-0.5">Muhyissunna Dars Ukkuda</span>
+            <span class="font-body text-[10px] text-fest-cream/70 font-bold tracking-widest uppercase mt-0.5">QUINTA EDICION • 5TH ED.</span>
+          </div>
+        </div>
+        <button id="close-mobile-menu" aria-label="Close menu" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-90 shrink-0 cursor-pointer">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Navigation Links Container -->
+      <nav class="flex flex-col gap-5 font-body">
+
+        <!-- Category: FESTIVAL EXPLORE -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center gap-2 px-2 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-fest-gold/60">
+            <span class="w-1.5 h-1.5 rounded-full bg-fest-gold/60"></span>
+            <span>Explore</span>
+          </div>
+          
+          <a href="index.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Welcome &amp; Overview</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
+
+          <a href="home.html#explore-section" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">explore</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Explore Theme</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
+
+          <a href="home.html#video-en-vivo" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">live_tv</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Main Stage Live</span>
+            </div>
+            <span class="text-[10px] text-fest-orange font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-fest-orange/10 border border-fest-orange/20">Stream</span>
+          </a>
+
+          <a href="home.html#thematic-tracks" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">palette</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Thematic Tracks</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
+        </div>
+
+        <!-- Category: FESTIVAL PROGRAMMES & COMPETITIONS -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center gap-2 px-2 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-fest-gold/60">
+            <span class="w-1.5 h-1.5 rounded-full bg-fest-gold/60"></span>
+            <span>Gathering &amp; Results</span>
+          </div>
+
+          <!-- Festival Schedule: Uniform Styling -->
+          <a href="schedule.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Festival Schedule</span>
+            </div>
+            <span class="text-[10px] text-fest-cream/80 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 border border-white/10">Day 3</span>
+          </a>
+
+          <!-- Official Results & Podium: Uniform Styling -->
+          <a href="results.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">emoji_events</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Official Results &amp; Podium</span>
+            </div>
+            <span class="text-[10px] text-amber-300 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Live
+            </span>
+          </a>
+
+          <!-- Participants Directory: Uniform Styling -->
+          <a href="participants.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">badge</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Participants Directory</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
+        </div>
+
+        <!-- Category: ACCESS & PASSES -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center gap-2 px-2 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-fest-gold/60">
+            <span class="w-1.5 h-1.5 rounded-full bg-fest-gold/60"></span>
+            <span>Portals</span>
+          </div>
+
+          <a href="login.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">school</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Competitor Portal</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
+        </div>
+
+      </nav>
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="p-5 sm:p-6 border-t border-white/10 flex flex-col gap-2.5 relative z-10 bg-black/30">
+      <a href="login.html" class="w-full py-2.5 px-4 rounded-xl bg-fest-red hover:bg-fest-red-light text-white font-bold text-center text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">login</span>
+        <span>Sign In to Portal</span>
+      </a>
+      <span class="text-center font-body text-[10px] sm:text-[11px] text-fest-cream/60">
+        Al Murafaqa • QUINTA EDICION • Live Results
+      </span>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="relative z-10 w-full pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-8">
+    
+    <!-- Breadcrumb & Back Link -->
+    <div class="flex items-center justify-between gap-3 pt-2">
+      <a href="home.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-fest-cream/90 bg-white/15 hover:bg-white/25 border border-white/20 px-3.5 py-1.5 rounded-full transition-all">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+        <span>Back to Festival Home</span>
+      </a>
+      <div class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span>LIVE • JURY CERTIFIED RESULTS</span>
+      </div>
+    </div>
+
+    <!-- Page Title & Hero Header -->
+    <div class="flex flex-col gap-3 text-center sm:text-left">
+      <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-fest-dark shadow-lg shadow-amber-500/25 shrink-0 ring-2 ring-amber-300/40">
+          <span class="material-symbols-outlined text-[28px]">emoji_events</span>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2.5 justify-center sm:justify-start">
+            <h1 class="font-headline text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              Official Results &amp; Podium
+            </h1>
+            <span class="text-[11px] bg-amber-400/25 text-amber-200 border border-amber-300/40 font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+              Certified Live
+            </span>
+          </div>
+          <p class="font-body text-xs sm:text-sm text-fest-cream/85 max-w-2xl mt-1 leading-relaxed">
+            Complete jury-certified competition outcomes, category-by-category standings, and points table for Al Murafaqa Quinta Edición.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overall Team Championship Standings Card -->
+    <div id="team-standings-section" class="w-full bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-6 border border-neutral-200/90 shadow-sm flex flex-col gap-4">
+      <div class="flex items-center justify-between pb-3 border-b border-neutral-200/70">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-800 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[20px]">military_tech</span>
+          </div>
+          <div>
+            <h3 class="font-headline text-base sm:text-lg font-bold text-neutral-900 leading-none">Overall Team Standings</h3>
+            <span class="font-body text-[11px] text-neutral-500">Points tally derived from certified podium positions (1st: 5 pts, 2nd: 3 pts, 3rd: 1 pt)</span>
+          </div>
+        </div>
+        <span id="standings-status-badge" class="text-[10px] font-extrabold uppercase tracking-wider text-fest-red bg-fest-red/10 border border-fest-red/20 px-2.5 py-1 rounded-lg">
+          Live Tally
+        </span>
+      </div>
+
+      <!-- Leaderboard Cards Container -->
+      <div id="team-standings-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <!-- Dynamic Leaderboard Teams will be rendered here -->
+        <div class="col-span-full py-6 text-center text-xs text-neutral-500 font-medium">
+          Calculating current championship tally...
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Filter Bar: Category Chips & Realtime Search -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-neutral-200/90 shadow-sm">
+      
+      <!-- Category Filter Chips -->
+      <div id="results-category-chips" class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 md:pb-0 w-full md:w-auto">
+        <button type="button" class="filter-chip active-chip px-4 py-2 rounded-xl text-xs font-bold transition-all bg-fest-red text-white shadow-sm shrink-0 cursor-pointer" data-category="ALL">
+          All Programmes
+        </button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative w-full md:w-80 shrink-0">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[19px]">search</span>
+        <input type="text" id="results-search-input" placeholder="Search event, contender, or team..." class="w-full pl-9 pr-3 py-2 text-xs bg-neutral-100 hover:bg-neutral-200/60 focus:bg-white focus:ring-2 focus:ring-fest-red/30 border border-neutral-200 rounded-xl outline-none font-body transition-all">
+      </div>
+    </div>
+
+    <!-- Active Programmes Counter Indicator -->
+    <div class="flex items-center justify-between px-2 text-xs font-bold text-neutral-600">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="results-counter-label">Showing declared competition results</span>
+      </div>
+      <span id="results-count-badge" class="font-mono text-fest-red bg-fest-red/10 border border-fest-red/20 px-2.5 py-0.5 rounded-lg">
+        0 Programmes
+      </span>
+    </div>
+
+    <!-- Main Results Grid -->
+    <div id="results-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- Loading spinner -->
+      <div class="col-span-full py-16 flex flex-col items-center justify-center text-center gap-3">
+        <div class="w-10 h-10 border-3 border-fest-red/20 border-t-fest-red rounded-full animate-spin"></div>
+        <p class="font-body text-sm font-semibold text-neutral-600">Synchronizing certified results from Supabase...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= FESTIVAL FOOTER ================= -->
+  <footer class="w-full px-4 sm:px-6 py-6 max-w-7xl mx-auto">
+    <div class="rounded-3xl bg-fest-dark text-fest-cream p-6 sm:p-8 border border-fest-orange/25 relative overflow-hidden">
+      <div class="animate-orb-1 absolute -right-12 -bottom-12 w-48 h-48 rounded-full bg-fest-red/40 blur-2xl pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-white/10">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0">
+            <img alt="Al Murafaqa Emblem" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
+          </div>
+          <div>
+            <h3 class="font-headline text-[18px] sm:text-[20px] font-extrabold text-white tracking-tight">Al Murafaqa • QUINTA EDICION</h3>
+            <p class="font-headline text-[14px] sm:text-[16px] text-fest-gold font-bold mt-0.5">Muhyissunna Dars Ukkuda</p>
+            <p class="font-body text-[11px] sm:text-[12px] text-fest-cream/70 mt-0.5">Pallidars: The Primal Source of Knowledge</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <a href="home.html" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Home</a>
+          <a href="schedule.html" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Schedule</a>
+          <a href="participants.html" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Participants</a>
+          <a href="login.html" class="px-3 py-1.5 rounded-lg bg-fest-red hover:bg-fest-red-light text-[12px] font-bold text-white transition-colors flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px]">login</span> Sign In
+          </a>
+        </div>
+      </div>
+
+      <div class="relative z-10 pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-fest-cream/65 font-body">
+        <span>© 2025 Al Murafaqa Cultural &amp; Literary Gathering. All rights reserved.</span>
+        <span class="text-fest-gold/90 font-semibold">Official Results &amp; Standings System</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts: Supabase Integration & UI Logic -->
+  <script type="module">
+    import { db, supabase } from './supabase-config.js';
+
+    // UI Drawer Elements
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    const menuOverlay = document.getElementById('mobile-menu-overlay');
+    const menuDrawer = document.getElementById('mobile-menu-drawer');
+    const closeMenuBtn = document.getElementById('close-mobile-menu');
+
+    function openMenu() {
+      if (!menuDrawer || !menuOverlay) return;
+      menuOverlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        menuOverlay.classList.remove('opacity-0');
+        menuOverlay.classList.add('opacity-100');
+        menuDrawer.classList.remove('translate-x-full');
+      });
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+      if (!menuDrawer || !menuOverlay) return;
+      menuOverlay.classList.remove('opacity-100');
+      menuOverlay.classList.add('opacity-0');
+      menuDrawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        menuOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
+      }, 300);
+    }
+
+    if (menuToggle) menuToggle.addEventListener('click', openMenu);
+    if (closeMenuBtn) closeMenuBtn.addEventListener('click', closeMenu);
+    if (menuOverlay) menuOverlay.addEventListener('click', closeMenu);
+
+    // Results State
+    let cachedWinnersList = [];
+    let cachedEventsMap = {};
+    let activeResultCategory = 'ALL';
+    let resultSearchQuery = '';
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Calculate & Render Team Standings
+    function renderTeamStandings() {
+      const container = document.getElementById('team-standings-grid');
+      if (!container) return;
+
+      // Points system: 1st Place = 5, 2nd Place = 3, 3rd Place = 1
+      const teamPoints = {};
+
+      cachedWinnersList.forEach(w => {
+        const teamName = (w.college_name || 'Independent').trim();
+        if (!teamPoints[teamName]) {
+          teamPoints[teamName] = { name: teamName, points: 0, gold: 0, silver: 0, bronze: 0 };
+        }
+        const pos = Number(w.position);
+        if (pos === 1) {
+          teamPoints[teamName].points += 5;
+          teamPoints[teamName].gold += 1;
+        } else if (pos === 2) {
+          teamPoints[teamName].points += 3;
+          teamPoints[teamName].silver += 1;
+        } else if (pos === 3) {
+          teamPoints[teamName].points += 1;
+          teamPoints[teamName].bronze += 1;
+        }
+      });
+
+      const sortedTeams = Object.values(teamPoints).sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.gold !== a.gold) return b.gold - a.gold;
+        return b.silver - a.silver;
+      });
+
+      if (sortedTeams.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-6 text-center text-xs text-neutral-500 font-medium">
+            No team points accrued yet. Standings will be computed in real-time as jury publishes event podiums.
+          </div>
+        `;
+        return;
+      }
+
+      const rankBadges = [
+        { label: '1st Leader', color: 'from-amber-400 to-amber-600', text: 'text-amber-950', ring: 'ring-amber-400/50' },
+        { label: '2nd Place', color: 'from-slate-300 to-slate-400', text: 'text-slate-900', ring: 'ring-slate-300/50' },
+        { label: '3rd Place', color: 'from-orange-300 to-amber-700', text: 'text-orange-950', ring: 'ring-orange-400/50' }
+      ];
+
+      container.innerHTML = sortedTeams.map((team, idx) => {
+        const badge = rankBadges[idx] || { label: `#${idx + 1}`, color: 'from-neutral-200 to-neutral-300', text: 'text-neutral-800', ring: 'ring-neutral-200' };
+        return `
+          <div class="p-4 rounded-2xl bg-neutral-50/80 border border-neutral-200/90 shadow-sm flex flex-col justify-between gap-3 hover:border-fest-orange/40 transition-all">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-gradient-to-r ${badge.color} ${badge.text} shadow-xs">
+                ${badge.label}
+              </span>
+              <span class="font-headline text-xl sm:text-2xl font-black text-fest-red">
+                ${team.points} <span class="text-xs font-bold text-neutral-500 uppercase">PTS</span>
+              </span>
+            </div>
+            
+            <div>
+              <h4 class="font-headline text-sm sm:text-base font-bold text-neutral-900 truncate">${escapeHtml(team.name)}</h4>
+              <div class="flex items-center gap-3 mt-1.5 text-[11px] font-bold text-neutral-600">
+                <span class="flex items-center gap-1 text-amber-700"><span>🥇</span>${team.gold}</span>
+                <span class="flex items-center gap-1 text-slate-700"><span>🥈</span>${team.silver}</span>
+                <span class="flex items-center gap-1 text-orange-800"><span>🥉</span>${team.bronze}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Event Results Grid
+    function renderResultsGrid() {
+      const container = document.getElementById('results-cards-container');
+      const counterLabel = document.getElementById('results-counter-label');
+      if (!container) return;
+
+      // Group cached winners by event
+      const byEvent = {};
+      cachedWinnersList.forEach(w => {
+        if (!byEvent[w.event_id]) byEvent[w.event_id] = [];
+        byEvent[w.event_id].push(w);
+      });
+
+      let eventIds = Object.keys(byEvent);
+
+      // Filter by Category
+      if (activeResultCategory && activeResultCategory !== 'ALL') {
+        eventIds = eventIds.filter(id => {
+          const evt = cachedEventsMap[id];
+          const cat = evt?.category || byEvent[id][0]?.events?.category || '';
+          return cat.toLowerCase() === activeResultCategory.toLowerCase();
+        });
+      }
+
+      // Filter by Search Query
+      if (resultSearchQuery) {
+        eventIds = eventIds.filter(id => {
+          const evt = cachedEventsMap[id];
+          const title = (evt?.title || byEvent[id][0]?.events?.title || '').toLowerCase();
+          const cat = (evt?.category || byEvent[id][0]?.events?.category || '').toLowerCase();
+          const code = (evt?.event_code || '').toLowerCase();
+          const hasContender = byEvent[id].some(w => 
+            (w.winner_name || '').toLowerCase().includes(resultSearchQuery) ||
+            (w.college_name || '').toLowerCase().includes(resultSearchQuery)
+          );
+          return title.includes(resultSearchQuery) || cat.includes(resultSearchQuery) || code.includes(resultSearchQuery) || hasContender;
+        });
+      }
+
+      if (counterLabel) {
+        counterLabel.textContent = `Showing ${eventIds.length} certified competition event${eventIds.length === 1 ? '' : 's'}`;
+      }
+
+      if (eventIds.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-16 px-6 rounded-3xl bg-white border border-neutral-200/80 shadow-sm flex flex-col items-center justify-center text-center">
+            <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-3 shadow-inner">
+              <span class="material-symbols-outlined text-[32px]">military_tech</span>
+            </div>
+            <h3 class="font-headline text-lg sm:text-xl font-bold text-neutral-900">No Declared Results Found</h3>
+            <p class="font-body text-xs sm:text-sm text-neutral-500 max-w-md mt-1">
+              ${resultSearchQuery ? 'No competition or contender matched your search criteria. Try a different keyword.' : 'Competitions are currently in progress. Verified standings will appear here once certified by the jury.'}
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = eventIds.map(eventId => {
+        const evt = cachedEventsMap[eventId];
+        const winners = byEvent[eventId].sort((a, b) => Number(a.position) - Number(b.position));
+        const eventTitle = evt?.title || winners[0]?.events?.title || 'Competition Event';
+        const eventCategory = evt?.category || winners[0]?.events?.category || 'General';
+        const eventCode = evt?.event_code || '';
+
+        const w1 = winners.find(w => Number(w.position) === 1);
+        const w2 = winners.find(w => Number(w.position) === 2);
+        const w3 = winners.find(w => Number(w.position) === 3);
+
+        return `
+          <div class="result-card rounded-3xl p-5 shadow-sm flex flex-col justify-between gap-4">
+            <!-- Event Card Top -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-fest-orange/15 text-fest-red border border-fest-orange/30">
+                  ${escapeHtml(eventCategory)}
+                </span>
+                ${eventCode ? `<span class="text-[10px] font-mono text-neutral-500 font-bold bg-neutral-100 px-2 py-0.5 rounded">${escapeHtml(eventCode)}</span>` : ''}
+              </div>
+              <h3 class="font-headline text-base sm:text-lg font-bold text-neutral-900 leading-snug">
+                ${escapeHtml(eventTitle)}
+              </h3>
+            </div>
+
+            <!-- Podium Standings -->
+            <div class="flex flex-col gap-2 pt-3 border-t border-neutral-100">
+              <!-- 1st Place (Gold) -->
+              ${w1 ? `
+                <div class="flex items-center justify-between p-2.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-fest-dark flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                      🥇
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-headline text-xs sm:text-sm font-bold text-neutral-900 truncate">${escapeHtml(w1.winner_name)}</span>
+                      <span class="font-body text-[10px] text-amber-800 font-medium truncate">${escapeHtml(w1.college_name || 'Contender')}</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end shrink-0">
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-lg">1st Place</span>
+                    <span class="text-[9px] font-bold text-amber-900 mt-0.5">5 PTS</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- 2nd Place (Silver) -->
+              ${w2 ? `
+                <div class="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-200/90 gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-400 to-slate-200 text-slate-800 flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                      🥈
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-headline text-xs sm:text-sm font-bold text-neutral-900 truncate">${escapeHtml(w2.winner_name)}</span>
+                      <span class="font-body text-[10px] text-slate-600 font-medium truncate">${escapeHtml(w2.college_name || 'Contender')}</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end shrink-0">
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg">2nd Place</span>
+                    <span class="text-[9px] font-bold text-slate-800 mt-0.5">3 PTS</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- 3rd Place (Bronze) -->
+              ${w3 ? `
+                <div class="flex items-center justify-between p-2.5 rounded-2xl bg-orange-50/70 border border-orange-200/80 gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-700 to-orange-400 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                      🥉
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-headline text-xs sm:text-sm font-bold text-neutral-900 truncate">${escapeHtml(w3.winner_name)}</span>
+                      <span class="font-body text-[10px] text-orange-800 font-medium truncate">${escapeHtml(w3.college_name || 'Contender')}</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end shrink-0">
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-orange-800 bg-orange-200/70 px-2 py-0.5 rounded-lg">3rd Place</span>
+                    <span class="text-[9px] font-bold text-orange-900 mt-0.5">1 PT</span>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Load All Official Results from Supabase/Local Database
+    async function loadOfficialResults() {
+      const countBadge = document.getElementById('results-count-badge');
+      const chipsContainer = document.getElementById('results-category-chips');
+
+      try {
+        const [winnersData, eventsData] = await Promise.all([
+          db.getWinners(),
+          db.getEvents()
+        ]);
+
+        // Map events by ID
+        cachedEventsMap = {};
+        if (Array.isArray(eventsData)) {
+          eventsData.forEach(evt => {
+            if (evt && evt.id) cachedEventsMap[evt.id] = evt;
+          });
+        }
+
+        // Only published winners
+        cachedWinnersList = (winnersData || []).filter(w => w && w.published !== false && w.winner_name && w.winner_name.trim().length > 0);
+
+        // Group by event_id
+        const byEvent = {};
+        cachedWinnersList.forEach(w => {
+          if (!byEvent[w.event_id]) byEvent[w.event_id] = [];
+          byEvent[w.event_id].push(w);
+        });
+
+        const publishedEventIds = Object.keys(byEvent);
+
+        if (countBadge) {
+          countBadge.textContent = `${publishedEventIds.length} Programmes Declared`;
+        }
+
+        // Build category chips dynamically
+        if (chipsContainer) {
+          const categoriesSet = new Set();
+          publishedEventIds.forEach(id => {
+            const evt = cachedEventsMap[id];
+            const cat = evt?.category || byEvent[id][0]?.events?.category;
+            if (cat) categoriesSet.add(cat);
+          });
+
+          let chipsHtml = `
+            <button type="button" class="filter-chip ${activeResultCategory === 'ALL' ? 'active-chip bg-fest-red text-white shadow-sm' : 'bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700'} px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer" data-category="ALL">
+              All (${publishedEventIds.length})
+            </button>
+          `;
+
+          Array.from(categoriesSet).sort().forEach(cat => {
+            const isActive = activeResultCategory.toLowerCase() === cat.toLowerCase();
+            chipsHtml += `
+              <button type="button" class="filter-chip ${isActive ? 'active-chip bg-fest-red text-white shadow-sm' : 'bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700'} px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer" data-category="${escapeHtml(cat)}">
+                ${escapeHtml(cat)}
+              </button>
+            `;
+          });
+
+          chipsContainer.innerHTML = chipsHtml;
+
+          chipsContainer.querySelectorAll('.filter-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+              activeResultCategory = btn.getAttribute('data-category') || 'ALL';
+              chipsContainer.querySelectorAll('.filter-chip').forEach(b => {
+                b.className = 'filter-chip bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer';
+              });
+              btn.className = 'filter-chip active-chip bg-fest-red text-white shadow-sm px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer';
+              renderResultsGrid();
+            });
+          });
+        }
+
+        renderTeamStandings();
+        renderResultsGrid();
+
+        // Search input listener
+        const searchInput = document.getElementById('results-search-input');
+        if (searchInput && !searchInput.dataset.bound) {
+          searchInput.dataset.bound = 'true';
+          searchInput.addEventListener('input', (e) => {
+            resultSearchQuery = (e.target.value || '').trim().toLowerCase();
+            renderResultsGrid();
+          });
+        }
+
+      } catch (err) {
+        console.warn('Failed to load official results:', err);
+      }
+    }
+
+    // Initialize on page load
+    loadOfficialResults();
+
+    // Supabase Realtime Subscription for Instant Updates
+    if (supabase) {
+      try {
+        supabase
+          .channel('public:winners:results_page')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'winners' }, () => {
+            console.log('[Realtime] Winners table updated - reloading official results.');
+            loadOfficialResults();
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn('Realtime subscription skipped:', e);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -4,6 +4,9 @@
 -- Enables Admin Token Allocation, Team Leader Self-Service Roster & Programme Desk
 -- ==============================================================================
 
+-- Ensure custom_categories column exists in fest_settings
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS custom_categories JSONB DEFAULT '[]'::jsonb;
+
 -- 1. TEAM LEADERS (Institutional Delegations & Token Provisioning)
 CREATE TABLE IF NOT EXISTS public.team_leaders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,50 +66,36 @@ ALTER TABLE public.team_assignments ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies if any to allow safe re-running
 DROP POLICY IF EXISTS "Public can lookup active leader token" ON public.team_leaders;
 DROP POLICY IF EXISTS "Admins have full access to team_leaders" ON public.team_leaders;
+DROP POLICY IF EXISTS "Allow all for team_leaders" ON public.team_leaders;
+
 DROP POLICY IF EXISTS "Public can access students via delegation" ON public.team_students;
 DROP POLICY IF EXISTS "Admins have full access to team_students" ON public.team_students;
+DROP POLICY IF EXISTS "Allow all for team_students" ON public.team_students;
+
 DROP POLICY IF EXISTS "Public can view and update team assignments" ON public.team_assignments;
 DROP POLICY IF EXISTS "Admins have full access to team_assignments" ON public.team_assignments;
+DROP POLICY IF EXISTS "Allow all for team_assignments" ON public.team_assignments;
 
--- Public can verify and load active team leader by token
-CREATE POLICY "Public can lookup active leader token"
-    ON public.team_leaders FOR SELECT
-    TO anon, authenticated
-    USING (status = 'active');
-
--- Master admins have unrestricted control over team leaders
-CREATE POLICY "Admins have full access to team_leaders"
+-- Team Leaders: full access for web portals and admin
+CREATE POLICY "Allow all for team_leaders"
     ON public.team_leaders FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
-
--- Students Roster: readable & insertable/updatable by public/team leader
-CREATE POLICY "Public can access students via delegation"
-    ON public.team_students FOR ALL
-    TO anon, authenticated
+    TO anon, authenticated, service_role
     USING (true)
     WITH CHECK (true);
 
--- Master admins full access to team students
-CREATE POLICY "Admins have full access to team_students"
+-- Students Roster: readable & insertable/updatable by public/team leader/admin
+CREATE POLICY "Allow all for team_students"
     ON public.team_students FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
-
--- Team Assignments: full access for delegation portal & admins
-CREATE POLICY "Public can view and update team assignments"
-    ON public.team_assignments FOR ALL
-    TO anon, authenticated
+    TO anon, authenticated, service_role
     USING (true)
     WITH CHECK (true);
 
-CREATE POLICY "Admins have full access to team_assignments"
+-- Team Assignments: full access for delegation portal & admin
+CREATE POLICY "Allow all for team_assignments"
     ON public.team_assignments FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
+    TO anon, authenticated, service_role
+    USING (true)
+    WITH CHECK (true);
 
 -- Permissions
 GRANT ALL ON public.team_leaders TO anon, authenticated, service_role;
@@ -130,17 +119,13 @@ CREATE INDEX IF NOT EXISTS idx_team_groups_leader ON public.team_groups(team_lea
 ALTER TABLE public.team_groups ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public can view and manage team groups" ON public.team_groups;
-CREATE POLICY "Public can view and manage team groups"
+DROP POLICY IF EXISTS "Admins have full access to team_groups" ON public.team_groups;
+DROP POLICY IF EXISTS "Allow all for team_groups" ON public.team_groups;
+
+CREATE POLICY "Allow all for team_groups"
     ON public.team_groups FOR ALL
-    TO anon, authenticated
+    TO anon, authenticated, service_role
     USING (true)
     WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Admins have full access to team_groups" ON public.team_groups;
-CREATE POLICY "Admins have full access to team_groups"
-    ON public.team_groups FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
 
 GRANT ALL ON public.team_groups TO anon, authenticated, service_role;

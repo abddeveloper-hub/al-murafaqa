@@ -42,6 +42,9 @@ ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_poster_url TEXT 
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_is_live BOOLEAN DEFAULT true;
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_viewer_count TEXT DEFAULT '4.8k live';
 ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS video_duration_note TEXT DEFAULT '42 mins remaining';
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS custom_categories JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS stage_ops JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.fest_settings ADD COLUMN IF NOT EXISTS site_restrictions JSONB DEFAULT '{}'::jsonb;
 
 -- ------------------------------------------------------------------------------
 -- 2. EVENTS (Competitions & Cultural Tracks)
@@ -337,17 +340,24 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 ALTER TABLE public.scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins have full access to scores"
+DROP POLICY IF EXISTS "Admins have full access to scores" ON public.scores;
+DROP POLICY IF EXISTS "Allow all for scores" ON public.scores;
+CREATE POLICY "Allow all for scores"
     ON public.scores FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
+    TO anon, authenticated, service_role
+    USING (true)
+    WITH CHECK (true);
 
-CREATE POLICY "Admins have full access to audit_logs"
+DROP POLICY IF EXISTS "Admins have full access to audit_logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "Allow all for audit_logs" ON public.audit_logs;
+CREATE POLICY "Allow all for audit_logs"
     ON public.audit_logs FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
+    TO anon, authenticated, service_role
+    USING (true)
+    WITH CHECK (true);
+
+GRANT ALL ON public.scores TO anon, authenticated, service_role;
+GRANT ALL ON public.audit_logs TO anon, authenticated, service_role;
 
 -- ==============================================================================
 -- MODULE 9: TEAM LEADER PORTAL & DELEGATION ROSTER ENGINE
@@ -405,40 +415,35 @@ ALTER TABLE public.team_leaders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.team_students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.team_assignments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public can lookup active leader token"
-    ON public.team_leaders FOR SELECT
-    TO anon, authenticated
-    USING (status = 'active');
+DROP POLICY IF EXISTS "Public can lookup active leader token" ON public.team_leaders;
+DROP POLICY IF EXISTS "Admins have full access to team_leaders" ON public.team_leaders;
+DROP POLICY IF EXISTS "Allow all for team_leaders" ON public.team_leaders;
 
-CREATE POLICY "Admins have full access to team_leaders"
+DROP POLICY IF EXISTS "Public can access students via delegation" ON public.team_students;
+DROP POLICY IF EXISTS "Admins have full access to team_students" ON public.team_students;
+DROP POLICY IF EXISTS "Allow all for team_students" ON public.team_students;
+
+DROP POLICY IF EXISTS "Public can view and update team assignments" ON public.team_assignments;
+DROP POLICY IF EXISTS "Admins have full access to team_assignments" ON public.team_assignments;
+DROP POLICY IF EXISTS "Allow all for team_assignments" ON public.team_assignments;
+
+CREATE POLICY "Allow all for team_leaders"
     ON public.team_leaders FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
-
-CREATE POLICY "Public can access students via delegation"
-    ON public.team_students FOR ALL
-    TO anon, authenticated
+    TO anon, authenticated, service_role
     USING (true)
     WITH CHECK (true);
 
-CREATE POLICY "Admins have full access to team_students"
+CREATE POLICY "Allow all for team_students"
     ON public.team_students FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
-
-CREATE POLICY "Public can view and update team assignments"
-    ON public.team_assignments FOR ALL
-    TO anon, authenticated
+    TO anon, authenticated, service_role
     USING (true)
     WITH CHECK (true);
 
-CREATE POLICY "Admins have full access to team_assignments"
+CREATE POLICY "Allow all for team_assignments"
     ON public.team_assignments FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
+    TO anon, authenticated, service_role
+    USING (true)
+    WITH CHECK (true);
 
 GRANT ALL ON public.team_leaders TO anon, authenticated, service_role;
 GRANT ALL ON public.team_students TO anon, authenticated, service_role;
@@ -461,18 +466,14 @@ CREATE INDEX IF NOT EXISTS idx_team_groups_leader ON public.team_groups(team_lea
 ALTER TABLE public.team_groups ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public can view and manage team groups" ON public.team_groups;
-CREATE POLICY "Public can view and manage team groups"
+DROP POLICY IF EXISTS "Admins have full access to team_groups" ON public.team_groups;
+DROP POLICY IF EXISTS "Allow all for team_groups" ON public.team_groups;
+
+CREATE POLICY "Allow all for team_groups"
     ON public.team_groups FOR ALL
-    TO anon, authenticated
+    TO anon, authenticated, service_role
     USING (true)
     WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Admins have full access to team_groups" ON public.team_groups;
-CREATE POLICY "Admins have full access to team_groups"
-    ON public.team_groups FOR ALL
-    TO authenticated, service_role
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
 
 GRANT ALL ON public.team_groups TO anon, authenticated, service_role;
 

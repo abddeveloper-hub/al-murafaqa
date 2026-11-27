@@ -457,6 +457,19 @@ async function loadAllData() {
     renderCategoriesManager();
     renderCategoriesSettingsPreview();
 
+    // Auto-sync any local-only team leaders to Supabase once cloud tables are available
+    if (db.isLive() && typeof db.syncLocalTeamLeadersToCloud === 'function') {
+      db.syncLocalTeamLeadersToCloud().then((res) => {
+        if (res && res.synced > 0) {
+          console.log(`[Cloud Sync] Synced ${res.synced} local team leaders to Supabase.`);
+          db.getTeamLeaders().then((refreshed) => {
+            cachedTeamLeaders = refreshed || [];
+            if (currentTab === 'team-leaders') renderTeamLeadersTab();
+          });
+        }
+      }).catch(() => {});
+    }
+
     // Render active tab immediately for snappy responsiveness
     renderCurrentTab();
 
@@ -1185,6 +1198,9 @@ window.openAddProgrammeModal = function () {
   const form = document.getElementById('form-event-editor');
   if (form) form.reset();
   
+  // Ensure dropdown is populated with all configured categories
+  populateCategoryDropdowns();
+
   const editId = document.getElementById('event-edit-id');
   if (editId) editId.value = '';
 
@@ -1267,7 +1283,19 @@ function renderEventsTab() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-500 py-8">No competition programmes match criteria.</td></tr>';
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-12 px-4">
+          <div class="flex flex-col items-center justify-center">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+              <span class="material-symbols-outlined text-[24px]">event_busy</span>
+            </div>
+            <div class="text-sm font-bold text-slate-700">No competition programmes found</div>
+            <div class="text-xs text-slate-400 mt-1 max-w-sm">Competitions and schedule are clean. Click &quot;Add New Programme&quot; to configure your official competitions.</div>
+          </div>
+        </td>
+      </tr>
+    `;
     return;
   }
 
@@ -1512,6 +1540,8 @@ function setupEventControls() {
 window.openEditEventModal = function (id) {
   const evt = cachedEvents.find((e) => e.id === id);
   if (!evt) return;
+
+  populateCategoryDropdowns(evt.category);
 
   document.getElementById('event-edit-id').value = evt.id;
   document.getElementById('evt-code').value = evt.code || generateProgrammeCode(evt.category);
@@ -5085,7 +5115,11 @@ function setupTeamLeaderControls() {
 
         // Copy link directly and notify admin
         navigator.clipboard.writeText(shareUrl);
-        showToast(`Team Leader assigned! Access link for "${institution}" copied to clipboard.`, 'success');
+        if (created._cloudSyncWarning) {
+          showToast(`⚠️ Saved locally: ${created._cloudSyncWarning}`, 'warning');
+        } else {
+          showToast(`Team Leader assigned! Access link for "${institution}" copied to clipboard.`, 'success');
+        }
 
         logAudit('TEAM_LEADER_PROVISIONED', `Assigned team leader "${name}" (${institution}) with token ${created.token}`);
         await loadAllData();
@@ -5323,7 +5357,7 @@ function populateCategoryDropdowns(selectedCategory = null) {
       divisions.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.name;
-        opt.textContent = `${c.name} [${c.code}]`;
+        opt.textContent = `${c.name} [${c.code || 'CAT'}]`;
         grp.appendChild(opt);
       });
       selectEvt.appendChild(grp);
@@ -5335,14 +5369,26 @@ function populateCategoryDropdowns(selectedCategory = null) {
       genres.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.name;
-        opt.textContent = `${c.name} [${c.code}]`;
+        opt.textContent = `${c.name} [${c.code || 'CAT'}]`;
         grp.appendChild(opt);
       });
       selectEvt.appendChild(grp);
     }
 
-    if (currentVal && cachedCategories.some(c => c.name.toLowerCase() === currentVal.toLowerCase())) {
-      selectEvt.value = currentVal;
+    if (divisions.length === 0 && genres.length === 0 && cachedCategories.length > 0) {
+      cachedCategories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = `${c.name} [${c.code || 'CAT'}]`;
+        selectEvt.appendChild(opt);
+      });
+    }
+
+    if (currentVal) {
+      const matched = cachedCategories.find(c => c.name.toLowerCase() === currentVal.toLowerCase());
+      if (matched) {
+        selectEvt.value = matched.name;
+      }
     }
   }
 
@@ -5352,7 +5398,7 @@ function populateCategoryDropdowns(selectedCategory = null) {
     cachedCategories.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.name;
-      opt.textContent = `${c.name} (${c.code})`;
+      opt.textContent = `${c.name} (${c.code || 'CAT'})`;
       selectFilter.appendChild(opt);
     });
     if (currentFilter) selectFilter.value = currentFilter;
@@ -5542,6 +5588,21 @@ function setupCategoryControls() {
   document.getElementById('btn-quick-add-category')?.addEventListener('click', () => openCategoriesModal(true));
   document.getElementById('btn-close-categories-modal')?.addEventListener('click', closeCategoriesModal);
   document.getElementById('btn-reset-category-form')?.addEventListener('click', resetCategoryForm);
+
+  // Reset to 4 Clean Standard Categories button
+  document.getElementById('btn-reset-categories-default')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to reset categories to the standard 4 clean divisions (Senior, Junior, Sub-Junior, General)? Any extra demo categories will be removed.')) return;
+    try {
+      cachedCategories = await db.resetCategoriesToDefault();
+      window.festivalCategories = cachedCategories;
+      populateCategoryDropdowns();
+      renderCategoriesManager();
+      renderCategoriesSettingsPreview();
+      showToast('Categories reset to standard 4 divisions (Senior, Junior, Sub-Junior, General)', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to reset categories', 'error');
+    }
+  });
 
   // Auto-generate 3-letter uppercase code while typing category name
   const nameInput = document.getElementById('cat-name-input');
