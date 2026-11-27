@@ -104,14 +104,14 @@
     <div class="h-20 px-4 sm:px-6 max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
       
       <!-- Logo & Branding -->
-      <a href="home.html" class="flex items-center gap-3 min-w-0 group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-md ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
+      <a href="home.html" class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 group cursor-pointer">
+        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-md ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
           <img alt="Al Murafaqa Emblem" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
         </div>
         <div class="flex flex-col min-w-0 justify-center">
-          <div class="flex items-center gap-2.5 flex-wrap">
-            <span class="font-headline text-[22px] sm:text-[26px] text-white tracking-tight truncate leading-none font-extrabold">Al Murafaqa</span>
-            <span class="font-headline text-[16px] sm:text-[22px] text-fest-gold font-bold bg-white/10 px-3 py-1 sm:py-1.5 rounded-xl border border-fest-gold/30 leading-none">Muhyissunna Dars Ukkuda</span>
+          <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap sm:flex-nowrap min-w-0">
+            <span class="font-headline text-[19px] sm:text-[26px] text-white tracking-tight truncate leading-none font-extrabold">Al Murafaqa</span>
+            <span class="font-headline text-[12px] sm:text-[22px] text-fest-gold font-bold bg-white/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-lg sm:rounded-xl border border-fest-gold/30 leading-none truncate max-w-full">Muhyissunna Dars Ukkuda</span>
           </div>
           <div class="flex items-center gap-1.5 mt-1">
             <span class="font-body text-[10px] sm:text-[11px] text-fest-gold font-extrabold tracking-widest uppercase truncate">QUINTA EDICION • CONTENDERS</span>
@@ -771,10 +771,6 @@
 
     async function loadAndRenderParticipants() {
       try {
-        if (db.syncAllDelegationData) {
-          await db.syncAllDelegationData().catch(() => {});
-        }
-
         const [teamStudents, teamLeaders, registrations, events, settingsData] = await Promise.all([
           db.getTeamStudents ? db.getTeamStudents() : [],
           db.getTeamLeaders ? db.getTeamLeaders() : [],

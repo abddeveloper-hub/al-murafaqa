@@ -136,17 +136,17 @@
     <div class="h-20 px-4 sm:px-8 w-full flex items-center justify-between gap-4">
       
       <!-- Corner 1 (Left Corner): Brand Logo & Title -->
-      <a href="home.html" class="flex items-center gap-3 min-w-0 group cursor-pointer shrink-0">
-        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
+      <a href="home.html" class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 group cursor-pointer">
+        <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-lg shadow-black/25 ring-2 ring-white/80 shrink-0 group-hover:scale-105 transition-transform">
           <img alt="Al Murafaqa Mini" class="w-full h-full object-contain filter drop-shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgF_8Y9_ssJtGnBq04GAqwwyugVdb3z0cz182Kswx4BmtqK2Qp0X5redY6rgTHbegf3h7fpiZO_iKOe5SsiTEWErIj1QHTO6OdLD0jXrl-b4khZNM6wAR66KEYjeSUgmeK0eAEoIrQjNz8ihWX2cl8xIzDigKySMrMWlUzfxKpgah3KPaiI_SfeJVonNmH9ENyzj7YXTnLLIVFoJIbwGGIIflTnELi3FaKroX_ElpMybiekHNP6N8FIA">
         </div>
         <div class="flex flex-col min-w-0 justify-center">
-          <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-            <span class="font-headline text-[22px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
-            <span class="font-headline text-[16px] sm:text-[22px] text-fest-gold font-bold tracking-tight bg-white/10 px-3 py-1 sm:py-1.5 rounded-xl border border-fest-gold/30 drop-shadow-sm leading-none">Muhyissunna Dars Ukkuda</span>
+          <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap sm:flex-nowrap min-w-0">
+            <span class="font-headline text-[19px] sm:text-[30px] text-white tracking-tight truncate leading-none font-extrabold drop-shadow-sm">Al Murafaqa</span>
+            <span class="font-headline text-[12px] sm:text-[22px] text-fest-gold font-bold tracking-tight bg-white/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-lg sm:rounded-xl border border-fest-gold/30 drop-shadow-sm leading-none truncate max-w-full">Muhyissunna Dars Ukkuda</span>
           </div>
           <div class="flex items-center gap-1.5 mt-1">
-            <span class="font-body text-[11px] sm:text-[12px] text-fest-gold font-extrabold tracking-widest uppercase truncate drop-shadow-sm">QUINTA EDICION • RESULTS PORTAL</span>
+            <span class="font-body text-[10px] sm:text-[12px] text-fest-gold font-extrabold tracking-widest uppercase truncate drop-shadow-sm">QUINTA EDICION • RESULTS PORTAL</span>
           </div>
         </div>
       </a>
@@ -154,7 +154,7 @@
       <!-- Corner 2 (Right Corner): Navigation Menu Button -->
       <div class="flex items-center gap-3 shrink-0">
         <!-- Modern Luxury Menu Toggle Button -->
-        <button id="mobile-menu-toggle" aria-label="Open Navigation Menu" class="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-fest-gold/30 hover:border-fest-gold/60 text-white transition-all shadow-md group cursor-pointer active:scale-95 backdrop-blur-md">
+        <button id="mobile-menu-toggle" type="button" aria-label="Open Navigation Menu" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-fest-gold/30 hover:border-fest-gold/60 text-white transition-all shadow-md group cursor-pointer active:scale-95 backdrop-blur-md">
           <span class="font-body text-xs sm:text-sm font-bold tracking-wider uppercase text-fest-cream group-hover:text-fest-gold transition-colors">Menu</span>
           <div class="w-7 h-7 rounded-lg bg-fest-red/40 border border-fest-gold/40 flex items-center justify-center text-fest-gold group-hover:bg-fest-red/60 transition-all">
             <span class="material-symbols-outlined text-[18px]">menu</span>
@@ -166,9 +166,9 @@
   </header>
 
   <!-- ================= LUXURY SLIDE-OUT NAVIGATION DRAWER ================= -->
-  <div id="mobile-menu-overlay" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-300"></div>
+  <div id="mobile-menu-overlay" class="fixed inset-0 z-[60] bg-black/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-300"></div>
 
-  <div id="mobile-menu-drawer" class="fixed top-0 right-0 bottom-0 w-[320px] sm:w-[380px] max-w-[88vw] z-50 bg-[#2A0813]/98 backdrop-blur-2xl border-l border-fest-gold/30 shadow-[-16px_0_48px_rgba(0,0,0,0.7)] flex flex-col justify-between transition-transform duration-300 translate-x-full overflow-hidden">
+  <div id="mobile-menu-drawer" class="fixed top-0 right-0 bottom-0 w-[320px] sm:w-[380px] max-w-[88vw] z-[70] bg-[#2A0813]/98 backdrop-blur-2xl border-l border-fest-gold/30 shadow-[-16px_0_48px_rgba(0,0,0,0.7)] flex flex-col justify-between transition-transform duration-300 translate-x-full overflow-hidden">
     
     <!-- Top Ornamental Amber Light Glow inside Drawer -->
     <div class="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-fest-gold/15 blur-3xl pointer-events-none"></div>
@@ -455,9 +455,48 @@
     </div>
   </footer>
 
+  <!-- Synchronous UI Drawer Handlers (Never blocked by CDN/module latency) -->
+  <script>
+    (function () {
+      const menuToggle = document.getElementById('mobile-menu-toggle');
+      const menuOverlay = document.getElementById('mobile-menu-overlay');
+      const menuDrawer = document.getElementById('mobile-menu-drawer');
+      const closeMenuBtn = document.getElementById('close-mobile-menu');
+
+      function openMenu() {
+        if (!menuDrawer || !menuOverlay) return;
+        menuOverlay.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          menuOverlay.classList.remove('opacity-0');
+          menuOverlay.classList.add('opacity-100');
+          menuDrawer.classList.remove('translate-x-full');
+        });
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMenu() {
+        if (!menuDrawer || !menuOverlay) return;
+        menuOverlay.classList.remove('opacity-100');
+        menuOverlay.classList.add('opacity-0');
+        menuDrawer.classList.add('translate-x-full');
+        setTimeout(() => {
+          menuOverlay.classList.add('hidden');
+          document.body.style.overflow = '';
+        }, 300);
+      }
+
+      if (menuToggle) menuToggle.addEventListener('click', openMenu);
+      if (closeMenuBtn) closeMenuBtn.addEventListener('click', closeMenu);
+      if (menuOverlay) menuOverlay.addEventListener('click', closeMenu);
+      document.querySelectorAll('.drawer-link').forEach((link) => {
+        link.addEventListener('click', closeMenu);
+      });
+    })();
+  </script>
+
   <!-- Scripts: Supabase Integration & UI Logic -->
   <script type="module">
-    import { db, supabase, evaluateFestLiveStatus } from './supabase-config.js';
+    import { db, getSupabaseClient, evaluateFestLiveStatus } from './supabase-config.js';
 
     function applyResultsLiveStatus(settings) {
       const status = evaluateFestLiveStatus(settings?.fest_dates || []);
@@ -488,38 +527,6 @@
         if (heroBadge) heroBadge.textContent = 'Final Standings';
       }
     }
-
-    // UI Drawer Elements
-    const menuToggle = document.getElementById('mobile-menu-toggle');
-    const menuOverlay = document.getElementById('mobile-menu-overlay');
-    const menuDrawer = document.getElementById('mobile-menu-drawer');
-    const closeMenuBtn = document.getElementById('close-mobile-menu');
-
-    function openMenu() {
-      if (!menuDrawer || !menuOverlay) return;
-      menuOverlay.classList.remove('hidden');
-      requestAnimationFrame(() => {
-        menuOverlay.classList.remove('opacity-0');
-        menuOverlay.classList.add('opacity-100');
-        menuDrawer.classList.remove('translate-x-full');
-      });
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeMenu() {
-      if (!menuDrawer || !menuOverlay) return;
-      menuOverlay.classList.remove('opacity-100');
-      menuOverlay.classList.add('opacity-0');
-      menuDrawer.classList.add('translate-x-full');
-      setTimeout(() => {
-        menuOverlay.classList.add('hidden');
-        document.body.style.overflow = '';
-      }, 300);
-    }
-
-    if (menuToggle) menuToggle.addEventListener('click', openMenu);
-    if (closeMenuBtn) closeMenuBtn.addEventListener('click', closeMenu);
-    if (menuOverlay) menuOverlay.addEventListener('click', closeMenu);
 
     // Results State
     let cachedWinnersList = [];
@@ -848,26 +855,35 @@
 
       } catch (err) {
         console.warn('Failed to load official results:', err);
+        cachedWinnersList = [];
+        if (countBadge) {
+          countBadge.textContent = '0 Programmes Declared';
+        }
+        renderTeamStandings();
+        renderResultsGrid();
       }
     }
 
     // Initialize on page load
     loadOfficialResults();
 
-    // Supabase Realtime Subscription for Instant Updates
-    if (supabase) {
+    // Supabase Realtime Subscription for Instant Updates (non-blocking if SDK still warming up)
+    (async () => {
       try {
-        supabase
-          .channel('public:winners:results_page')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'winners' }, () => {
-            console.log('[Realtime] Winners table updated - reloading official results.');
-            loadOfficialResults();
-          })
-          .subscribe();
+        const client = await getSupabaseClient();
+        if (client) {
+          client
+            .channel('public:winners:results_page')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'winners' }, () => {
+              console.log('[Realtime] Winners table updated - reloading official results.');
+              loadOfficialResults();
+            })
+            .subscribe();
+        }
       } catch (e) {
         console.warn('Realtime subscription skipped:', e);
       }
-    }
+    })();
   </script>
 </body>
 </html>

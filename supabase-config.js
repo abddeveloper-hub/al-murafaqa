@@ -4,7 +4,67 @@
 // Cloud write errors are surfaced so local-only changes are never reported as saved.
 // ==============================================================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_CDN_URLS = [
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm',
+  'https://esm.sh/@supabase/supabase-js@2',
+];
+
+// Native fetch wrapper with hard timeout so slow/blocked networks never stall UI loaders
+async function timedFetch(input, init = {}, timeoutMs = 8000) {
+  if (typeof fetch !== 'function') {
+    throw new Error('Fetch API is unavailable in this environment.');
+  }
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  let timeoutId = null;
+  let onExternalAbort = null;
+
+  if (controller) {
+    if (init?.signal) {
+      if (init.signal.aborted) {
+        controller.abort();
+      } else {
+        onExternalAbort = () => controller.abort();
+        init.signal.addEventListener('abort', onExternalAbort, { once: true });
+      }
+    }
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  }
+
+  try {
+    return await fetch(input, {
+      ...init,
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    if (onExternalAbort && init?.signal) {
+      init.signal.removeEventListener('abort', onExternalAbort);
+    }
+  }
+}
+
+async function importWithTimeout(url, timeoutMs = 3500) {
+  let timeoutId = null;
+  try {
+    return await Promise.race([
+      import(url),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`Timed out loading ${url}`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+function safeParseJson(raw, fallback = null) {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch (_) {
+    return fallback;
+  }
+}
 
 // Helper to generate RFC4122 v4 UUIDs
 export function generateUuid() {
@@ -90,18 +150,98 @@ export const SUPABASE_CONFIG = {
 const isPlaceholder = (val) => !val || val.includes('YOUR_PROJECT_ID') || val.includes('YOUR_SUPABASE_ANON_KEY');
 export const isConfigured = !isPlaceholder(SUPABASE_CONFIG.url) && !isPlaceholder(SUPABASE_CONFIG.anonKey);
 
-// Initialize Supabase Client (if valid, otherwise null)
+// Lazily initialized Supabase Client (non-blocking at module import so blocked CDNs never break UI scripts)
 export let supabase = null;
-if (isConfigured) {
+let supabaseInitPromise = null;
+
+export async function getSupabaseClient(timeoutMs = 3500) {
+  if (!isConfigured) return null;
+  if (supabase) return supabase;
+  if (supabaseInitPromise) return supabaseInitPromise;
+
+  supabaseInitPromise = (async () => {
+    try {
+      let createClientFn =
+        (typeof globalThis !== 'undefined' && globalThis.supabase && typeof globalThis.supabase.createClient === 'function')
+          ? globalThis.supabase.createClient
+          : null;
+
+      if (!createClientFn) {
+        for (const cdnUrl of SUPABASE_CDN_URLS) {
+          try {
+            const mod = await importWithTimeout(cdnUrl, timeoutMs);
+            if (mod && typeof mod.createClient === 'function') {
+              createClientFn = mod.createClient;
+              break;
+            }
+          } catch (cdnErr) {
+            console.warn(`[Supabase CDN] Failed to load ${cdnUrl}:`, cdnErr?.message || cdnErr);
+          }
+        }
+      }
+
+      if (!createClientFn) return null;
+
+      supabase = createClientFn(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+        },
+        global: {
+          fetch: (url, opts) => timedFetch(url, opts, 8000),
+        },
+      });
+      return supabase;
+    } catch (err) {
+      console.warn('[Supabase Config] Failed to initialize Supabase client:', err);
+      return null;
+    } finally {
+      if (!supabase) {
+        supabaseInitPromise = null;
+      }
+    }
+  })();
+
+  return supabaseInitPromise;
+}
+
+// Warm up Supabase SDK in the background without blocking ES module evaluation
+if (isConfigured && typeof window !== 'undefined') {
+  getSupabaseClient().catch(() => null);
+}
+
+// Zero-CDN direct PostgREST read fallback with hard timeout
+async function restSelect(table, queryString = '', { single = false, timeoutMs = 6000 } = {}) {
+  if (!isConfigured) {
+    return { data: null, error: new Error('Supabase credentials are not configured') };
+  }
   try {
-    supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
+    const cleanUrl = SUPABASE_CONFIG.url.replace(/\/+$/, '');
+    const url = `${cleanUrl}/rest/v1/${table}${queryString ? '?' + queryString : ''}`;
+    const res = await timedFetch(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          apikey: SUPABASE_CONFIG.anonKey,
+          Authorization: `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          Accept: 'application/json',
+        },
       },
-    });
+      timeoutMs
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      return { data: null, error: new Error(text || `REST HTTP ${res.status}`) };
+    }
+    const json = await res.json();
+    if (single) {
+      const row = Array.isArray(json) ? (json[0] ?? null) : json;
+      return { data: row, error: null };
+    }
+    return { data: json, error: null };
   } catch (err) {
-    console.warn('[Supabase Config] Failed to initialize Supabase client:', err);
+    return { data: null, error: err };
   }
 }
 
@@ -460,9 +600,13 @@ export function sanitizeCategoriesList(cats) {
 }
 
 export const db = {
-  // Check active mode
+  // Check active mode (true whenever Supabase credentials are configured; reads also work via direct REST)
   isLive() {
-    return isConfigured && supabase !== null;
+    return isConfigured;
+  },
+
+  async getClient(timeoutMs = 3500) {
+    return await getSupabaseClient(timeoutMs);
   },
 
   // Master Admin Provisioning (Grants Unrestricted Full Privileges)
@@ -515,9 +659,10 @@ export const db = {
       normalizedEmail === 'director' ||
       !email;
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
         // If live user is admin, also sync local master session for resilience
         if (data?.session?.user) {
@@ -555,9 +700,10 @@ export const db = {
   },
 
   async signOut() {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient(2000) : null;
+    if (client) {
       try {
-        await supabase.auth.signOut();
+        await client.auth.signOut();
       } catch (err) {
         console.warn('Sign-out error from Supabase:', err);
       }
@@ -568,9 +714,10 @@ export const db = {
   },
 
   async getSession() {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient(2000) : null;
+    if (client) {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await client.auth.getSession();
         if (data?.session) return data.session;
       } catch (err) {
         console.warn('Error reading Supabase live session:', err);
@@ -578,28 +725,29 @@ export const db = {
     }
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem('almurafaqa_admin_session');
-      return raw ? JSON.parse(raw) : null;
+      return safeParseJson(raw, null);
     }
     return null;
   },
 
   // Fest Settings Operations
   async getSettings() {
-    const raw = localStorage.getItem('almurafaqa_settings');
-    let cachedSettings = null;
-    try {
-      cachedSettings = raw ? JSON.parse(raw) : null;
-    } catch (err) {
-      console.warn('[Local settings cache] Could not parse cached settings:', err);
-    }
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_settings') : null;
+    const cachedSettings = safeParseJson(raw, null);
 
     if (this.isLive()) {
       try {
-        const { data, error } = await supabase
-          .from('fest_settings')
-          .select('*')
-          .eq('id', 1)
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('fest_settings')
+            .select('*')
+            .eq('id', 1)
+            .maybeSingle());
+        } else {
+          ({ data, error } = await restSelect('fest_settings', 'select=*&id=eq.1&limit=1', { single: true }));
+        }
 
         if (!error && data) {
           const fallbackDates = Array.isArray(data.site_restrictions?._fest_dates)
@@ -616,7 +764,7 @@ export const db = {
           if (!cloudSettings.video_poster_url || cloudSettings.video_poster_url.includes('AB6AXuBI4u7wM1') || cloudSettings.video_poster_url.includes('googleusercontent.com/aida-public')) {
             cloudSettings.video_poster_url = 'video-poster.jpg';
             // Self-heal cloud database row if it still holds the legacy mock oud player image URL
-            if (data?.video_poster_url && (data.video_poster_url.includes('AB6AXuBI4u7wM1') || data.video_poster_url.includes('googleusercontent.com/aida-public'))) {
+            if (supabase && data?.video_poster_url && (data.video_poster_url.includes('AB6AXuBI4u7wM1') || data.video_poster_url.includes('googleusercontent.com/aida-public'))) {
               supabase.from('fest_settings').update({ video_poster_url: 'video-poster.jpg' }).eq('id', 1).then(() => {}).catch(() => {});
             }
           }
@@ -665,10 +813,11 @@ export const db = {
     if ('fest_dates' in payload) {
       payload.fest_dates = normalizeFestDates(payload.fest_dates);
     }
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
         // Attempt upsert with maybeSingle() so missing row 1 is created and empty results never throw PGRST116
-        let { data, error } = await supabase
+        let { data, error } = await client
           .from('fest_settings')
           .upsert({ id: 1, ...payload }, { onConflict: 'id' })
           .select()
@@ -713,7 +862,7 @@ export const db = {
             // Mirror fest_dates inside site_restrictions._fest_dates so cloud sync works before SQL migration
             if ('fest_dates' in payload) {
               try {
-                const { data: curRow } = await supabase
+                const { data: curRow } = await client
                   .from('fest_settings')
                   .select('site_restrictions')
                   .eq('id', 1)
@@ -725,7 +874,7 @@ export const db = {
               } catch (_) {}
             }
             try {
-              const retryRes = await supabase
+              const retryRes = await client
                 .from('fest_settings')
                 .upsert(basePayload, { onConflict: 'id' })
                 .select()
@@ -799,7 +948,7 @@ export const db = {
     try {
       const local = localStorage.getItem('almurafaqa_custom_categories');
       if (local) {
-        const parsed = JSON.parse(local);
+        const parsed = safeParseJson(local, null);
         if (Array.isArray(parsed) && parsed.length > 0) cached = parsed;
       }
     } catch (e) {}
@@ -807,11 +956,17 @@ export const db = {
     let cloudCats = null;
     if (this.isLive()) {
       try {
-        const { data, error } = await supabase
-          .from('fest_settings')
-          .select('custom_categories')
-          .eq('id', 1)
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('fest_settings')
+            .select('custom_categories')
+            .eq('id', 1)
+            .maybeSingle());
+        } else {
+          ({ data, error } = await restSelect('fest_settings', 'select=custom_categories&id=eq.1&limit=1', { single: true }));
+        }
         if (!error && data?.custom_categories && Array.isArray(data.custom_categories) && data.custom_categories.length > 0) {
           cloudCats = data.custom_categories;
         }
@@ -836,9 +991,10 @@ export const db = {
       localStorage.setItem('almurafaqa_custom_categories', JSON.stringify(CORE_CLEAN_CATEGORIES));
     } catch (e) {}
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase
+        await client
           .from('fest_settings')
           .update({ custom_categories: CORE_CLEAN_CATEGORIES })
           .eq('id', 1);
@@ -883,9 +1039,10 @@ export const db = {
       localStorage.setItem('almurafaqa_custom_categories', JSON.stringify(list));
     } catch (e) {}
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase
+        await client
           .from('fest_settings')
           .update({ custom_categories: list })
           .eq('id', 1);
@@ -914,9 +1071,10 @@ export const db = {
       localStorage.setItem('almurafaqa_custom_categories', JSON.stringify(updated));
     } catch (e) {}
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase
+        await client
           .from('fest_settings')
           .update({ custom_categories: updated })
           .eq('id', 1);
@@ -931,11 +1089,26 @@ export const db = {
   // Events Operations
   async getEvents() {
     if (this.isLive()) {
-      const { data, error } = await supabase.from('events').select('*').order('day_number', { ascending: true });
-      if (!error && data) return purgeMockEvents(data);
+      try {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase.from('events').select('*').order('day_number', { ascending: true }));
+        } else {
+          ({ data, error } = await restSelect('events', 'select=*&order=day_number.asc'));
+        }
+        if (!error && Array.isArray(data)) {
+          const clean = purgeMockEvents(data);
+          try { localStorage.setItem('almurafaqa_events', JSON.stringify(clean)); } catch (_) {}
+          return clean;
+        }
+      } catch (err) {
+        console.warn('[Supabase getEvents]', err);
+      }
     }
-    const raw = localStorage.getItem('almurafaqa_events');
-    return purgeMockEvents(raw ? JSON.parse(raw) : DEFAULT_EVENTS);
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_events') : null;
+    const parsed = safeParseJson(raw, null);
+    return purgeMockEvents(Array.isArray(parsed) ? parsed : DEFAULT_EVENTS);
   },
 
   async purgeAllDemoEvents() {
@@ -951,6 +1124,8 @@ export const db = {
 
   async saveEvent(eventData) {
     if (this.isLive()) {
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
       const payload = { ...eventData };
       if (!payload.category) payload.category = 'Senior';
       if (!payload.day_number) payload.day_number = 1;
@@ -961,7 +1136,7 @@ export const db = {
 
       try {
         if (eventData.id && isUuid(eventData.id)) {
-          const { data, error } = await supabase.from('events').update(payload).eq('id', eventData.id).select().single();
+          const { data, error } = await client.from('events').update(payload).eq('id', eventData.id).select().single();
           if (error) throw error;
           if (data) {
             const list = await this.getEvents();
@@ -973,7 +1148,7 @@ export const db = {
           }
         } else {
           delete payload.id;
-          const { data, error } = await supabase.from('events').insert([payload]).select().single();
+          const { data, error } = await client.from('events').insert([payload]).select().single();
           if (error) throw error;
           if (data) {
             const list = await this.getEvents();
@@ -993,7 +1168,7 @@ export const db = {
             if (baseCols.has(k)) basePayload[k] = payload[k];
           }
           if (eventData.id && isUuid(eventData.id)) {
-            const retry = await supabase.from('events').update(basePayload).eq('id', eventData.id).select().single();
+            const retry = await client.from('events').update(basePayload).eq('id', eventData.id).select().single();
             if (!retry.error && retry.data) {
               const fullData = { ...payload, ...retry.data };
               const list = await this.getEvents();
@@ -1004,7 +1179,7 @@ export const db = {
               return fullData;
             }
           } else {
-            const retry = await supabase.from('events').insert([basePayload]).select().single();
+            const retry = await client.from('events').insert([basePayload]).select().single();
             if (!retry.error && retry.data) {
               const fullData = { ...payload, ...retry.data };
               const list = await this.getEvents();
@@ -1044,9 +1219,10 @@ export const db = {
       localStorage.setItem('almurafaqa_deleted_event_ids', JSON.stringify(Array.from(deletedIds)));
     } catch (e) {}
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        const { error } = await supabase.from('events').delete().eq('id', id);
+        const { error } = await client.from('events').delete().eq('id', id);
         if (error) console.warn('[Supabase deleteEvent]', error);
       } catch (err) {
         console.warn('[Supabase deleteEvent]', err);
@@ -1064,19 +1240,36 @@ export const db = {
   // Registrations Operations
   async getRegistrations() {
     if (this.isLive()) {
-      const { data, error } = await supabase
-        .from('registrations')
-        .select('*, events(title, fee)')
-        .order('created_at', { ascending: false });
-      if (!error && data) return purgeMockRegistrations(data);
+      try {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('registrations')
+            .select('*, events(title, fee)')
+            .order('created_at', { ascending: false }));
+        } else {
+          ({ data, error } = await restSelect('registrations', 'select=*,events(title,fee)&order=created_at.desc'));
+        }
+        if (!error && Array.isArray(data)) {
+          const clean = purgeMockRegistrations(data);
+          try { localStorage.setItem('almurafaqa_registrations', JSON.stringify(clean)); } catch (_) {}
+          return clean;
+        }
+      } catch (err) {
+        console.warn('[Supabase getRegistrations]', err);
+      }
     }
-    const raw = localStorage.getItem('almurafaqa_registrations');
-    return purgeMockRegistrations(raw ? JSON.parse(raw) : DEFAULT_REGISTRATIONS);
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_registrations') : null;
+    const parsed = safeParseJson(raw, null);
+    return purgeMockRegistrations(Array.isArray(parsed) ? parsed : DEFAULT_REGISTRATIONS);
   },
 
   async updatePayment(id, payment_status) {
     if (this.isLive()) {
-      const { data, error } = await supabase
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
+      const { data, error } = await client
         .from('registrations')
         .update({ payment_status })
         .eq('id', id)
@@ -1098,7 +1291,9 @@ export const db = {
   async checkIn(id, checked_in) {
     const timestamp = checked_in ? new Date().toISOString() : null;
     if (this.isLive()) {
-      const { data, error } = await supabase
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
+      const { data, error } = await client
         .from('registrations')
         .update({ checked_in, checked_in_at: timestamp })
         .eq('id', id)
@@ -1119,9 +1314,10 @@ export const db = {
   },
 
     async updateRegistration(id, updates) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('registrations')
           .update(updates)
           .eq('id', id)
@@ -1150,9 +1346,11 @@ export const db = {
     if (!regData.team_members) regData.team_members = [{ name: regData.leader_name, role: 'Lead' }];
 
     if (this.isLive()) {
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
       const payload = { ...regData };
       delete payload.id;
-      const { data, error } = await supabase.from('registrations').insert([payload]).select().single();
+      const { data, error } = await client.from('registrations').insert([payload]).select().single();
       if (error) throw error;
       if (!data) throw new Error('Registration creation did not return a record.');
       return data;
@@ -1167,20 +1365,37 @@ export const db = {
   // Announcements Operations
   async getAnnouncements() {
     if (this.isLive()) {
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) return purgeMockAnnouncements(data);
+      try {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('announcements')
+            .select('*')
+            .order('created_at', { ascending: false }));
+        } else {
+          ({ data, error } = await restSelect('announcements', 'select=*&order=created_at.desc'));
+        }
+        if (!error && Array.isArray(data)) {
+          const clean = purgeMockAnnouncements(data);
+          try { localStorage.setItem('almurafaqa_announcements', JSON.stringify(clean)); } catch (_) {}
+          return clean;
+        }
+      } catch (err) {
+        console.warn('[Supabase getAnnouncements]', err);
+      }
     }
-    const raw = localStorage.getItem('almurafaqa_announcements');
-    return purgeMockAnnouncements(raw ? JSON.parse(raw) : DEFAULT_ANNOUNCEMENTS);
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_announcements') : null;
+    const parsed = safeParseJson(raw, null);
+    return purgeMockAnnouncements(Array.isArray(parsed) ? parsed : DEFAULT_ANNOUNCEMENTS);
   },
 
   async saveAnnouncement(data) {
     if (this.isLive()) {
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
       if (data.id && isUuid(data.id)) {
-        const { data: updated, error } = await supabase
+        const { data: updated, error } = await client
           .from('announcements')
           .update(data)
           .eq('id', data.id)
@@ -1192,7 +1407,7 @@ export const db = {
       } else {
         const payload = { ...data };
         delete payload.id;
-        const { data: inserted, error } = await supabase
+        const { data: inserted, error } = await client
           .from('announcements')
           .insert([payload])
           .select()
@@ -1217,7 +1432,9 @@ export const db = {
 
   async deleteAnnouncement(id) {
     if (this.isLive()) {
-      const { error } = await supabase.from('announcements').delete().eq('id', id);
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
+      const { error } = await client.from('announcements').delete().eq('id', id);
       if (error) throw error;
       return true;
     }
@@ -1230,14 +1447,29 @@ export const db = {
   // Winners Operations
   async getWinners() {
     if (this.isLive()) {
-      const { data, error } = await supabase
-        .from('winners')
-        .select('*, events(title, category)')
-        .order('position', { ascending: true });
-      if (!error && data) return purgeMockWinners(data);
+      try {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('winners')
+            .select('*, events(title, category)')
+            .order('position', { ascending: true }));
+        } else {
+          ({ data, error } = await restSelect('winners', 'select=*,events(title,category)&order=position.asc'));
+        }
+        if (!error && Array.isArray(data)) {
+          const clean = purgeMockWinners(data);
+          try { localStorage.setItem('almurafaqa_winners', JSON.stringify(clean)); } catch (_) {}
+          return clean;
+        }
+      } catch (err) {
+        console.warn('[Supabase getWinners]', err);
+      }
     }
-    const raw = localStorage.getItem('almurafaqa_winners');
-    return purgeMockWinners(raw ? JSON.parse(raw) : DEFAULT_WINNERS);
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_winners') : null;
+    const parsed = safeParseJson(raw, null);
+    return purgeMockWinners(Array.isArray(parsed) ? parsed : DEFAULT_WINNERS);
   },
 
   async saveWinners(eventId, winnersArray, published = true) {
@@ -1253,10 +1485,12 @@ export const db = {
       }));
 
     if (this.isLive()) {
-      const { error: delError } = await supabase.from('winners').delete().eq('event_id', eventId);
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Cloud connection unavailable right now. Please try again.');
+      const { error: delError } = await client.from('winners').delete().eq('event_id', eventId);
       if (delError) throw delError;
       if (records.length > 0) {
-        const { data, error } = await supabase.from('winners').insert(records).select();
+        const { data, error } = await client.from('winners').insert(records).select();
         if (error) throw error;
         return data || [];
       }
@@ -1279,11 +1513,20 @@ export const db = {
   async getScores(eventId = null) {
     if (this.isLive()) {
       try {
-        let query = supabase.from('scores').select('*').order('created_at', { ascending: false });
-        if (eventId) query = query.eq('event_id', eventId);
-        const { data, error } = await query;
-        if (!error && data) {
-          localStorage.setItem('almurafaqa_scores', JSON.stringify(data));
+        let data = null;
+        let error = null;
+        if (supabase) {
+          let query = supabase.from('scores').select('*').order('created_at', { ascending: false });
+          if (eventId) query = query.eq('event_id', eventId);
+          ({ data, error } = await query);
+        } else {
+          const qs = 'select=*&order=created_at.desc' + (eventId ? `&event_id=eq.${encodeURIComponent(eventId)}` : '');
+          ({ data, error } = await restSelect('scores', qs));
+        }
+        if (!error && Array.isArray(data)) {
+          if (!eventId) {
+            try { localStorage.setItem('almurafaqa_scores', JSON.stringify(data)); } catch (_) {}
+          }
           return data;
         }
         if (error && error.code !== 'PGRST205') {
@@ -1293,13 +1536,9 @@ export const db = {
         console.warn('[Supabase getScores exception]', err);
       }
     }
-    let list = [];
-    try {
-      const raw = localStorage.getItem('almurafaqa_scores');
-      list = raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      list = [];
-    }
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_scores') : null;
+    const parsed = safeParseJson(raw, []);
+    const list = Array.isArray(parsed) ? parsed : [];
     if (eventId) {
       return list.filter((s) => s.event_id === eventId);
     }
@@ -1313,11 +1552,12 @@ export const db = {
       updated_at: new Date().toISOString(),
     };
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
         const payload = { ...record };
         if (!isUuid(payload.id)) delete payload.id;
-        const { data, error } = await supabase.from('scores').upsert([payload]).select().single();
+        const { data, error } = await client.from('scores').upsert([payload]).select().single();
         if (!error && data) {
           const list = await this.getScores();
           const idx = list.findIndex((s) => s.id === data.id);
@@ -1346,9 +1586,10 @@ export const db = {
   },
 
   async deleteScore(id) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase.from('scores').delete().eq('id', id);
+        await client.from('scores').delete().eq('id', id);
       } catch (err) {
         console.warn('[Supabase deleteScore]', err);
       }
@@ -1405,11 +1646,17 @@ export const db = {
 
     if (this.isLive()) {
       try {
-        const { data, error } = await supabase
-          .from('fest_settings')
-          .select('stage_ops')
-          .eq('id', 1)
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('fest_settings')
+            .select('stage_ops')
+            .eq('id', 1)
+            .maybeSingle());
+        } else {
+          ({ data, error } = await restSelect('fest_settings', 'select=stage_ops&id=eq.1&limit=1', { single: true }));
+        }
         if (!error && data?.stage_ops && typeof data.stage_ops === 'object' && Object.keys(data.stage_ops).length > 0) {
           const cloudOps = { ...defaultOps, ...data.stage_ops, stages: { ...defaultOps.stages, ...(data.stage_ops.stages || {}) } };
           localStorage.setItem('almurafaqa_stage_ops', JSON.stringify(cloudOps));
@@ -1435,9 +1682,10 @@ export const db = {
     const merged = { ...current, ...opsObj };
     localStorage.setItem('almurafaqa_stage_ops', JSON.stringify(merged));
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase
+        await client
           .from('fest_settings')
           .update({ stage_ops: merged })
           .eq('id', 1);
@@ -1463,13 +1711,19 @@ export const db = {
   async getAuditLogs() {
     if (this.isLive()) {
       try {
-        const { data, error } = await supabase
-          .from('audit_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(250);
-        if (!error && data) {
-          localStorage.setItem('almurafaqa_audit_logs', JSON.stringify(data));
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('audit_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(250));
+        } else {
+          ({ data, error } = await restSelect('audit_logs', 'select=*&order=created_at.desc&limit=250'));
+        }
+        if (!error && Array.isArray(data)) {
+          try { localStorage.setItem('almurafaqa_audit_logs', JSON.stringify(data)); } catch (_) {}
           return data;
         }
         if (error && error.code !== 'PGRST205') {
@@ -1479,12 +1733,9 @@ export const db = {
         console.warn('[Supabase getAuditLogs exception]', err);
       }
     }
-    try {
-      const raw = localStorage.getItem('almurafaqa_audit_logs');
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('almurafaqa_audit_logs') : null;
+    const parsed = safeParseJson(raw, []);
+    return Array.isArray(parsed) ? parsed : [];
   },
 
   async addAuditLog(action, details, role = 'Super Admin') {
@@ -1496,11 +1747,12 @@ export const db = {
       created_at: new Date().toISOString(),
     };
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
         const payload = { ...entry };
         delete payload.id;
-        const { data, error } = await supabase.from('audit_logs').insert([payload]).select().single();
+        const { data, error } = await client.from('audit_logs').insert([payload]).select().single();
         if (!error && data) {
           const list = await this.getAuditLogs();
           list.unshift(data);
@@ -1604,11 +1856,17 @@ export const db = {
 
     if (this.isLive()) {
       try {
-        const { data, error } = await supabase
-          .from('fest_settings')
-          .select('site_restrictions')
-          .eq('id', 1)
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('fest_settings')
+            .select('site_restrictions')
+            .eq('id', 1)
+            .maybeSingle());
+        } else {
+          ({ data, error } = await restSelect('fest_settings', 'select=site_restrictions&id=eq.1&limit=1', { single: true }));
+        }
         if (!error && data?.site_restrictions && typeof data.site_restrictions === 'object' && Object.keys(data.site_restrictions).length > 0) {
           const { _fest_dates, ...cleanRes } = data.site_restrictions;
           const cloudRes = { ...defaultRestrictions, ...cleanRes };
@@ -1633,11 +1891,12 @@ export const db = {
     const merged = { ...current, ...restrictionsObj, updated_at: new Date().toISOString() };
     localStorage.setItem('almurafaqa_restrictions', JSON.stringify(merged));
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
         let cloudPayload = { ...merged };
         try {
-          const { data: curRow } = await supabase
+          const { data: curRow } = await client
             .from('fest_settings')
             .select('site_restrictions')
             .eq('id', 1)
@@ -1646,7 +1905,7 @@ export const db = {
             cloudPayload._fest_dates = curRow.site_restrictions._fest_dates;
           }
         } catch (_) {}
-        await supabase
+        await client
           .from('fest_settings')
           .update({ site_restrictions: cloudPayload })
           .eq('id', 1);
@@ -1666,11 +1925,17 @@ export const db = {
     let cloudData = null;
     if (this.isLive()) {
       try {
-        const { data, error } = await supabase
-          .from('team_leaders')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error && data) {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('team_leaders')
+            .select('*')
+            .order('created_at', { ascending: false }));
+        } else {
+          ({ data, error } = await restSelect('team_leaders', 'select=*&order=created_at.desc'));
+        }
+        if (!error && Array.isArray(data)) {
           cloudData = data;
         }
         if (error) console.warn('[Supabase getTeamLeaders]', error.message);
@@ -1679,8 +1944,9 @@ export const db = {
       }
     }
 
-    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_LEADERS);
-    const localList = raw ? JSON.parse(raw) : [];
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.TEAM_LEADERS) : null;
+    const parsedLocal = safeParseJson(raw, []);
+    const localList = Array.isArray(parsedLocal) ? parsedLocal : [];
 
     // Merge cloud and local so local delegations are never wiped before syncing
     const mergedMap = new Map();
@@ -1718,22 +1984,39 @@ export const db = {
     const normalizedToken = cleanToken.replace(/\s+/g, '-');
     if (this.isLive()) {
       try {
-        let { data, error } = await supabase
-          .from('team_leaders')
-          .select('*')
-          .eq('token', cleanToken)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        // If not found with exact cleanToken, try normalizedToken
-        if (!data && normalizedToken !== cleanToken) {
-          const retry = await supabase
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
             .from('team_leaders')
             .select('*')
-            .eq('token', normalizedToken)
+            .eq('token', cleanToken)
             .eq('status', 'active')
-            .maybeSingle();
-          if (!retry.error && retry.data) data = retry.data;
+            .maybeSingle());
+
+          if (!data && normalizedToken !== cleanToken) {
+            const retry = await supabase
+              .from('team_leaders')
+              .select('*')
+              .eq('token', normalizedToken)
+              .eq('status', 'active')
+              .maybeSingle();
+            if (!retry.error && retry.data) data = retry.data;
+          }
+        } else {
+          ({ data, error } = await restSelect(
+            'team_leaders',
+            `select=*&token=eq.${encodeURIComponent(cleanToken)}&status=eq.active&limit=1`,
+            { single: true }
+          ));
+          if (!data && normalizedToken !== cleanToken) {
+            const retry = await restSelect(
+              'team_leaders',
+              `select=*&token=eq.${encodeURIComponent(normalizedToken)}&status=eq.active&limit=1`,
+              { single: true }
+            );
+            if (!retry.error && retry.data) data = retry.data;
+          }
         }
 
         if (!error && data) return data;
@@ -1776,11 +2059,12 @@ export const db = {
     let cloudSaved = false;
     let cloudError = null;
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
         const payload = { ...newLeader };
         delete payload.id;
-        const { data: inserted, error } = await supabase
+        const { data: inserted, error } = await client
           .from('team_leaders')
           .insert([payload])
           .select()
@@ -1821,20 +2105,16 @@ export const db = {
 
   // Sync locally cached team leaders to Supabase (useful after database migration is applied)
   async syncLocalTeamLeadersToCloud() {
-    if (!this.isLive()) return { synced: 0, total: 0 };
+    if (!this.isLive() || typeof localStorage === 'undefined') return { synced: 0, total: 0 };
     const raw = localStorage.getItem(STORAGE_KEYS.TEAM_LEADERS);
-    if (!raw) return { synced: 0, total: 0 };
-    let localLeaders = [];
-    try {
-      localLeaders = JSON.parse(raw);
-    } catch (e) {
-      return { synced: 0, total: 0 };
-    }
+    const localLeaders = safeParseJson(raw, []);
     if (!Array.isArray(localLeaders) || localLeaders.length === 0) return { synced: 0, total: 0 };
+    const client = await getSupabaseClient();
+    if (!client) return { synced: 0, total: localLeaders.length };
 
     let syncedCount = 0;
     try {
-      const { data: cloudData, error } = await supabase.from('team_leaders').select('id, token');
+      const { data: cloudData, error } = await client.from('team_leaders').select('id, token');
       if (error) {
         console.warn('[syncLocalTeamLeadersToCloud check]', error.message);
         return { synced: 0, total: localLeaders.length, error: error.message };
@@ -1857,7 +2137,7 @@ export const db = {
             status: leader.status || 'active',
             notes: (leader.notes || '').trim(),
           };
-          const { error: insErr } = await supabase.from('team_leaders').upsert([payload], { onConflict: 'token' });
+          const { error: insErr } = await client.from('team_leaders').upsert([payload], { onConflict: 'token' });
           if (!insErr) syncedCount++;
           else console.warn('[syncLocalTeamLeadersToCloud upsert error]', insErr.message);
         }
@@ -1870,23 +2150,19 @@ export const db = {
 
   // Sync locally cached team students to Supabase
   async syncLocalTeamStudentsToCloud() {
-    if (!this.isLive()) return { synced: 0, total: 0 };
+    if (!this.isLive() || typeof localStorage === 'undefined') return { synced: 0, total: 0 };
     const raw = localStorage.getItem(STORAGE_KEYS.TEAM_STUDENTS);
-    if (!raw) return { synced: 0, total: 0 };
-    let localStudents = [];
-    try {
-      localStudents = JSON.parse(raw);
-    } catch (e) {
-      return { synced: 0, total: 0 };
-    }
+    const localStudents = safeParseJson(raw, []);
     if (!Array.isArray(localStudents) || localStudents.length === 0) return { synced: 0, total: 0 };
+    const client = await getSupabaseClient();
+    if (!client) return { synced: 0, total: localStudents.length };
 
     let syncedCount = 0;
     try {
       // First ensure team leaders exist in Supabase so foreign keys do not fail
       await this.syncLocalTeamLeadersToCloud();
 
-      const { data: cloudStudents, error } = await supabase.from('team_students').select('id, student_code, team_leader_id');
+      const { data: cloudStudents, error } = await client.from('team_students').select('id, student_code, team_leader_id');
       if (error) {
         console.warn('[syncLocalTeamStudentsToCloud check]', error.message);
         return { synced: 0, total: localStudents.length, error: error.message };
@@ -1895,7 +2171,7 @@ export const db = {
       const existingCodes = new Set((cloudStudents || []).map((s) => (s.student_code || '').trim().toUpperCase()));
 
       // Get all cloud leader IDs
-      const { data: cloudLeaders } = await supabase.from('team_leaders').select('id, token');
+      const { data: cloudLeaders } = await client.from('team_leaders').select('id, token');
       const cloudLeaderIdMap = new Map();
       (cloudLeaders || []).forEach((l) => {
         cloudLeaderIdMap.set(l.id, l.id);
@@ -1923,7 +2199,7 @@ export const db = {
               notes: (student.notes || '').trim(),
               assigned_events: Array.isArray(student.assigned_events) ? student.assigned_events : [],
             };
-            const { error: insErr } = await supabase.from('team_students').insert([payload]);
+            const { error: insErr } = await client.from('team_students').insert([payload]);
             if (!insErr) syncedCount++;
             else console.warn('[syncLocalTeamStudentsToCloud insert error]', insErr.message);
           }
@@ -1949,9 +2225,10 @@ export const db = {
   // Update existing team leader
   async updateTeamLeader(id, updates) {
     updates.updated_at = new Date().toISOString();
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('team_leaders')
           .update(updates)
           .eq('id', id)
@@ -1986,9 +2263,10 @@ export const db = {
 
   // Delete Team Leader
   async deleteTeamLeader(id) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase.from('team_leaders').delete().eq('id', id);
+        await client.from('team_leaders').delete().eq('id', id);
       } catch (err) {
         console.warn('[Supabase deleteTeamLeader]', err);
       }
@@ -2013,12 +2291,19 @@ export const db = {
     let cloudData = null;
     if (this.isLive()) {
       try {
-        let query = supabase.from('team_students').select('*').order('created_at', { ascending: false });
-        if (teamLeaderId) {
-          query = query.eq('team_leader_id', teamLeaderId);
+        let data = null;
+        let error = null;
+        if (supabase) {
+          let query = supabase.from('team_students').select('*').order('created_at', { ascending: false });
+          if (teamLeaderId) {
+            query = query.eq('team_leader_id', teamLeaderId);
+          }
+          ({ data, error } = await query);
+        } else {
+          const qs = 'select=*&order=created_at.desc' + (teamLeaderId ? `&team_leader_id=eq.${encodeURIComponent(teamLeaderId)}` : '');
+          ({ data, error } = await restSelect('team_students', qs));
         }
-        const { data, error } = await query;
-        if (!error && data) {
+        if (!error && Array.isArray(data)) {
           cloudData = data;
         }
       } catch (err) {
@@ -2026,8 +2311,9 @@ export const db = {
       }
     }
 
-    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_STUDENTS);
-    const localStudents = raw ? JSON.parse(raw) : [];
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.TEAM_STUDENTS) : null;
+    const parsedStudents = safeParseJson(raw, []);
+    const localStudents = Array.isArray(parsedStudents) ? parsedStudents : [];
 
     // Merge cloud and local so local students are NEVER lost before syncing
     const mergedMap = new Map();
@@ -2073,10 +2359,11 @@ export const db = {
       created_at: new Date().toISOString(),
     };
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
         // Ensure team leader exists in cloud first so foreign key never fails
-        const { data: leaderExists } = await supabase
+        const { data: leaderExists } = await client
           .from('team_leaders')
           .select('id')
           .eq('id', student.team_leader_id)
@@ -2088,7 +2375,7 @@ export const db = {
         }
 
         const payload = { ...student };
-        const { data: inserted, error } = await supabase
+        const { data: inserted, error } = await client
           .from('team_students')
           .insert([payload])
           .select()
@@ -2115,9 +2402,10 @@ export const db = {
   },
 
   async updateTeamStudent(studentId, updates) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('team_students')
           .update(updates)
           .eq('id', studentId)
@@ -2145,9 +2433,10 @@ export const db = {
   },
 
   async deleteTeamStudent(studentId) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase.from('team_students').delete().eq('id', studentId);
+        await client.from('team_students').delete().eq('id', studentId);
       } catch (err) {
         console.warn('[Supabase deleteTeamStudent]', err);
       }
@@ -2165,19 +2454,29 @@ export const db = {
   async getTeamAssignments(teamLeaderId = null) {
     if (this.isLive()) {
       try {
-        let query = supabase.from('team_assignments').select('*');
-        if (teamLeaderId) query = query.eq('team_leader_id', teamLeaderId);
-        const { data, error } = await query;
-        if (!error && data) {
-          if (!teamLeaderId) localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(data));
+        let data = null;
+        let error = null;
+        if (supabase) {
+          let query = supabase.from('team_assignments').select('*');
+          if (teamLeaderId) query = query.eq('team_leader_id', teamLeaderId);
+          ({ data, error } = await query);
+        } else {
+          const qs = 'select=*' + (teamLeaderId ? `&team_leader_id=eq.${encodeURIComponent(teamLeaderId)}` : '');
+          ({ data, error } = await restSelect('team_assignments', qs));
+        }
+        if (!error && Array.isArray(data)) {
+          if (!teamLeaderId) {
+            try { localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(data)); } catch (_) {}
+          }
           return data;
         }
       } catch (err) {
         console.warn('[Supabase getTeamAssignments]', err);
       }
     }
-    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_ASSIGNMENTS);
-    const all = raw ? JSON.parse(raw) : [];
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.TEAM_ASSIGNMENTS) : null;
+    const parsed = safeParseJson(raw, []);
+    const all = Array.isArray(parsed) ? parsed : [];
     return teamLeaderId ? all.filter((a) => a.team_leader_id === teamLeaderId) : all;
   },
 
@@ -2231,9 +2530,10 @@ export const db = {
       created_at: new Date().toISOString(),
     };
 
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase
+        await client
           .from('team_assignments')
           .delete()
           .eq('team_leader_id', teamLeaderId)
@@ -2241,7 +2541,7 @@ export const db = {
 
         const payload = { ...assignmentRecord };
         delete payload.id;
-        const { data: insData, error: insErr } = await supabase
+        const { data: insData, error: insErr } = await client
           .from('team_assignments')
           .insert([payload])
           .select()
@@ -2283,9 +2583,10 @@ export const db = {
 
   // Remove assignment for a programme
   async removeTeamAssignment(teamLeaderId, eventId) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase.from('team_assignments').delete().eq('team_leader_id', teamLeaderId).eq('event_id', eventId);
+        await client.from('team_assignments').delete().eq('team_leader_id', teamLeaderId).eq('event_id', eventId);
       } catch (err) {
         console.warn('[Supabase removeTeamAssignment]', err);
       }
@@ -2309,19 +2610,29 @@ export const db = {
   async getTeamGroups(teamLeaderId = null) {
     if (this.isLive()) {
       try {
-        let query = supabase.from('team_groups').select('*').order('created_at', { ascending: false });
-        if (teamLeaderId) query = query.eq('team_leader_id', teamLeaderId);
-        const { data, error } = await query;
-        if (!error && data) {
-          if (!teamLeaderId) localStorage.setItem(STORAGE_KEYS.TEAM_GROUPS, JSON.stringify(data));
+        let data = null;
+        let error = null;
+        if (supabase) {
+          let query = supabase.from('team_groups').select('*').order('created_at', { ascending: false });
+          if (teamLeaderId) query = query.eq('team_leader_id', teamLeaderId);
+          ({ data, error } = await query);
+        } else {
+          const qs = 'select=*&order=created_at.desc' + (teamLeaderId ? `&team_leader_id=eq.${encodeURIComponent(teamLeaderId)}` : '');
+          ({ data, error } = await restSelect('team_groups', qs));
+        }
+        if (!error && Array.isArray(data)) {
+          if (!teamLeaderId) {
+            try { localStorage.setItem(STORAGE_KEYS.TEAM_GROUPS, JSON.stringify(data)); } catch (_) {}
+          }
           return data;
         }
       } catch (err) {
         console.warn('[Supabase getTeamGroups]', err);
       }
     }
-    const raw = localStorage.getItem(STORAGE_KEYS.TEAM_GROUPS);
-    const all = raw ? JSON.parse(raw) : [];
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.TEAM_GROUPS) : null;
+    const parsed = safeParseJson(raw, []);
+    const all = Array.isArray(parsed) ? parsed : [];
     return teamLeaderId ? all.filter((g) => g.team_leader_id === teamLeaderId) : all;
   },
 
@@ -2329,6 +2640,7 @@ export const db = {
     const list = await this.getTeamGroups();
     let record = null;
     const now = new Date().toISOString();
+    const client = this.isLive() ? await getSupabaseClient() : null;
 
     if (teamData.id) {
       // Update
@@ -2342,10 +2654,10 @@ export const db = {
         };
         list[index] = record;
       }
-      if (this.isLive()) {
+      if (client) {
         try {
           const payload = { ...record };
-          await supabase.from('team_groups').update(payload).eq('id', teamData.id);
+          await client.from('team_groups').update(payload).eq('id', teamData.id);
         } catch (err) {
           console.warn('[Supabase saveTeamGroup update]', err);
         }
@@ -2362,11 +2674,11 @@ export const db = {
         notes: teamData.notes || '',
         created_at: now,
       };
-      if (this.isLive()) {
+      if (client) {
         try {
           const payload = { ...record };
           delete payload.id;
-          const { data, error } = await supabase.from('team_groups').insert([payload]).select().single();
+          const { data, error } = await client.from('team_groups').insert([payload]).select().single();
           if (!error && data) record = data;
         } catch (err) {
           console.warn('[Supabase saveTeamGroup insert]', err);
@@ -2380,9 +2692,10 @@ export const db = {
   },
 
   async deleteTeamGroup(teamGroupId) {
-    if (this.isLive()) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
       try {
-        await supabase.from('team_groups').delete().eq('id', teamGroupId);
+        await client.from('team_groups').delete().eq('id', teamGroupId);
       } catch (err) {
         console.warn('[Supabase deleteTeamGroup]', err);
       }
@@ -2406,13 +2719,23 @@ export const db = {
       'team_students', 'team_assignments', 'team_groups'
     ];
     const results = {};
+    const client = await getSupabaseClient(4500);
     for (const tbl of tables) {
       try {
-        const { count, error } = await supabase.from(tbl).select('*', { count: 'exact', head: true });
-        if (error) {
-          results[tbl] = { ok: false, error: error.message, code: error.code };
+        if (client) {
+          const { count, error } = await client.from(tbl).select('*', { count: 'exact', head: true });
+          if (error) {
+            results[tbl] = { ok: false, error: error.message, code: error.code };
+          } else {
+            results[tbl] = { ok: true, count: count ?? 0 };
+          }
         } else {
-          results[tbl] = { ok: true, count: count ?? 0 };
+          const { error } = await restSelect(tbl, 'select=id&limit=1');
+          if (error) {
+            results[tbl] = { ok: false, error: error.message };
+          } else {
+            results[tbl] = { ok: true, count: 'REST ok' };
+          }
         }
       } catch (err) {
         results[tbl] = { ok: false, error: err.message };
