@@ -293,14 +293,49 @@
           db.getEvents ? db.getEvents() : [],
         ]);
 
+        const eventsById = {};
+        if (Array.isArray(events)) {
+          events.forEach((ev) => {
+            if (ev && ev.id) eventsById[ev.id] = ev;
+          });
+        }
+
         let list = [];
+        const upsertParticipant = (entry) => {
+          const entryName = (entry.name || '').trim().toLowerCase();
+          const entryInst = (entry.institution || '').trim().toLowerCase();
+          const entryTicket = (entry.ticket_code || '').trim().toLowerCase();
+          const existing = list.find((item) =>
+            (entryTicket && String(item.ticket_code || '').trim().toLowerCase() === entryTicket && String(item.name || '').trim().toLowerCase() === entryName) ||
+            (entryName && String(item.name || '').trim().toLowerCase() === entryName && String(item.institution || '').trim().toLowerCase() === entryInst)
+          );
+          if (existing) {
+            (entry.assigned_events || []).forEach((ev) => {
+              if (!existing.assigned_events.some((x) => (x.event_title || '').toLowerCase() === (ev.event_title || '').toLowerCase())) {
+                existing.assigned_events.push(ev);
+              }
+            });
+          } else {
+            list.push(entry);
+          }
+        };
 
         if (Array.isArray(teamStudents) && teamStudents.length > 0) {
           teamStudents.forEach((s) => {
             const leader = (teamLeaders || []).find((l) => l.id === s.team_leader_id);
             const instName = leader?.institution_name || leader?.team_name || 'Festival Delegation';
             const tCode = (s.assigned_events && s.assigned_events[0]?.ticket_code) || `ALM-${s.student_code}`;
-            list.push({
+            const enrichedEvents = (s.assigned_events || []).map((ev) => {
+              const meta = eventsById[ev.event_id];
+              return {
+                ...ev,
+                event_title: ev.event_title || meta?.title || 'Competition Stage',
+                day_number: ev.day_number || meta?.day_number || 1,
+                time_slot: ev.time_slot || meta?.time_slot || 'TBA',
+                venue: ev.venue || meta?.venue || 'Main Stage'
+              };
+            });
+            upsertParticipant({
               id: s.id,
               name: s.student_name,
               code: s.student_code,
@@ -308,38 +343,48 @@
               ticket_code: tCode,
               institution: instName,
               category: s.category || 'Senior',
-              assigned_events: s.assigned_events || []
+              assigned_events: enrichedEvents
             });
           });
         }
 
         if (Array.isArray(registrations) && registrations.length > 0) {
           registrations.forEach((r) => {
+            const shortTicket = (r.ticket_code || '0000').slice(-4);
+            const evtMeta = r.events || eventsById[r.event_id] || null;
+            const stageObj = evtMeta ? [{
+              event_id: evtMeta.id || r.event_id,
+              event_title: evtMeta.title || 'Festival Event',
+              day_number: evtMeta.day_number || 1,
+              time_slot: evtMeta.time_slot || 'TBA',
+              venue: evtMeta.venue || 'Main Stage'
+            }] : [];
+
             if (r.team_members && Array.isArray(r.team_members) && r.team_members.length > 0) {
               r.team_members.forEach((m, idx) => {
-                if (m.name && !list.some((item) => item.name.toLowerCase() === m.name.toLowerCase())) {
-                  list.push({
+                if (m && m.name) {
+                  upsertParticipant({
                     id: `${r.id}-${idx}`,
                     name: m.name,
-                    code: m.code || `REG-${r.ticket_code.slice(-4)}-${idx + 1}`,
+                    code: m.code || `REG-${shortTicket}-${idx + 1}`,
                     chest_number: m.code || `REG-${idx + 1}`,
-                    ticket_code: r.ticket_code,
+                    ticket_code: r.ticket_code || `REG-${shortTicket}`,
                     institution: r.college_name || r.team_name || 'Delegation Team',
-                    category: 'Senior',
-                    assigned_events: r.events ? [{ event_title: r.events.title, day_number: 1, time_slot: '10:00 AM', venue: 'Dome' }] : []
+                    category: evtMeta?.category || 'Senior',
+                    assigned_events: stageObj.slice()
                   });
                 }
               });
-            } else if (r.leader_name && !list.some((item) => item.name.toLowerCase() === r.leader_name.toLowerCase())) {
-              list.push({
+            } else if (r.leader_name) {
+              upsertParticipant({
                 id: r.id,
                 name: r.leader_name,
-                code: `REG-${r.ticket_code.slice(-4)}`,
-                chest_number: `REG-${r.ticket_code.slice(-4)}`,
-                ticket_code: r.ticket_code,
+                code: `REG-${shortTicket}`,
+                chest_number: `REG-${shortTicket}`,
+                ticket_code: r.ticket_code || `REG-${shortTicket}`,
                 institution: r.college_name || r.team_name || 'Delegation Team',
-                category: 'Senior',
-                assigned_events: r.events ? [{ event_title: r.events.title, day_number: 1, time_slot: '10:00 AM', venue: 'Dome' }] : []
+                category: evtMeta?.category || 'Senior',
+                assigned_events: stageObj.slice()
               });
             }
           });
@@ -396,8 +441,8 @@
         }
       }
 
-      // If still no participant matched or no param provided, fall back to the first participant
-      if (!p && participants.length > 0) {
+      // Only fall back to the first participant when no explicit query param was provided
+      if (!queryId && !p && participants.length > 0) {
         p = participants[0];
       }
 

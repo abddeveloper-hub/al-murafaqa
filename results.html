@@ -324,14 +324,20 @@
   <main class="relative z-10 w-full pt-24 pb-16 max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-8">
     
     <!-- Breadcrumb & Back Link -->
-    <div class="flex items-center justify-between gap-3 pt-2">
+    <div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
       <a href="home.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-fest-cream/90 bg-white/15 hover:bg-white/25 border border-white/20 px-3.5 py-1.5 rounded-full transition-all">
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
         <span>Back to Festival Home</span>
       </a>
-      <div id="results-live-pill" class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
-        <span id="results-live-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-        <span id="results-live-text">JURY CERTIFIED RESULTS</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="judgment.html" class="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/25 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold transition-all">
+          <span class="material-symbols-outlined text-[14px] text-fest-gold">fact_check</span>
+          <span>Official Judgment Rules</span>
+        </a>
+        <div id="results-live-pill" class="flex items-center gap-2 bg-fest-red-dark/80 border border-fest-orange/30 px-3 py-1 rounded-full text-fest-cream text-[11px] font-bold">
+          <span id="results-live-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="results-live-text">JURY CERTIFIED RESULTS</span>
+        </div>
       </div>
     </div>
 
@@ -647,7 +653,7 @@
           const evt = cachedEventsMap[id];
           const title = (evt?.title || byEvent[id][0]?.events?.title || '').toLowerCase();
           const cat = (evt?.category || byEvent[id][0]?.events?.category || '').toLowerCase();
-          const code = (evt?.event_code || '').toLowerCase();
+          const code = (evt?.code || evt?.event_code || '').toLowerCase();
           const hasContender = byEvent[id].some(w => 
             (w.winner_name || '').toLowerCase().includes(resultSearchQuery) ||
             (w.college_name || '').toLowerCase().includes(resultSearchQuery)
@@ -680,7 +686,7 @@
         const winners = byEvent[eventId].sort((a, b) => Number(a.position) - Number(b.position));
         const eventTitle = evt?.title || winners[0]?.events?.title || 'Competition Event';
         const eventCategory = evt?.category || winners[0]?.events?.category || 'General';
-        const eventCode = evt?.event_code || '';
+        const eventCode = evt?.code || evt?.event_code || '';
 
         const w1 = winners.find(w => Number(w.position) === 1);
         const w2 = winners.find(w => Number(w.position) === 2);
@@ -771,12 +777,37 @@
       const chipsContainer = document.getElementById('results-category-chips');
 
       try {
-        const [winnersData, eventsData, settingsData] = await Promise.all([
+        const [winnersData, eventsData, settingsData, restrictions] = await Promise.all([
           db.getWinners(),
           db.getEvents(),
-          db.getSettings ? db.getSettings() : null
+          db.getSettings ? db.getSettings() : null,
+          db.getRestrictions ? db.getRestrictions() : null
         ]);
         if (settingsData) applyResultsLiveStatus(settingsData);
+
+        if (restrictions?.score_embargo) {
+          cachedWinnersList = [];
+          if (countBadge) countBadge.textContent = 'Jury Embargo Active';
+          const standingsEl = document.getElementById('team-standings-grid');
+          const resultsEl = document.getElementById('results-cards-container');
+          if (standingsEl) {
+            standingsEl.innerHTML = '<div class="col-span-full py-6 text-center text-xs text-amber-700 font-bold">Standings are temporarily embargoed pending grand jury certification.</div>';
+          }
+          if (resultsEl) {
+            resultsEl.innerHTML = `
+              <div class="col-span-full py-16 px-6 rounded-3xl bg-amber-50/90 border border-amber-300 shadow-sm flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 mb-3 shadow-inner">
+                  <span class="material-symbols-outlined text-[32px]">gavel</span>
+                </div>
+                <h3 class="font-headline text-lg sm:text-xl font-bold text-neutral-900">Results Under Jury Embargo</h3>
+                <p class="font-body text-xs sm:text-sm text-neutral-600 max-w-md mt-1">
+                  Public scorecards and podium winners are temporarily withheld during final adjudication. Check back shortly!
+                </p>
+              </div>
+            `;
+          }
+          return;
+        }
 
         // Map events by ID
         cachedEventsMap = {};

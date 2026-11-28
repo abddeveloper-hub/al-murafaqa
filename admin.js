@@ -7,7 +7,9 @@ import {
   db,
   isConfigured,
   generateLeaderToken,
+  generateJudgeToken,
   getShareablePortalUrl,
+  getSupabaseClient,
   evaluateFestLiveStatus,
   formatFestDateShort,
   formatFestDateReadable,
@@ -32,6 +34,8 @@ let cachedRestrictions = null;
 let cachedTeamLeaders = [];
 let cachedTeamStudents = [];
 let cachedTeamAssignments = [];
+let cachedJudgeTokens = [];
+let cachedJudgmentEntries = [];
 let activeRole = 'superadmin'; // 'superadmin' | 'jury' | 'marshal' | 'stageops'
 let currentAttendeeLookup = null;
 let html5QrScanner = null;
@@ -126,11 +130,12 @@ async function checkAuthSession() {
 function updateCloudIndicator() {
   const dot = document.getElementById('cloud-indicator-dot');
   const text = document.getElementById('cloud-indicator-text');
+  if (!dot || !text) return;
   if (db.isLive()) {
-    dot.className = 'cloud-dot';
+    dot.className = 'w-2 h-2 rounded-full bg-emerald-500 shrink-0';
     text.textContent = 'Supabase Cloud Mode';
   } else {
-    dot.className = 'cloud-dot demo';
+    dot.className = 'w-2 h-2 rounded-full bg-amber-500 shrink-0';
     text.textContent = 'Local Demo Mode (Offline)';
   }
 }
@@ -194,7 +199,7 @@ function setupEventListeners() {
         showToast('Error granting master access: ' + err.message, 'error');
       } finally {
         btnMasterBypass.disabled = false;
-        btnMasterBypass.innerHTML = '<span class="material-symbols-outlined text-[20px]">admin_panel_settings</span><span>Instant 1-Click Master Admin Access (Full Privileges)</span>';
+        btnMasterBypass.innerHTML = '<span class="material-symbols-outlined text-[20px]">admin_panel_settings</span><span>Instant Master Admin Access (Full Privileges)</span>';
       }
     });
   }
@@ -369,6 +374,7 @@ function setupEventListeners() {
   setupTeamLeaderControls();
   setupCategoryControls();
   setupFestDatesControls();
+  setupJudgmentsControls();
 
   // Global Modal Close Buttons
   document.querySelectorAll('.btn-close-modal').forEach((btn) => {
@@ -395,6 +401,7 @@ function renderCurrentTab(tabId = currentTab) {
   else if (tabId === 'winners') renderWinnersTab();
   else if (tabId === 'stageops') { renderStageOpsTab(); startAudioWaveSimulator(); }
   else if (tabId === 'scoring') renderScoringTab();
+  else if (tabId === 'judgments') renderJudgmentsTab();
   else if (tabId === 'analytics') renderAnalyticsTab();
   else if (tabId === 'settings') { renderFestDatesManager(); renderAuditLog(); }
   else if (tabId === 'restrictions') renderRestrictionsTab();
@@ -439,7 +446,7 @@ window.switchTab = switchTab;
 
 async function loadAllData() {
   try {
-    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders, categories, teamStudents, teamAssignments] = await Promise.all([
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, restrictions, teamLeaders, categories, teamStudents, teamAssignments, judgeTokens, judgmentEntries] = await Promise.all([
       db.getSettings(),
       db.getEvents(),
       db.getRegistrations(),
@@ -453,6 +460,8 @@ async function loadAllData() {
       db.getCategories ? db.getCategories() : [],
       db.getTeamStudents ? db.getTeamStudents() : [],
       db.getTeamAssignments ? db.getTeamAssignments() : [],
+      db.getJudgeTokens ? db.getJudgeTokens() : [],
+      db.getJudgmentEntries ? db.getJudgmentEntries() : [],
     ]);
 
     cachedSettings = settings;
@@ -468,14 +477,26 @@ async function loadAllData() {
     cachedCategories = categories || [];
     cachedTeamStudents = teamStudents || [];
     cachedTeamAssignments = teamAssignments || [];
+    cachedJudgeTokens = judgeTokens || [];
+    cachedJudgmentEntries = judgmentEntries || [];
     window.festivalCategories = cachedCategories;
 
     populateCategoryDropdowns();
     populateEventDayDropdown();
+    populateJudgmentFestDropdowns();
     renderCategoriesManager();
     renderCategoriesSettingsPreview();
     renderFestDatesManager();
     updateAdminLiveDateBadges();
+
+    if (db.isLive() && typeof db.syncLocalJudgeTokensToCloud === 'function') {
+      db.syncLocalJudgeTokensToCloud().then((res) => {
+        if (res && res.synced > 0) {
+          refreshJudgmentsDataOnly();
+        }
+      }).catch(() => {});
+    }
+    initJudgmentsRealtimeSync();
 
     // Auto-sync any local-only team leaders to Supabase once cloud tables are available
     if (db.isLive() && typeof db.syncLocalTeamLeadersToCloud === 'function') {
@@ -484,7 +505,7 @@ async function loadAllData() {
           console.log(`[Cloud Sync] Synced ${res.synced} local team leaders to Supabase.`);
           db.getTeamLeaders().then((refreshed) => {
             cachedTeamLeaders = refreshed || [];
-            if (currentTab === 'team-leaders') renderTeamLeadersTab();
+            if (currentTab === 'teamleaders') renderTeamLeadersTab();
           });
         }
       }).catch(() => {});
@@ -502,6 +523,7 @@ async function loadAllData() {
       if (currentTab !== 'checkin') renderCheckInTab();
       if (currentTab !== 'winners') renderWinnersTab();
       if (currentTab !== 'teamleaders') renderTeamLeadersTab();
+      if (currentTab !== 'judgments') renderJudgmentsTab();
       initLucide();
     }, 100);
   } catch (err) {
@@ -1006,8 +1028,8 @@ function getEmbedUrl(rawUrl) {
     };
   }
 
-  // 2. YouTube Links
-  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([\w-]{11})/i);
+  // 2. YouTube Links (watch, youtu.be, embed, live, shorts)
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/i);
   if (ytMatch && ytMatch[1]) {
     return {
       type: 'youtube',
@@ -1813,13 +1835,13 @@ function renderRegistrationsTab() {
             }
             ${
               r.is_restricted
-                ? `<button class="btn-icon" style="color: #D97706; border-color: #FDE68A; width: 32px; height: 32px;" title="Edit Operational Restriction Directive" onclick="window.openRestrictModal('${r.id}')">
+                ? `<button class="btn-icon" style="color: #D97706; border-color: #FDE68A; width: 32px; height: 32px;" title="Edit Operational Restriction Directive" onclick="window.openRestrictModal('${escapeHtml(r.id)}')">
                      <span class="material-symbols-outlined text-[16px]">edit_note</span>
                    </button>
-                   <button class="btn-icon" style="color: #059669; border-color: #A7F3D0; width: 32px; height: 32px;" title="Lift Restriction" onclick="window.liftRestriction('${r.id}', '${escapeHtml(r.team_name || r.leader_name)}')">
+                   <button class="btn-icon btn-reg-lift-restriction" style="color: #059669; border-color: #A7F3D0; width: 32px; height: 32px;" title="Lift Restriction" data-id="${escapeHtml(r.id)}" data-name="${escapeHtml(r.team_name || r.leader_name)}">
                      <span class="material-symbols-outlined text-[16px]">lock_open</span>
                    </button>`
-                : `<button class="btn-icon" style="color: #DC2626; border-color: #FECACA; width: 32px; height: 32px;" title="Impose Restriction / Blacklist" onclick="window.openRestrictModal('${r.id}')">
+                : `<button class="btn-icon" style="color: #DC2626; border-color: #FECACA; width: 32px; height: 32px;" title="Impose Restriction / Blacklist" onclick="window.openRestrictModal('${escapeHtml(r.id)}')">
                      <span class="material-symbols-outlined text-[16px]">lock_person</span>
                    </button>`
             }
@@ -1829,6 +1851,12 @@ function renderRegistrationsTab() {
     `;
     })
     .join('');
+
+  tbody.querySelectorAll('.btn-reg-lift-restriction').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      window.liftRestriction(btn.getAttribute('data-id'), btn.getAttribute('data-name') || 'Delegate');
+    });
+  });
 
   initLucide();
 }
@@ -1990,6 +2018,24 @@ window.viewTeamModal = function (id) {
   document.getElementById('modal-team').classList.add('show');
 };
 
+function csvCell(value) {
+  const text = String(value ?? '');
+  const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+function downloadCsvFile(filename, headers, rows) {
+  const csvContent = '\uFEFF' + [headers.map(csvCell).join(','), ...rows.map((r) => r.map(csvCell).join(','))].join('\r\n');
+  const downloadUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.setAttribute('href', downloadUrl);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+}
+
 function exportRegistrationsCSV() {
   if (cachedRegistrations.length === 0) {
     showToast('No registrations to export', 'info');
@@ -1997,11 +2043,6 @@ function exportRegistrationsCSV() {
   }
 
   const headers = ['Ticket Code', 'Event Title', 'Leader Name', 'Email', 'Phone', 'Institution', 'Team Name', 'Checked In'];
-  const csvCell = (value) => {
-    const text = String(value ?? '');
-    const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
-    return `"${safeText.replace(/"/g, '""')}"`;
-  };
   const rows = cachedRegistrations.map((r) => {
     const evt = cachedEvents.find((e) => e.id === r.event_id) || r.events;
     return [
@@ -2013,18 +2054,10 @@ function exportRegistrationsCSV() {
       r.college_name,
       r.team_name || '',
       r.checked_in ? 'YES' : 'NO',
-    ].map(csvCell);
+    ];
   });
 
-  const csvContent = '\uFEFF' + [headers.map(csvCell).join(','), ...rows.map((row) => row.join(','))].join('\r\n');
-  const downloadUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.setAttribute('href', downloadUrl);
-  link.setAttribute('download', `al_murafaqa_registrations_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+  downloadCsvFile(`al_murafaqa_registrations_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   showToast('CSV downloaded successfully', 'success');
 }
 
@@ -2500,8 +2533,9 @@ function renderAuditLog(filterText = '') {
   }
 
   tbody.innerHTML = filtered.slice(0, 50).map((log) => {
-    const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '—';
-    const dateStr = log.timestamp ? new Date(log.timestamp).toLocaleDateString() : '—';
+    const logTs = log.created_at || log.timestamp;
+    const timeStr = logTs ? new Date(logTs).toLocaleTimeString() : '—';
+    const dateStr = logTs ? new Date(logTs).toLocaleDateString() : '—';
     return `
       <tr class="hover:bg-slate-50 transition-colors">
         <td class="py-2.5 px-4 text-slate-500 whitespace-nowrap">
@@ -2533,20 +2567,13 @@ function exportAuditCSV() {
 
   const headers = ['Timestamp', 'Role', 'Action', 'Details'];
   const rows = logs.map((l) => [
-    csvCell(l.timestamp),
-    csvCell(l.role),
-    csvCell(l.action),
-    csvCell(l.details),
+    l.created_at || l.timestamp || '',
+    l.role || '',
+    l.action || '',
+    l.details || '',
   ]);
 
-  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `almurafaqa_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCsvFile(`almurafaqa_audit_trail_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   showToast('Audit log exported successfully', 'success');
 }
 
@@ -3770,20 +3797,23 @@ document.addEventListener('click', (e) => {
   }
 });
 
-async function onQrCodeScanned(decodedText) {
-  if (!decodedText) return;
-  let rawCode = decodedText.trim();
+function extractQrTicketCode(decodedText) {
+  let rawCode = String(decodedText || '').trim();
   try {
     if (rawCode.includes('?')) {
       const parsedUrl = new URL(rawCode, window.location.origin);
-      const paramVal = parsedUrl.searchParams.get('id') || parsedUrl.searchParams.get('code') || parsedUrl.searchParams.get('ticket');
-      if (paramVal) rawCode = paramVal;
+      const paramVal = parsedUrl.searchParams.get('id') || parsedUrl.searchParams.get('code') || parsedUrl.searchParams.get('chest') || parsedUrl.searchParams.get('ticket');
+      if (paramVal) rawCode = paramVal.trim();
     }
   } catch (e) {}
   rawCode = rawCode.toUpperCase();
-  // Match code e.g. ALM-XXXX or pure code
-  const match = rawCode.match(/[A-Z0-9]{3,4}-[A-Z0-9]{3,6}/) || [rawCode];
-  const ticketCode = match[0];
+  const match = rawCode.match(/[A-Z0-9]{2,6}-[A-Z0-9]{2,8}/) || [rawCode];
+  return match[0];
+}
+
+async function onQrCodeScanned(decodedText) {
+  if (!decodedText) return;
+  const ticketCode = extractQrTicketCode(decodedText);
 
   // Play audio chime
   if (audioChimeEnabled) playSuccessChime();
@@ -3809,7 +3839,7 @@ async function onQrCodeScanned(decodedText) {
       // Auto check-in
       if (!found.checked_in) {
         try {
-          await db.checkIn(found.ticket_code);
+          await db.checkIn(found.id, true);
           found.checked_in = true;
           found.checked_in_at = new Date().toISOString();
           renderCheckInTab();
@@ -3819,6 +3849,7 @@ async function onQrCodeScanned(decodedText) {
           showToast(`Gate Accreditation Confirmed: ${found.leader_name}`, 'success');
         } catch (e) {
           console.error('Check-in error:', e);
+          showToast('Gate check-in sync failed: ' + (e.message || 'Database error'), 'error');
         }
       } else {
         showToast(`Pass ${ticketCode} already checked in.`, 'info');
@@ -4040,10 +4071,10 @@ function exportScoresCSV() {
 
   const headers = ['Event ID', 'Competitor', 'Institution', 'Judge', 'Technical (30)', 'Andalusian (30)', 'Creative (20)', 'Decorum (20)', 'Penalties', 'Total (100)'];
   const rows = scores.map((s) => [
-    csvCell(s.event_id),
-    csvCell(s.team_name),
-    csvCell(s.college_name),
-    csvCell(s.judge_name),
+    s.event_id,
+    s.team_name,
+    s.college_name,
+    s.judge_name,
     s.criterion_technical || 0,
     s.criterion_andalusian || 0,
     s.criterion_creative || 0,
@@ -4052,14 +4083,7 @@ function exportScoresCSV() {
     s.total_score || 0,
   ]);
 
-  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `almurafaqa_jury_scores_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCsvFile(`almurafaqa_jury_scores_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   showToast('Jury scorecards exported successfully', 'success');
 }
 
@@ -4072,21 +4096,14 @@ function exportWinnersCSV() {
 
   const headers = ['Event Title', 'Position', 'Winner / Team', 'Institution', 'Published At'];
   const rows = winners.map((w) => [
-    csvCell(w.events?.title || 'Competition'),
+    w.events?.title || 'Competition',
     w.position,
-    csvCell(w.winner_name),
-    csvCell(w.college_name),
-    csvCell(w.created_at),
+    w.winner_name,
+    w.college_name,
+    w.created_at,
   ]);
 
-  const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `almurafaqa_official_podium_${new Date().toISOString().slice(0, 10)}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCsvFile(`almurafaqa_official_podium_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
   showToast('Official podium roster exported successfully', 'success');
 }
 
@@ -4852,9 +4869,7 @@ async function liftRestriction(registrationId, name = 'Delegate') {
 const originalOnQrCodeScanned = onQrCodeScanned;
 onQrCodeScanned = async function(decodedText) {
   if (!decodedText) return;
-  const rawCode = decodedText.trim().toUpperCase();
-  const match = rawCode.match(/[A-Z0-9]{3,4}-[A-Z0-9]{3,6}/) || [rawCode];
-  const ticketCode = match[0];
+  const ticketCode = extractQrTicketCode(decodedText);
 
   // Check 1: Global Gate Ingress Restriction
   if (cachedRestrictions?.gate_ingress_restricted) {
@@ -5426,16 +5441,24 @@ async function renderTeamLeadersTab() {
     }
   }
 
-  // Calculate statistics across all leaders
+  // Calculate statistics across all leaders in a single fetch
   const activeCount = leaders.filter((l) => l.status === 'active').length;
   let totalLeaderStudents = 0;
   let totalLeaderAssignments = 0;
+  const studentCountsByLeader = {};
 
   try {
-    const allStudents = await db.getTeamStudents();
-    const allAssignments = await db.getTeamAssignments();
-    totalLeaderStudents = allStudents.length;
-    totalLeaderAssignments = allAssignments.length;
+    const [allStudents, allAssignments] = await Promise.all([
+      db.getTeamStudents(),
+      db.getTeamAssignments()
+    ]);
+    totalLeaderStudents = (allStudents || []).length;
+    totalLeaderAssignments = (allAssignments || []).length;
+    (allStudents || []).forEach((s) => {
+      if (s && s.team_leader_id) {
+        studentCountsByLeader[s.team_leader_id] = (studentCountsByLeader[s.team_leader_id] || 0) + 1;
+      }
+    });
   } catch (err) {
     console.warn('[Telemetry calculations for team leaders]', err);
   }
@@ -5477,6 +5500,7 @@ async function renderTeamLeadersTab() {
     tr.className = 'hover:bg-slate-50 transition-colors';
 
     const portalUrl = getShareablePortalUrl(leader.token, 'leader.html');
+    const leaderStuCount = studentCountsByLeader[leader.id] || 0;
 
     tr.innerHTML = `
       <td class="py-3 px-4">
@@ -5493,24 +5517,24 @@ async function renderTeamLeadersTab() {
       <td class="py-3 px-4">
         <div class="flex items-center gap-2">
           <span 
-            class="px-2.5 py-1 rounded-md bg-purple-50 text-purple-900 border border-purple-200 font-mono font-bold text-xs cursor-pointer hover:bg-purple-100 transition-colors"
+            class="btn-copy-leader-token px-2.5 py-1 rounded-md bg-purple-50 text-purple-900 border border-purple-200 font-mono font-bold text-xs cursor-pointer hover:bg-purple-100 transition-colors"
             title="Click to copy token"
-            onclick="window.copyLeaderToken('${escapeHtml(leader.token)}')"
+            data-token="${escapeHtml(leader.token)}"
           >
             ${escapeHtml(leader.token)}
           </span>
           <button 
             type="button" 
-            class="p-1 rounded-lg text-purple-700 hover:bg-purple-100 transition-colors"
+            class="btn-copy-leader-link p-1 rounded-lg text-purple-700 hover:bg-purple-100 transition-colors"
             title="Copy portal direct invite link"
-            onclick="window.copyLeaderLink('${escapeHtml(portalUrl)}')"
+            data-url="${escapeHtml(portalUrl)}"
           >
             <span class="material-symbols-outlined text-[16px]">link</span>
           </button>
         </div>
       </td>
       <td class="py-3 px-4">
-        <div class="font-bold text-slate-800"><span id="leader-stu-count-${leader.id}">--</span> / ${leader.max_students || 50}</div>
+        <div class="font-bold text-slate-800"><span id="leader-stu-count-${escapeHtml(leader.id)}">${leaderStuCount}</span> / ${leader.max_students || 50}</div>
         <div class="text-[10px] text-slate-400">Student Slots</div>
       </td>
       <td class="py-3 px-4">
@@ -5523,7 +5547,7 @@ async function renderTeamLeadersTab() {
       <td class="py-3 px-4 text-right">
         <div class="flex items-center justify-end gap-1.5">
           <a 
-            href="${portalUrl}" 
+            href="${escapeHtml(portalUrl)}" 
             target="_blank" 
             class="p-1.5 rounded-lg text-purple-700 hover:bg-purple-50 transition-colors"
             title="Open Leader Portal in new tab"
@@ -5533,27 +5557,29 @@ async function renderTeamLeadersTab() {
 
           <button 
             type="button" 
-            class="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            class="btn-view-leader-roster p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             title="View Enrolled Students & Stages"
-            onclick="window.viewLeaderRoster('${leader.id}')"
+            data-id="${escapeHtml(leader.id)}"
           >
             <span class="material-symbols-outlined text-[18px]">visibility</span>
           </button>
 
           <button 
             type="button" 
-            class="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors"
+            class="btn-regen-leader-token p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors"
             title="Regenerate Access Token"
-            onclick="window.regenerateLeaderTokenPrompt('${leader.id}', '${escapeHtml(leader.institution_name)}')"
+            data-id="${escapeHtml(leader.id)}"
+            data-institution="${escapeHtml(leader.institution_name)}"
           >
             <span class="material-symbols-outlined text-[18px]">refresh</span>
           </button>
 
           <button 
             type="button" 
-            class="p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
+            class="btn-delete-leader p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
             title="Delete Team Leader"
-            onclick="window.deleteLeaderPrompt('${leader.id}', '${escapeHtml(leader.institution_name)}')"
+            data-id="${escapeHtml(leader.id)}"
+            data-institution="${escapeHtml(leader.institution_name)}"
           >
             <span class="material-symbols-outlined text-[18px]">delete</span>
           </button>
@@ -5561,12 +5587,22 @@ async function renderTeamLeadersTab() {
       </td>
     `;
     tbody.appendChild(tr);
+  });
 
-    // Fetch student count asynchronously for this leader
-    db.getTeamStudents(leader.id).then((students) => {
-      const el = document.getElementById(`leader-stu-count-${leader.id}`);
-      if (el) el.textContent = students.length;
-    });
+  tbody.querySelectorAll('.btn-copy-leader-token').forEach((el) => {
+    el.addEventListener('click', () => window.copyLeaderToken(el.getAttribute('data-token') || ''));
+  });
+  tbody.querySelectorAll('.btn-copy-leader-link').forEach((el) => {
+    el.addEventListener('click', () => window.copyLeaderLink(el.getAttribute('data-url') || ''));
+  });
+  tbody.querySelectorAll('.btn-view-leader-roster').forEach((el) => {
+    el.addEventListener('click', () => window.viewLeaderRoster(el.getAttribute('data-id') || ''));
+  });
+  tbody.querySelectorAll('.btn-regen-leader-token').forEach((el) => {
+    el.addEventListener('click', () => window.regenerateLeaderTokenPrompt(el.getAttribute('data-id') || '', el.getAttribute('data-institution') || 'Delegation'));
+  });
+  tbody.querySelectorAll('.btn-delete-leader').forEach((el) => {
+    el.addEventListener('click', () => window.deleteLeaderPrompt(el.getAttribute('data-id') || '', el.getAttribute('data-institution') || 'Delegation'));
   });
 }
 
@@ -6578,6 +6614,696 @@ function setupFestDatesControls() {
         showToast('Failed to save festival date: ' + err.message, 'error');
       } finally {
         if (saveBtn) saveBtn.disabled = false;
+      }
+    });
+  }
+}
+
+// ==============================================================================
+// 20. FEST JUDGMENT SYSTEM & TOKEN-BASED JUDGE REVIEW
+// ==============================================================================
+let activePreviewEntryId = null;
+let judgmentsSyncInitialized = false;
+let judgmentsRealtimeChannel = null;
+let judgmentsPollInterval = null;
+let lastGeneratedJudgeToken = '';
+let lastGeneratedJudgeLink = '';
+
+function isJudgeTokenExpired(tok) {
+  return Boolean(tok?.expires_at && Date.parse(tok.expires_at) <= Date.now());
+}
+
+function getEffectiveTokenState(tok) {
+  if (!tok || tok.is_active !== true) return 'revoked';
+  if (isJudgeTokenExpired(tok)) return 'expired';
+  return 'active';
+}
+
+function getJudgmentReviewStatus(entry) {
+  if (entry?.is_published === true) return 'PUBLISHED';
+  const hasRules = Boolean(
+    entry && (
+      (Array.isArray(entry.rules) && entry.rules.length > 0) ||
+      String(entry.rules_summary || '').trim().length > 0
+    )
+  );
+  if (entry?.status === 'SUBMITTED' || hasRules) return 'SUBMITTED';
+  return 'DRAFT';
+}
+
+function populateJudgmentFestDropdowns() {
+  const assignSelect = document.getElementById('judge-form-fest');
+  const filterSelect = document.getElementById('filter-judgment-fest');
+  const events = [...(cachedEvents || [])].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+  if (assignSelect) {
+    const prev = assignSelect.value;
+    if (events.length === 0) {
+      assignSelect.innerHTML = '<option value="">No Fests / Events Created Yet</option>';
+    } else {
+      assignSelect.innerHTML = '<option value="">Select Fest / Programme...</option>' + events.map((ev) => {
+        const label = `${ev.code ? `[${ev.code}] ` : ''}${ev.title || 'Untitled Fest'}${ev.category ? ` (${ev.category})` : ''}`;
+        return `<option value="${escapeHtml(ev.id)}">${escapeHtml(label)}</option>`;
+      }).join('');
+      if (prev && events.some((e) => e.id === prev)) assignSelect.value = prev;
+    }
+  }
+
+  if (filterSelect) {
+    const prev = filterSelect.value;
+    filterSelect.innerHTML = '<option value="">All Fests</option>' + events.map((ev) => {
+      return `<option value="${escapeHtml(ev.id)}">${escapeHtml(ev.title || 'Untitled Fest')}</option>`;
+    }).join('');
+    if (prev && events.some((e) => e.id === prev)) filterSelect.value = prev;
+  }
+}
+
+async function refreshJudgmentsDataOnly() {
+  try {
+    const [tokens, entries] = await Promise.all([
+      db.getJudgeTokens ? db.getJudgeTokens() : [],
+      db.getJudgmentEntries ? db.getJudgmentEntries() : [],
+    ]);
+    cachedJudgeTokens = tokens || [];
+    cachedJudgmentEntries = entries || [];
+    renderJudgmentsTab();
+    if (activePreviewEntryId) {
+      const updated = cachedJudgmentEntries.find((e) => e.id === activePreviewEntryId);
+      if (updated) renderJudgmentPreviewContent(updated);
+    }
+  } catch (err) {
+    console.warn('[Judgments Live Refresh]', err?.message || err);
+  }
+}
+
+function initJudgmentsRealtimeSync() {
+  if (judgmentsSyncInitialized) return;
+  judgmentsSyncInitialized = true;
+
+  // Cross-tab instant sync for localStorage mode / multi-window previews
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'almurafaqa_judge_tokens' || e.key === 'almurafaqa_judgment_entries') {
+      refreshJudgmentsDataOnly();
+    }
+  });
+
+  // Supabase Realtime channel for instant judge -> admin updates
+  getSupabaseClient().then((client) => {
+    if (!client || judgmentsRealtimeChannel) return;
+    judgmentsRealtimeChannel = client
+      .channel('admin:judgment_system_live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'judgment_entries' }, () => {
+        refreshJudgmentsDataOnly();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'judge_tokens' }, () => {
+        refreshJudgmentsDataOnly();
+      })
+      .subscribe();
+  }).catch(() => {});
+
+  // Lightweight polling fallback while tab-judgments is visible
+  judgmentsPollInterval = setInterval(() => {
+    if (currentTab === 'judgments' && !document.hidden) {
+      refreshJudgmentsDataOnly();
+    }
+  }, 10000);
+}
+
+function renderJudgmentsTab() {
+  populateJudgmentFestDropdowns();
+
+  const tokens = cachedJudgeTokens || [];
+  const entries = cachedJudgmentEntries || [];
+
+  const activeTokensCount = tokens.filter((t) => getEffectiveTokenState(t) === 'active').length;
+  const submittedEntries = entries.filter((e) => getJudgmentReviewStatus(e) === 'SUBMITTED');
+  const publishedEntries = entries.filter((e) => getJudgmentReviewStatus(e) === 'PUBLISHED');
+
+  const statTotal = document.getElementById('stat-judge-tokens-total');
+  const statActive = document.getElementById('stat-judge-tokens-active');
+  const statSub = document.getElementById('stat-judgments-submitted');
+  const statPub = document.getElementById('stat-judgments-published');
+  const badgeNav = document.getElementById('badge-judgments-review');
+
+  if (statTotal) statTotal.textContent = tokens.length;
+  if (statActive) statActive.textContent = activeTokensCount;
+  if (statSub) statSub.textContent = submittedEntries.length;
+  if (statPub) statPub.textContent = publishedEntries.length;
+  if (badgeNav) {
+    if (submittedEntries.length > 0) {
+      badgeNav.textContent = submittedEntries.length;
+      badgeNav.style.display = 'inline-block';
+    } else {
+      badgeNav.style.display = 'none';
+    }
+  }
+
+  renderJudgeTokensTable();
+  renderJudgmentsReviewPanel();
+}
+
+function renderJudgeTokensTable() {
+  const tbody = document.getElementById('judge-tokens-table-body');
+  const emptyState = document.getElementById('judge-tokens-empty-state');
+  if (!tbody) return;
+
+  const searchVal = (document.getElementById('search-judge-tokens')?.value || '').toLowerCase().trim();
+  const statusVal = document.getElementById('filter-judge-token-status')?.value || '';
+  const eventsById = new Map((cachedEvents || []).map((e) => [e.id, e]));
+
+  const filtered = (cachedJudgeTokens || []).filter((t) => {
+    const fest = t.events || eventsById.get(t.fest_id);
+    const state = getEffectiveTokenState(t);
+    const matchesSearch = !searchVal ||
+      (t.judge_name || '').toLowerCase().includes(searchVal) ||
+      (t.judge_email || '').toLowerCase().includes(searchVal) ||
+      (t.token || '').toLowerCase().includes(searchVal) ||
+      (fest?.title || '').toLowerCase().includes(searchVal);
+    const matchesStatus = !statusVal || state === statusVal;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    emptyState?.classList.remove('hidden');
+    return;
+  }
+
+  emptyState?.classList.add('hidden');
+  tbody.innerHTML = filtered.map((tok) => {
+    const fest = tok.events || eventsById.get(tok.fest_id);
+    const state = getEffectiveTokenState(tok);
+    const shareUrl = getShareablePortalUrl(tok.token, 'judge.html');
+    const localPortalHref = `judge.html?token=${encodeURIComponent(tok.token || '')}`;
+    const lastSeen = tok.last_activity_at
+      ? `Last sync: ${new Date(tok.last_activity_at).toLocaleString()}`
+      : 'Never logged in';
+    const expiryLabel = tok.expires_at
+      ? `Expires: ${new Date(tok.expires_at).toLocaleString()}`
+      : 'No expiration';
+
+    const statusBadge = state === 'active'
+      ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">ACTIVE</span>'
+      : state === 'expired'
+      ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">EXPIRED</span>'
+      : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">REVOKED</span>';
+
+    const toggleLabel = tok.is_active ? 'Revoke' : 'Reactivate';
+    const toggleCls = tok.is_active
+      ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200';
+
+    return `
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="py-3 px-4">
+          <div class="font-bold text-slate-900">${escapeHtml(tok.judge_name)}</div>
+          <div class="text-[11px] text-slate-500">${escapeHtml(tok.judge_email || 'No email specified')}</div>
+        </td>
+        <td class="py-3 px-4">
+          <div class="font-semibold text-slate-900">${escapeHtml(fest?.title || 'Assigned Fest')}</div>
+          <div class="text-[11px] text-slate-500">${escapeHtml(fest?.category || 'Programme')}${fest?.code ? ` • ${escapeHtml(fest.code)}` : ''}</div>
+        </td>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-1.5">
+            <button type="button" class="btn-copy-judge-token px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 font-mono font-bold text-xs hover:bg-indigo-100 cursor-pointer" data-token="${escapeHtml(tok.token)}" title="Copy Token">
+              ${escapeHtml(tok.token)}
+            </button>
+            <button type="button" class="btn-copy-judge-link p-1.5 rounded-lg text-indigo-700 hover:bg-indigo-100 cursor-pointer" data-url="${escapeHtml(shareUrl)}" title="Copy Direct Login Link">
+              <span class="material-symbols-outlined text-[16px]">link</span>
+            </button>
+          </div>
+        </td>
+        <td class="py-3 px-4 text-[11px] text-slate-600">
+          <div class="font-medium">${escapeHtml(lastSeen)}</div>
+          <div class="text-[10px] text-slate-400">${escapeHtml(expiryLabel)}</div>
+        </td>
+        <td class="py-3 px-4">
+          ${statusBadge}
+        </td>
+        <td class="py-3 px-4 text-right whitespace-nowrap">
+          <div class="inline-flex items-center gap-1.5">
+            <a href="${escapeHtml(localPortalHref)}" target="_blank" class="p-1.5 rounded-lg text-indigo-700 hover:bg-indigo-50" title="Open Judge Portal as this Judge">
+              <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+            </a>
+            <button type="button" class="btn-toggle-judge-token px-2.5 py-1 rounded-lg border font-bold text-[11px] transition-colors cursor-pointer ${toggleCls}" data-id="${escapeHtml(tok.id)}" data-active="${tok.is_active ? 'true' : 'false'}" data-name="${escapeHtml(tok.judge_name)}">
+              ${toggleLabel}
+            </button>
+            <button type="button" class="btn-regen-judge-token p-1.5 rounded-lg text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer" data-id="${escapeHtml(tok.id)}" data-name="${escapeHtml(tok.judge_name)}" title="Regenerate Token">
+              <span class="material-symbols-outlined text-[17px]">refresh</span>
+            </button>
+            <button type="button" class="btn-delete-judge-token p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 cursor-pointer" data-id="${escapeHtml(tok.id)}" data-name="${escapeHtml(tok.judge_name)}" title="Delete Judge Assignment">
+              <span class="material-symbols-outlined text-[17px]">delete</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('.btn-copy-judge-token').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tok = btn.getAttribute('data-token') || '';
+      navigator.clipboard.writeText(tok).then(() => showToast(`Judge token "${tok}" copied!`, 'info'));
+    });
+  });
+
+  tbody.querySelectorAll('.btn-copy-judge-link').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const url = btn.getAttribute('data-url') || '';
+      navigator.clipboard.writeText(url)
+        .then(() => showToast('Direct Judge login link copied!', 'success'))
+        .catch(() => prompt('Copy Judge Portal login link:', url));
+    });
+  });
+
+  tbody.querySelectorAll('.btn-toggle-judge-token').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const currentlyActive = btn.getAttribute('data-active') === 'true';
+      const name = btn.getAttribute('data-name') || 'Judge';
+      const nextActive = !currentlyActive;
+      if (!nextActive && !confirm(`Revoke access token for "${name}"? Active sessions will be blocked immediately.`)) return;
+      try {
+        await db.toggleJudgeTokenStatus(id, nextActive);
+        logAudit(nextActive ? 'JUDGE_TOKEN_REACTIVATED' : 'JUDGE_TOKEN_REVOKED', `${nextActive ? 'Reactivated' : 'Revoked'} judge access for ${name}`);
+        showToast(`Judge token ${nextActive ? 'reactivated' : 'revoked'} for ${name}.`, nextActive ? 'success' : 'warning');
+        await refreshJudgmentsDataOnly();
+      } catch (err) {
+        showToast('Failed to update token status: ' + err.message, 'error');
+      }
+    });
+  });
+
+  tbody.querySelectorAll('.btn-regen-judge-token').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name') || 'Judge';
+      if (!confirm(`Regenerate access token for "${name}"? The previous token will stop working.`)) return;
+      try {
+        const updated = await db.regenerateJudgeToken(id);
+        logAudit('JUDGE_TOKEN_REGENERATED', `Regenerated token for judge ${name} to ${updated.token}`);
+        showToast(`New token issued: ${updated.token}`, 'success');
+        await refreshJudgmentsDataOnly();
+      } catch (err) {
+        showToast('Failed to regenerate token: ' + err.message, 'error');
+      }
+    });
+  });
+
+  tbody.querySelectorAll('.btn-delete-judge-token').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name') || 'Judge';
+      if (!confirm(`Delete judge assignment and submitted rules for "${name}"?`)) return;
+      try {
+        await db.deleteJudgeToken(id);
+        logAudit('JUDGE_TOKEN_DELETED', `Deleted judge assignment for ${name}`);
+        showToast(`Removed judge assignment for ${name}.`, 'info');
+        await refreshJudgmentsDataOnly();
+      } catch (err) {
+        showToast('Failed to delete judge assignment: ' + err.message, 'error');
+      }
+    });
+  });
+}
+
+function renderJudgmentsReviewPanel() {
+  const container = document.getElementById('judgments-review-list');
+  if (!container) return;
+
+  const filterFest = document.getElementById('filter-judgment-fest')?.value || '';
+  const filterStatus = document.getElementById('filter-judgment-status')?.value || '';
+  const eventsById = new Map((cachedEvents || []).map((e) => [e.id, e]));
+  const tokensById = new Map((cachedJudgeTokens || []).map((t) => [t.id, t]));
+
+  // Build combined review items: every saved judgment entry + pending tokens with no submission yet
+  const items = [];
+  const coveredPairs = new Set();
+
+  (cachedJudgmentEntries || []).forEach((entry) => {
+    const key = `${entry.fest_id}::${entry.judge_token_id}`;
+    coveredPairs.add(key);
+    items.push({
+      entry,
+      token: entry.judge_tokens || tokensById.get(entry.judge_token_id) || null,
+      fest: entry.events || eventsById.get(entry.fest_id) || null,
+      reviewState: getJudgmentReviewStatus(entry),
+    });
+  });
+
+  (cachedJudgeTokens || []).forEach((tok) => {
+    const key = `${tok.fest_id}::${tok.id}`;
+    if (!coveredPairs.has(key)) {
+      items.push({
+        entry: null,
+        token: tok,
+        fest: tok.events || eventsById.get(tok.fest_id) || null,
+        reviewState: 'DRAFT',
+      });
+    }
+  });
+
+  const filtered = items.filter((it) => {
+    const fid = it.entry?.fest_id || it.token?.fest_id || '';
+    const matchFest = !filterFest || fid === filterFest;
+    const matchStatus = !filterStatus || it.reviewState === filterStatus;
+    return matchFest && matchStatus;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-12 px-6 text-center text-xs text-slate-500 bg-white rounded-2xl border border-dashed border-slate-300">
+        No judgment entries match the current filter. Assign a judge above or ask the judge to log in and sync rules.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map((it) => {
+    const fest = it.fest;
+    const tok = it.token;
+    const entry = it.entry;
+    const rules = Array.isArray(entry?.rules) ? entry.rules : [];
+    const remarks = Array.isArray(entry?.scores_or_remarks) ? entry.scores_or_remarks : [];
+    const festId = entry?.fest_id || tok?.fest_id || '';
+    const isPublished = entry?.is_published === true;
+
+    const badge = it.reviewState === 'PUBLISHED'
+      ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>Published</span>'
+      : it.reviewState === 'SUBMITTED'
+      ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200"><span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>Updated by Judge</span>'
+      : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Pending</span>';
+
+    const updatedStr = entry?.updated_at
+      ? `Synced ${new Date(entry.updated_at).toLocaleString()}`
+      : 'Awaiting first judge submission';
+
+    const summaryPreview = entry?.rules_summary
+      ? escapeHtml(entry.rules_summary.slice(0, 140)) + (entry.rules_summary.length > 140 ? '…' : '')
+      : (rules.length > 0 ? escapeHtml(rules.map((r) => r.title).slice(0, 3).join(' • ')) : 'No rules or criteria entered yet.');
+
+    return `
+      <div class="bg-white p-5 rounded-2xl border ${isPublished ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200'} shadow-sm flex flex-col justify-between gap-4">
+        <div class="space-y-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(fest?.category || 'Programme')}${fest?.code ? ` • ${escapeHtml(fest.code)}` : ''}</span>
+              <h4 class="font-bold text-base text-slate-900 truncate">${escapeHtml(fest?.title || 'Fest Competition')}</h4>
+            </div>
+            ${badge}
+          </div>
+
+          <div class="flex items-center gap-2 text-xs text-slate-600">
+            <span class="material-symbols-outlined text-[15px] text-indigo-600">gavel</span>
+            <span class="font-semibold">${escapeHtml(tok?.judge_name || 'Assigned Judge')}</span>
+            <span class="text-slate-300">•</span>
+            <span class="text-[11px] text-slate-500">${escapeHtml(updatedStr)}</span>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap text-[11px]">
+            <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold">${rules.length} Rule${rules.length === 1 ? '' : 's'} / Criteria</span>
+            <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold">${remarks.length} Evaluation${remarks.length === 1 ? '' : 's'} / Notes</span>
+          </div>
+
+          <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
+            ${summaryPreview}
+          </p>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2">
+            ${entry ? `
+              <button type="button" class="btn-preview-judgment px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1 cursor-pointer" data-entry-id="${escapeHtml(entry.id)}">
+                <span class="material-symbols-outlined text-[15px]">visibility</span>
+                <span>Preview Content</span>
+              </button>
+            ` : ''}
+            ${isPublished ? `
+              <a href="judgment.html?festId=${encodeURIComponent(festId)}" target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1">
+                <span class="material-symbols-outlined text-[15px]">open_in_new</span>
+                <span>Public View</span>
+              </a>
+            ` : ''}
+          </div>
+
+          ${entry ? `
+            <button type="button" class="btn-toggle-publish-judgment px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer ${
+              isPublished
+                ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }" data-entry-id="${escapeHtml(entry.id)}" data-publish="${isPublished ? 'false' : 'true'}">
+              <span class="material-symbols-outlined text-[15px]">${isPublished ? 'unpublished' : 'publish'}</span>
+              <span>${isPublished ? 'Unpublish' : 'Publish to Public'}</span>
+            </button>
+          ` : `
+            <span class="text-[11px] text-slate-400 font-semibold italic">Waiting for judge sync</span>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.btn-preview-judgment').forEach((btn) => {
+    btn.addEventListener('click', () => openJudgmentPreviewModal(btn.getAttribute('data-entry-id')));
+  });
+
+  container.querySelectorAll('.btn-toggle-publish-judgment').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const entryId = btn.getAttribute('data-entry-id');
+      const publishNext = btn.getAttribute('data-publish') === 'true';
+      await handleToggleJudgmentPublish(entryId, publishNext);
+    });
+  });
+}
+
+function renderJudgmentPreviewContent(entry) {
+  const modal = document.getElementById('modal-preview-judgment');
+  const titleEl = document.getElementById('preview-judgment-fest');
+  const judgeEl = document.getElementById('preview-judgment-judge');
+  const badgeEl = document.getElementById('preview-judgment-status-badge');
+  const bodyEl = document.getElementById('preview-judgment-body');
+  const pubLinkEl = document.getElementById('preview-judgment-public-link');
+  const toggleBtn = document.getElementById('btn-modal-toggle-publish-judgment');
+  if (!modal || !entry) return;
+
+  const fest = entry.events || (cachedEvents || []).find((e) => e.id === entry.fest_id);
+  const tok = entry.judge_tokens || (cachedJudgeTokens || []).find((t) => t.id === entry.judge_token_id);
+  const state = getJudgmentReviewStatus(entry);
+  const isPublished = entry.is_published === true;
+
+  if (titleEl) titleEl.textContent = fest?.title || 'Fest Judgment Entry';
+  if (judgeEl) judgeEl.textContent = `Judge: ${tok?.judge_name || 'Assigned Judge'} • Updated: ${entry.updated_at ? new Date(entry.updated_at).toLocaleString() : '—'}`;
+  if (badgeEl) {
+    badgeEl.textContent = state === 'PUBLISHED' ? 'Published' : state === 'SUBMITTED' ? 'Updated by Judge' : 'Pending';
+    badgeEl.className = state === 'PUBLISHED'
+      ? 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-900'
+      : state === 'SUBMITTED'
+      ? 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-900'
+      : 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-900';
+  }
+  if (pubLinkEl) pubLinkEl.href = `judgment.html?festId=${encodeURIComponent(entry.fest_id)}`;
+  if (toggleBtn) {
+    toggleBtn.setAttribute('data-entry-id', entry.id);
+    toggleBtn.setAttribute('data-publish', isPublished ? 'false' : 'true');
+    toggleBtn.className = isPublished
+      ? 'px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer'
+      : 'px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer';
+    toggleBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">${isPublished ? 'unpublished' : 'publish'}</span><span>${isPublished ? 'Unpublish from Public' : 'Publish to Public'}</span>`;
+  }
+
+  const rules = Array.isArray(entry.rules) ? entry.rules : [];
+  const remarks = Array.isArray(entry.scores_or_remarks) ? entry.scores_or_remarks : [];
+
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      ${entry.rules_summary ? `
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Official Judging Overview / Notes</div>
+          <p class="text-sm text-slate-800 whitespace-pre-line leading-relaxed">${escapeHtml(entry.rules_summary)}</p>
+        </div>
+      ` : ''}
+
+      <div class="space-y-2.5">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-600">Judgment Rules &amp; Criteria (${rules.length})</div>
+        ${rules.length > 0 ? rules.map((r, idx) => `
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start justify-between gap-3">
+            <div class="space-y-1 min-w-0">
+              <div class="font-bold text-slate-900 text-sm">${idx + 1}. ${escapeHtml(r.title)}</div>
+              ${r.description ? `<p class="text-xs text-slate-600 leading-relaxed whitespace-pre-line">${escapeHtml(r.description)}</p>` : ''}
+            </div>
+            ${r.max_points !== null && r.max_points !== undefined ? `
+              <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-800 font-mono font-bold text-xs shrink-0">${escapeHtml(String(r.max_points))} pts</span>
+            ` : ''}
+          </div>
+        `).join('') : '<div class="text-xs text-slate-400 italic">No structured rules added.</div>'}
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-600">Evaluations, Results &amp; Jury Remarks (${remarks.length})</div>
+        ${remarks.length > 0 ? `
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3">Competitor / Scope</th>
+                  <th class="py-2.5 px-3">Score</th>
+                  <th class="py-2.5 px-3">Remarks</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${remarks.map((rm) => `
+                  <tr>
+                    <td class="py-2.5 px-3">
+                      <div class="font-bold text-slate-900">${escapeHtml(rm.contestant_name)}</div>
+                      ${rm.institution ? `<div class="text-[10px] text-slate-500">${escapeHtml(rm.institution)}</div>` : ''}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-indigo-800">${rm.score !== null && rm.score !== undefined ? escapeHtml(String(rm.score)) : '—'}</td>
+                    <td class="py-2.5 px-3 text-slate-700">${escapeHtml(rm.remarks || '—')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<div class="text-xs text-slate-400 italic">No evaluation remarks recorded.</div>'}
+      </div>
+    `;
+  }
+}
+
+function openJudgmentPreviewModal(entryId) {
+  const entry = (cachedJudgmentEntries || []).find((e) => e.id === entryId);
+  if (!entry) return;
+  activePreviewEntryId = entryId;
+  renderJudgmentPreviewContent(entry);
+  document.getElementById('modal-preview-judgment')?.classList.add('show');
+}
+
+async function handleToggleJudgmentPublish(entryId, publishNext) {
+  try {
+    const updated = await db.publishJudgmentEntry(entryId, publishNext);
+    logAudit(
+      publishNext ? 'JUDGMENT_PUBLISHED_TO_PUBLIC' : 'JUDGMENT_UNPUBLISHED',
+      `${publishNext ? 'Published' : 'Unpublished'} judgment entry ${entryId} for public visibility`
+    );
+    showToast(
+      publishNext ? 'Judgment rules & remarks published to Public!' : 'Judgment entry unpublished from public view.',
+      publishNext ? 'success' : 'info'
+    );
+    await refreshJudgmentsDataOnly();
+    if (activePreviewEntryId === entryId && updated) {
+      renderJudgmentPreviewContent(updated);
+    }
+  } catch (err) {
+    showToast('Failed to update publication state: ' + err.message, 'error');
+  }
+}
+
+function setupJudgmentsControls() {
+  const tokenInput = document.getElementById('judge-form-token');
+  const btnRegen = document.getElementById('btn-judge-regen-preview-token');
+  const form = document.getElementById('form-assign-judge');
+  const btnRefresh = document.getElementById('btn-refresh-judgments');
+  const btnCopyGenTok = document.getElementById('btn-copy-generated-judge-token');
+  const btnCopyGenLink = document.getElementById('btn-copy-generated-judge-link');
+  const btnModalToggle = document.getElementById('btn-modal-toggle-publish-judgment');
+
+  const fillFreshJudgeToken = () => {
+    if (tokenInput) tokenInput.value = generateJudgeToken();
+  };
+  fillFreshJudgeToken();
+
+  if (btnRegen) btnRegen.addEventListener('click', fillFreshJudgeToken);
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', async () => {
+      await refreshJudgmentsDataOnly();
+      showToast('Live judge submissions refreshed.', 'info');
+    });
+  }
+
+  if (btnCopyGenTok) {
+    btnCopyGenTok.addEventListener('click', () => {
+      if (!lastGeneratedJudgeToken) return;
+      navigator.clipboard.writeText(lastGeneratedJudgeToken).then(() => showToast(`Copied token ${lastGeneratedJudgeToken}`, 'info'));
+    });
+  }
+
+  if (btnCopyGenLink) {
+    btnCopyGenLink.addEventListener('click', () => {
+      if (!lastGeneratedJudgeLink) return;
+      navigator.clipboard.writeText(lastGeneratedJudgeLink).then(() => showToast('Direct Judge Login Link copied!', 'success'));
+    });
+  }
+
+  if (btnModalToggle) {
+    btnModalToggle.addEventListener('click', async () => {
+      const id = btnModalToggle.getAttribute('data-entry-id');
+      const publishNext = btnModalToggle.getAttribute('data-publish') === 'true';
+      if (id) await handleToggleJudgmentPublish(id, publishNext);
+    });
+  }
+
+  document.getElementById('search-judge-tokens')?.addEventListener('input', renderJudgeTokensTable);
+  document.getElementById('filter-judge-token-status')?.addEventListener('change', renderJudgeTokensTable);
+  document.getElementById('filter-judgment-fest')?.addEventListener('change', renderJudgmentsReviewPanel);
+  document.getElementById('filter-judgment-status')?.addEventListener('change', renderJudgmentsReviewPanel);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const festId = document.getElementById('judge-form-fest')?.value || '';
+      const judgeName = document.getElementById('judge-form-name')?.value?.trim() || '';
+      const judgeEmail = document.getElementById('judge-form-email')?.value?.trim() || '';
+      const expiresAt = document.getElementById('judge-form-expires')?.value || '';
+      const tokenVal = (document.getElementById('judge-form-token')?.value || '').trim().toUpperCase();
+      const submitBtn = document.getElementById('btn-generate-judge-token');
+
+      if (!festId) {
+        showToast('Please select a Fest / Programme first.', 'warning');
+        return;
+      }
+      if (!judgeName) {
+        showToast('Please enter the Judge full name.', 'warning');
+        return;
+      }
+
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        const created = await db.createJudgeToken({
+          fest_id: festId,
+          judge_name: judgeName,
+          judge_email: judgeEmail,
+          expires_at: expiresAt || null,
+          token: tokenVal || generateJudgeToken(),
+        });
+
+        const shareUrl = getShareablePortalUrl(created.token, 'judge.html');
+        lastGeneratedJudgeToken = created.token;
+        lastGeneratedJudgeLink = shareUrl;
+
+        const banner = document.getElementById('judge-generated-banner');
+        const tokText = document.getElementById('judge-generated-token-text');
+        const linkText = document.getElementById('judge-generated-link-text');
+        const openLink = document.getElementById('judge-generated-open-link');
+        if (tokText) tokText.textContent = created.token;
+        if (linkText) linkText.textContent = shareUrl;
+        if (openLink) openLink.href = `judge.html?token=${encodeURIComponent(created.token)}`;
+        banner?.classList.remove('hidden');
+
+        form.reset();
+        fillFreshJudgeToken();
+
+        if (created._cloudSyncWarning) {
+          showToast(created._cloudSyncWarning, 'warning');
+        } else {
+          showToast(`Judge token "${created.token}" generated for ${judgeName}!`, 'success');
+        }
+        const festTitle = (cachedEvents || []).find((ev) => ev.id === festId)?.title || festId;
+        logAudit('JUDGE_TOKEN_GENERATED', `Assigned Judge ${judgeName} to "${festTitle}" (Token: ${created.token})`);
+        await refreshJudgmentsDataOnly();
+      } catch (err) {
+        showToast('Failed to generate judge token: ' + err.message, 'error');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
   }

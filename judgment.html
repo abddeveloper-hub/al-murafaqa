@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+  <title>Al Murafaqa — Official Fest Judgment Rules &amp; Criteria</title>
+
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "fest-red": "#970201",
+            "fest-red-dark": "#45101F",
+            "fest-orange": "#F79624",
+            "fest-cream": "#F5EBD0",
+            "fest-gold": "#FDE68A",
+            "fest-dark": "#2D101A",
+          },
+          fontFamily: {
+            "headline": ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+            "body": ["Clash Display", "Noto Sans Arabic", "sans-serif"],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @layer base {
+      html, body {
+        font-family: "Clash Display", "Noto Sans Arabic", sans-serif;
+        background: linear-gradient(180deg, #970201 0%, #7F011F 340px, #FBF5E5 340px, #FBF5E5 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+    }
+  </style>
+</head>
+<body class="text-neutral-900 antialiased flex flex-col min-h-screen">
+
+  <!-- Sticky Top Header -->
+  <header class="fixed top-0 inset-x-0 z-50 bg-[#45101F]/90 backdrop-blur-xl border-b border-fest-gold/25">
+    <div class="h-16 sm:h-20 max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+      <a href="home.html" class="flex items-center gap-3 group min-w-0">
+        <img src="hero-emblem.png" alt="Al Murafaqa Emblem" class="h-10 sm:h-12 w-auto object-contain filter drop-shadow-md shrink-0"/>
+        <div class="flex flex-col min-w-0">
+          <span class="font-headline text-base sm:text-lg font-extrabold text-white tracking-tight truncate">Al Murafaqa</span>
+          <span class="font-body text-[10px] text-fest-gold font-bold uppercase tracking-widest truncate">Published Fest Judgments</span>
+        </div>
+      </a>
+
+      <nav class="flex items-center gap-2 sm:gap-3 shrink-0 text-xs font-bold">
+        <a href="schedule.html" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-colors">Schedule</a>
+        <a href="results.html" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-colors">Results</a>
+        <a href="judge.html" class="px-3 py-1.5 rounded-xl bg-fest-orange hover:brightness-110 text-white shadow-sm transition-all">Judge Portal</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="relative z-10 w-full pt-24 pb-16 max-w-6xl mx-auto px-4 sm:px-6 flex-1 flex flex-col gap-7">
+
+    <!-- Top Navigation & Status Pill -->
+    <div class="flex items-center justify-between gap-3 flex-wrap pt-2">
+      <a href="home.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-fest-cream/90 bg-white/15 hover:bg-white/25 border border-white/20 px-3.5 py-1.5 rounded-full transition-all">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+        <span>Back to Festival Home</span>
+      </a>
+      <span class="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-300/40 px-3 py-1 rounded-full text-emerald-100 text-[11px] font-bold">
+        <span class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+        <span>OFFICIAL PUBLISHED RULES ONLY</span>
+      </span>
+    </div>
+
+    <!-- Hero Heading -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
+      <div class="space-y-2">
+        <h1 id="public-judgment-title" class="font-headline text-3xl sm:text-4xl font-extrabold tracking-tight">
+          Official Judgment Rules &amp; Criteria
+        </h1>
+        <p id="public-judgment-subtitle" class="text-xs sm:text-sm text-fest-cream/85 max-w-2xl leading-relaxed">
+          Transparent jury guidelines, evaluation rubrics, and published adjudication remarks approved by the Festival Administration.
+        </p>
+      </div>
+      <div id="public-show-all-wrap" class="hidden shrink-0">
+        <a href="judgment.html" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition-all">
+          <span class="material-symbols-outlined text-[16px]">apps</span>
+          <span>View All Published Fests</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Filter Toolbar (shown on directory view) -->
+    <div id="public-judgment-toolbar" class="bg-white rounded-2xl p-4 border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div class="relative flex-1">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[18px]">search</span>
+        <input type="text" id="public-judgment-search" placeholder="Search Fest title, rule, criterion, or remark..." class="w-full h-10 pl-9 pr-4 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-900 focus:outline-none focus:border-fest-red"/>
+      </div>
+      <select id="public-judgment-fest-filter" class="h-10 px-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-bold text-neutral-800 focus:outline-none focus:border-fest-red">
+        <option value="">All Fests</option>
+      </select>
+    </div>
+
+    <!-- Published Judgments Container -->
+    <div id="public-judgments-container" class="space-y-6">
+      <div class="bg-white rounded-3xl p-10 text-center text-xs text-neutral-500 border border-neutral-200 shadow-sm">
+        Synchronizing published judging directives...
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="w-full bg-[#45101F] text-fest-cream py-6 px-4 sm:px-6 border-t border-fest-gold/25 mt-auto">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+      <span>© 2025 Al Murafaqa Cultural &amp; Literary Gathering • Official Adjudication Archives</span>
+      <div class="flex items-center gap-4 text-fest-gold font-bold">
+        <a href="home.html" class="hover:underline">Home</a>
+        <span>•</span>
+        <a href="schedule.html" class="hover:underline">Schedule</a>
+        <span>•</span>
+        <a href="results.html" class="hover:underline">Results</a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { db, getSupabaseClient } from './supabase-config.js';
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedFestId = (params.get('festId') || params.get('eventId') || '').trim();
+    let cachedPublished = [];
+    let cachedEvents = [];
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPublishedEntries() {
+      const container = document.getElementById('public-judgments-container');
+      const searchEl = document.getElementById('public-judgment-search');
+      const festFilterEl = document.getElementById('public-judgment-fest-filter');
+      if (!container) return;
+
+      const query = (searchEl?.value || '').trim().toLowerCase();
+      const selectedFestId = requestedFestId || (festFilterEl?.value || '');
+
+      const filtered = (cachedPublished || []).filter((entry) => {
+        if (!entry || entry.is_published !== true) return false;
+        if (selectedFestId && entry.fest_id !== selectedFestId) return false;
+        if (!query) return true;
+        const festTitle = (entry.fest?.title || '').toLowerCase();
+        const festCode = (entry.fest?.code || '').toLowerCase();
+        const summary = (entry.rules_summary || '').toLowerCase();
+        const judgeName = (entry.judge_name || '').toLowerCase();
+        const ruleMatch = (entry.rules || []).some((r) =>
+          (r.title || '').toLowerCase().includes(query) || (r.description || '').toLowerCase().includes(query)
+        );
+        const remarkMatch = (entry.scores_or_remarks || []).some((m) =>
+          (m.contestant_name || '').toLowerCase().includes(query) || (m.remarks || '').toLowerCase().includes(query)
+        );
+        return festTitle.includes(query) || festCode.includes(query) || summary.includes(query) || judgeName.includes(query) || ruleMatch || remarkMatch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-12 text-center border border-neutral-200/90 shadow-sm space-y-3">
+            <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto">
+              <span class="material-symbols-outlined text-[32px]">gavel</span>
+            </div>
+            <h2 class="font-headline text-xl font-bold text-neutral-900">Judgment rules have not been published yet.</h2>
+            <p class="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
+              ${requestedFestId ? 'Official rules and judging criteria for this Fest are currently pending final review and publication by the administration.' : 'No official Fest judgment directives have been published yet. Check back soon or explore the competition schedule.'}
+            </p>
+            <div class="pt-2 flex items-center justify-center gap-3 flex-wrap">
+              ${requestedFestId ? `<a href="judgment.html" class="px-4 py-2 rounded-xl bg-fest-red text-white font-bold text-xs shadow-sm">Browse All Published Judgments</a>` : ''}
+              <a href="schedule.html" class="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs">View Competition Schedule</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map((entry) => {
+        const fest = entry.fest || {};
+        const rules = Array.isArray(entry.rules) ? entry.rules : [];
+        const remarks = Array.isArray(entry.scores_or_remarks) ? entry.scores_or_remarks : [];
+        const totalPoints = rules.reduce((sum, r) => sum + (Number.isFinite(Number(r.max_points)) && r.max_points !== null ? Number(r.max_points) : 0), 0);
+
+        return `
+          <article class="bg-white rounded-3xl border border-neutral-200/90 shadow-sm overflow-hidden">
+            <!-- Fest Header -->
+            <div class="p-6 sm:p-7 bg-gradient-to-r from-[#45101F] via-[#68132B] to-[#3A0B18] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="space-y-1.5 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-2.5 py-0.5 rounded-full bg-fest-orange/20 border border-fest-orange/40 text-fest-gold text-[10px] font-bold uppercase tracking-wider">
+                    ${escapeHtml(fest.category || 'Official Track')}
+                  </span>
+                  ${fest.code ? `<span class="px-2 py-0.5 rounded-md bg-white/10 font-mono text-[10px] font-bold text-fest-cream">${escapeHtml(fest.code)}</span>` : ''}
+                  <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-300/35 text-emerald-100 text-[10px] font-bold uppercase">
+                    Published
+                  </span>
+                </div>
+                <h2 class="font-headline text-xl sm:text-2xl font-extrabold tracking-tight">${escapeHtml(fest.title || 'Fest Competition')}</h2>
+                <p class="text-xs text-fest-cream/80">
+                  Jury Panel: <strong class="text-white">${escapeHtml(entry.judge_name || 'Official Jury')}</strong>
+                  ${fest.venue ? ` • Venue: ${escapeHtml(fest.venue)}` : ''}
+                  ${entry.published_at ? ` • Published ${new Date(entry.published_at).toLocaleDateString()}` : ''}
+                </p>
+              </div>
+              <div class="flex items-center gap-3 shrink-0">
+                ${totalPoints > 0 ? `
+                  <div class="px-4 py-2.5 rounded-2xl bg-white/10 border border-white/15 text-center">
+                    <div class="text-[10px] uppercase font-bold text-fest-gold">Rubric Total</div>
+                    <div class="text-xl font-extrabold text-white">${totalPoints} <span class="text-xs font-normal text-fest-cream">Pts</span></div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="p-6 sm:p-7 space-y-6">
+              ${entry.rules_summary ? `
+                <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-1.5">
+                  <div class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-900">
+                    <span class="material-symbols-outlined text-[16px]">description</span>
+                    <span>Official Adjudication Overview</span>
+                  </div>
+                  <p class="text-sm text-neutral-800 whitespace-pre-line leading-relaxed">${escapeHtml(entry.rules_summary)}</p>
+                </div>
+              ` : ''}
+
+              <div class="space-y-3">
+                <h3 class="font-headline text-sm font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[18px] text-fest-red">rule</span>
+                  <span>Judging Rules &amp; Criteria (${rules.length})</span>
+                </h3>
+                ${rules.length > 0 ? `
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${rules.map((r, idx) => `
+                      <div class="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 flex items-start justify-between gap-3">
+                        <div class="space-y-1 min-w-0">
+                          <div class="font-bold text-sm text-neutral-900">${idx + 1}. ${escapeHtml(r.title)}</div>
+                          ${r.description ? `<p class="text-xs text-neutral-600 leading-relaxed whitespace-pre-line">${escapeHtml(r.description)}</p>` : ''}
+                        </div>
+                        ${r.max_points !== null && r.max_points !== undefined ? `
+                          <span class="px-2.5 py-1 rounded-lg bg-fest-red/10 text-fest-red border border-fest-red/20 font-mono font-bold text-xs shrink-0">${escapeHtml(String(r.max_points))} pts</span>
+                        ` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : '<p class="text-xs text-neutral-400 italic">See adjudication overview above.</p>'}
+              </div>
+
+              ${remarks.length > 0 ? `
+                <div class="space-y-3 pt-2 border-t border-neutral-100">
+                  <h3 class="font-headline text-sm font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px] text-emerald-700">grading</span>
+                    <span>Published Jury Evaluations &amp; Remarks</span>
+                  </h3>
+                  <div class="overflow-x-auto border border-neutral-200 rounded-2xl">
+                    <table class="w-full text-left text-xs">
+                      <thead class="bg-neutral-50 text-neutral-500 font-bold uppercase border-b border-neutral-200">
+                        <tr>
+                          <th class="py-3 px-4">Competitor / Scope</th>
+                          <th class="py-3 px-4">Score</th>
+                          <th class="py-3 px-4">Official Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-neutral-100">
+                        ${remarks.map((rm) => `
+                          <tr>
+                            <td class="py-3 px-4">
+                              <div class="font-bold text-neutral-900">${escapeHtml(rm.contestant_name)}</div>
+                              ${rm.institution ? `<div class="text-[11px] text-neutral-500">${escapeHtml(rm.institution)}</div>` : ''}
+                            </td>
+                            <td class="py-3 px-4 font-mono font-bold text-fest-red">${rm.score !== null && rm.score !== undefined ? escapeHtml(String(rm.score)) : '—'}</td>
+                            <td class="py-3 px-4 text-neutral-700 leading-relaxed">${escapeHtml(rm.remarks || '—')}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadPublicJudgments() {
+      try {
+        const [published, events] = await Promise.all([
+          db.getPublicFestJudgments(requestedFestId || null),
+          db.getEvents ? db.getEvents() : [],
+        ]);
+        cachedPublished = (published || []).filter((p) => p && p.is_published === true);
+        cachedEvents = Array.isArray(events) ? events : [];
+
+        if (requestedFestId) {
+          document.getElementById('public-judgment-toolbar')?.classList.add('hidden');
+          document.getElementById('public-show-all-wrap')?.classList.remove('hidden');
+          const matchedFest = cachedPublished[0]?.fest || cachedEvents.find((e) => e.id === requestedFestId);
+          if (matchedFest?.title) {
+            document.getElementById('public-judgment-title').textContent = `${matchedFest.title} — Official Judgment Rules`;
+            document.getElementById('public-judgment-subtitle').textContent = `Published evaluation criteria and jury remarks for ${matchedFest.title}${matchedFest.venue ? ` at ${matchedFest.venue}` : ''}.`;
+          }
+        } else {
+          const sel = document.getElementById('public-judgment-fest-filter');
+          if (sel) {
+            const prev = sel.value;
+            const pubFests = new Map();
+            cachedPublished.forEach((p) => {
+              if (p.fest_id && p.fest?.title) pubFests.set(p.fest_id, p.fest.title);
+            });
+            sel.innerHTML = '<option value="">All Published Fests</option>' + Array.from(pubFests.entries())
+              .sort((a, b) => a[1].localeCompare(b[1]))
+              .map(([fid, ftitle]) => `<option value="${escapeHtml(fid)}">${escapeHtml(ftitle)}</option>`)
+              .join('');
+            if (prev && pubFests.has(prev)) sel.value = prev;
+          }
+        }
+
+        renderPublishedEntries();
+      } catch (err) {
+        console.warn('Error loading public judgments:', err);
+        cachedPublished = [];
+        renderPublishedEntries();
+      }
+    }
+
+    document.getElementById('public-judgment-search')?.addEventListener('input', renderPublishedEntries);
+    document.getElementById('public-judgment-fest-filter')?.addEventListener('change', renderPublishedEntries);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'almurafaqa_judgment_entries') loadPublicJudgments();
+    });
+
+    loadPublicJudgments();
+
+    getSupabaseClient().then((client) => {
+      if (!client) return;
+      client
+        .channel('public:judgment_entries_view')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'judgment_entries' }, () => {
+          loadPublicJudgments();
+        })
+        .subscribe();
+    }).catch(() => {});
+  </script>
+</body>
+</html>

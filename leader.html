@@ -84,6 +84,17 @@
         box-shadow: none !important;
         page-break-inside: avoid;
       }
+      body:has(#modal-pass:not(.hidden)) > *:not(#modal-pass) {
+        display: none !important;
+      }
+      body:has(#modal-pass:not(.hidden)) #modal-pass {
+        position: static !important;
+        background: #FFFFFF !important;
+        padding: 0 !important;
+      }
+      body:has(#modal-pass:not(.hidden)) #modal-pass button {
+        display: none !important;
+      }
     }
     @media screen {
       .print-only {

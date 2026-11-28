@@ -338,11 +338,11 @@
       </div>
 
       <!-- Category Filter Chips -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 custom-scroll text-xs">
-        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-[#45101F] text-white shadow-sm cursor-pointer" data-category="all">All Contenders</button>
-        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer" data-category="Senior">Senior</button>
-        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer" data-category="Junior">Junior</button>
-        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer" data-category="Sub-Junior">Sub-Junior</button>
+      <div id="participants-cat-filters" class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 custom-scroll text-xs">
+        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-[#45101F] text-white shadow-sm cursor-pointer shrink-0" data-category="all">All Contenders</button>
+        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer shrink-0" data-category="Senior">Senior</button>
+        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer shrink-0" data-category="Junior">Junior</button>
+        <button type="button" class="participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer shrink-0" data-category="Sub-Junior">Sub-Junior</button>
       </div>
     </div>
 
@@ -544,6 +544,9 @@
     if (mobileMenuToggle) mobileMenuToggle.addEventListener('click', openDrawer);
     if (closeMobileMenu) closeMobileMenu.addEventListener('click', closeDrawer);
     if (mobileOverlay) mobileOverlay.addEventListener('click', closeDrawer);
+    document.querySelectorAll('.drawer-link').forEach((link) => {
+      link.addEventListener('click', closeDrawer);
+    });
   </script>
 
   <script type="module">
@@ -769,13 +772,57 @@
       }
     }
 
+    function bindParticipantCategoryFilters() {
+      document.querySelectorAll('.participant-cat-filter').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.participant-cat-filter').forEach((b) => {
+            b.className = 'participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer shrink-0';
+          });
+          btn.className = 'participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-[#45101F] text-white shadow-sm cursor-pointer shrink-0';
+          currentParticipantCategory = btn.getAttribute('data-category') || 'all';
+          renderParticipantsGrid();
+        });
+      });
+    }
+
+    function renderParticipantCategoryChips(categoriesList = []) {
+      const container = document.getElementById('participants-cat-filters');
+      if (!container) return;
+      const ordered = [];
+      const seen = new Set();
+      const pushUnique = (val) => {
+        const clean = String(val || '').trim();
+        if (!clean) return;
+        const key = clean.toLowerCase();
+        if (key === 'all' || seen.has(key)) return;
+        seen.add(key);
+        ordered.push(clean);
+      };
+      ['Senior', 'Junior', 'Sub-Junior'].forEach(pushUnique);
+      (categoriesList || []).forEach(pushUnique);
+      cachedParticipants.forEach((p) => pushUnique(p.category));
+
+      const chipClass = (active) => active
+        ? 'participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-[#45101F] text-white shadow-sm cursor-pointer shrink-0'
+        : 'participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer shrink-0';
+
+      let html = `<button type="button" class="${chipClass(currentParticipantCategory === 'all')}" data-category="all">All Contenders</button>`;
+      ordered.forEach((cat) => {
+        const isActive = currentParticipantCategory.toLowerCase() === cat.toLowerCase();
+        html += `<button type="button" class="${chipClass(isActive)}" data-category="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`;
+      });
+      container.innerHTML = html;
+      bindParticipantCategoryFilters();
+    }
+
     async function loadAndRenderParticipants() {
       try {
-        const [teamStudents, teamLeaders, registrations, events, settingsData] = await Promise.all([
+        const [teamStudents, teamLeaders, registrations, events, categories, settingsData] = await Promise.all([
           db.getTeamStudents ? db.getTeamStudents() : [],
           db.getTeamLeaders ? db.getTeamLeaders() : [],
           db.getRegistrations ? db.getRegistrations() : [],
           db.getEvents ? db.getEvents() : [],
+          db.getCategories ? db.getCategories() : [],
           db.getSettings ? db.getSettings() : null,
         ]);
         if (settingsData) {
@@ -786,14 +833,49 @@
           }
         }
 
+        const eventsById = {};
+        if (Array.isArray(events)) {
+          events.forEach((ev) => {
+            if (ev && ev.id) eventsById[ev.id] = ev;
+          });
+        }
+
         let list = [];
+        const upsertParticipant = (entry) => {
+          const entryName = (entry.name || '').trim().toLowerCase();
+          const entryInst = (entry.institution || '').trim().toLowerCase();
+          const entryTicket = (entry.ticket_code || '').trim().toLowerCase();
+          const existing = list.find((item) =>
+            (entryTicket && String(item.ticket_code || '').trim().toLowerCase() === entryTicket && String(item.name || '').trim().toLowerCase() === entryName) ||
+            (entryName && String(item.name || '').trim().toLowerCase() === entryName && String(item.institution || '').trim().toLowerCase() === entryInst)
+          );
+          if (existing) {
+            (entry.assigned_events || []).forEach((ev) => {
+              if (!existing.assigned_events.some((x) => (x.event_title || '').toLowerCase() === (ev.event_title || '').toLowerCase())) {
+                existing.assigned_events.push(ev);
+              }
+            });
+          } else {
+            list.push(entry);
+          }
+        };
 
         if (Array.isArray(teamStudents) && teamStudents.length > 0) {
           teamStudents.forEach((s) => {
             const leader = (teamLeaders || []).find((l) => l.id === s.team_leader_id);
             const instName = leader?.institution_name || leader?.team_name || 'Festival Delegation';
             const tCode = (s.assigned_events && s.assigned_events[0]?.ticket_code) || `ALM-${s.student_code}`;
-            list.push({
+            const enrichedEvents = (s.assigned_events || []).map((ev) => {
+              const meta = eventsById[ev.event_id];
+              return {
+                ...ev,
+                event_title: ev.event_title || meta?.title || 'Competition Stage',
+                day_number: ev.day_number || meta?.day_number || 1,
+                time_slot: ev.time_slot || meta?.time_slot || 'TBA',
+                venue: ev.venue || meta?.venue || 'Main Stage'
+              };
+            });
+            upsertParticipant({
               id: s.id,
               name: s.student_name,
               code: s.student_code,
@@ -801,44 +883,55 @@
               ticket_code: tCode,
               institution: instName,
               category: s.category || 'Senior',
-              assigned_events: s.assigned_events || []
+              assigned_events: enrichedEvents
             });
           });
         }
 
         if (Array.isArray(registrations) && registrations.length > 0) {
           registrations.forEach((r) => {
+            const shortTicket = (r.ticket_code || '0000').slice(-4);
+            const evtMeta = r.events || eventsById[r.event_id] || null;
+            const stageObj = evtMeta ? [{
+              event_id: evtMeta.id || r.event_id,
+              event_title: evtMeta.title || 'Festival Event',
+              day_number: evtMeta.day_number || 1,
+              time_slot: evtMeta.time_slot || 'TBA',
+              venue: evtMeta.venue || 'Main Stage'
+            }] : [];
+
             if (r.team_members && Array.isArray(r.team_members) && r.team_members.length > 0) {
               r.team_members.forEach((m, idx) => {
-                if (m.name && !list.some((item) => item.name.toLowerCase() === m.name.toLowerCase())) {
-                  list.push({
+                if (m && m.name) {
+                  upsertParticipant({
                     id: `${r.id}-${idx}`,
                     name: m.name,
-                    code: m.code || `REG-${r.ticket_code.slice(-4)}-${idx + 1}`,
+                    code: m.code || `REG-${shortTicket}-${idx + 1}`,
                     chest_number: m.code || `REG-${idx + 1}`,
-                    ticket_code: r.ticket_code,
+                    ticket_code: r.ticket_code || `REG-${shortTicket}`,
                     institution: r.college_name || r.team_name || 'Delegation Team',
-                    category: 'Senior',
-                    assigned_events: r.events ? [{ event_title: r.events.title, day_number: 1, time_slot: '10:00 AM', venue: 'Dome' }] : []
+                    category: evtMeta?.category || 'Senior',
+                    assigned_events: stageObj.slice()
                   });
                 }
               });
-            } else if (r.leader_name && !list.some((item) => item.name.toLowerCase() === r.leader_name.toLowerCase())) {
-              list.push({
+            } else if (r.leader_name) {
+              upsertParticipant({
                 id: r.id,
                 name: r.leader_name,
-                code: `REG-${r.ticket_code.slice(-4)}`,
-                chest_number: `REG-${r.ticket_code.slice(-4)}`,
-                ticket_code: r.ticket_code,
+                code: `REG-${shortTicket}`,
+                chest_number: `REG-${shortTicket}`,
+                ticket_code: r.ticket_code || `REG-${shortTicket}`,
                 institution: r.college_name || r.team_name || 'Delegation Team',
-                category: 'Senior',
-                assigned_events: r.events ? [{ event_title: r.events.title, day_number: 1, time_slot: '10:00 AM', venue: 'Dome' }] : []
+                category: evtMeta?.category || 'Senior',
+                assigned_events: stageObj.slice()
               });
             }
           });
         }
 
         cachedParticipants = list;
+        renderParticipantCategoryChips(categories);
         renderParticipantsGrid();
 
         // Check if page opened with ?id= or ?code= parameter (e.g. from scanning a QR code!)
@@ -886,16 +979,7 @@
       });
     }
 
-    document.querySelectorAll('.participant-cat-filter').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.participant-cat-filter').forEach((b) => {
-          b.className = 'participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-neutral-100 hover:bg-neutral-200 text-neutral-700 cursor-pointer';
-        });
-        btn.className = 'participant-cat-filter px-3.5 py-2 rounded-xl font-bold transition-all bg-[#45101F] text-white shadow-sm cursor-pointer';
-        currentParticipantCategory = btn.getAttribute('data-category') || 'all';
-        renderParticipantsGrid();
-      });
-    });
+    bindParticipantCategoryFilters();
 
     const closeBtn = document.getElementById('close-participant-modal');
     const closeFooterBtn = document.getElementById('btn-close-p-modal-footer');

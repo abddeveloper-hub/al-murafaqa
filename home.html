@@ -494,6 +494,17 @@
             </div>
             <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
           </a>
+
+          <!-- Published Judgment Rules: Uniform Styling -->
+          <a href="judgment.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">fact_check</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Judging Rules &amp; Criteria</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
         </div>
 
         <!-- Category: PORTALS -->
@@ -502,6 +513,16 @@
             <span class="w-1.5 h-1.5 rounded-full bg-fest-gold/60"></span>
             <span>Portals</span>
           </div>
+
+          <a href="judge.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">gavel</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Judge Token Portal</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
 
           <a href="login.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
             <div class="flex items-center gap-3 min-w-0">
@@ -656,8 +677,6 @@
               </span>
             </div>
           </div>
-
-        </div>
       </section>
 
       <!-- ================= THEMATIC TRACKS ================= -->
@@ -1277,6 +1296,10 @@
                 <a href="#explore-section" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Theme</a>
                 <a href="#video-en-vivo" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Main Stage</a>
                 <a href="schedule.html" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Schedule</a>
+                <a href="judgment.html" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-fest-orange text-[12px] font-semibold text-white transition-colors">Judging Rules</a>
+                <a href="judge.html" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-[12px] font-bold text-white transition-colors flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[15px]">gavel</span> Judge Portal
+                </a>
                 <a href="login.html" class="px-3 py-1.5 rounded-lg bg-fest-red hover:bg-fest-red-light text-[12px] font-bold text-white transition-colors flex items-center gap-1">
                   <span class="material-symbols-outlined text-[15px]">login</span> Sign In
                 </a>
@@ -1593,8 +1616,8 @@
         };
       }
 
-      // 2. YouTube Links
-      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([\w-]{11})/i);
+      // 2. YouTube Links (watch, youtu.be, embed, live, shorts)
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/i);
       if (ytMatch && ytMatch[1]) {
         return {
           type: 'youtube',
@@ -1753,18 +1776,20 @@
       return false;
     };
 
-    // Hydrate active settings (Video Section, Live Dates Status, Ticker & Maintenance Mode)
+    // Hydrate active settings (Video Section, Live Dates Status, Ticker & Maintenance/Lockdown Mode)
     try {
-      const settings = await db.getSettings();
+      const [settings, restrictions] = await Promise.all([
+        db.getSettings(),
+        db.getRestrictions ? db.getRestrictions() : null
+      ]);
       if (settings) {
         latestSettings = settings;
         hydrateLiveDateStatus(settings);
         hydrateVideoSection(settings);
-
-        if (settings.maintenance_mode) {
-          const maint = document.getElementById('maintenance-overlay');
-          if (maint) maint.classList.remove('hidden');
-        }
+      }
+      if (settings?.maintenance_mode || restrictions?.site_lockdown) {
+        const maint = document.getElementById('maintenance-overlay');
+        if (maint) maint.classList.remove('hidden');
       }
       setInterval(() => {
         if (latestSettings) {
@@ -1822,7 +1847,7 @@
           const evt = cachedEventsMap[id];
           const title = (evt?.title || byEvent[id][0]?.events?.title || '').toLowerCase();
           const cat = (evt?.category || byEvent[id][0]?.events?.category || '').toLowerCase();
-          const code = (evt?.event_code || '').toLowerCase();
+          const code = (evt?.code || evt?.event_code || '').toLowerCase();
           const hasContender = byEvent[id].some(w => 
             (w.winner_name || '').toLowerCase().includes(resultSearchQuery) ||
             (w.college_name || '').toLowerCase().includes(resultSearchQuery)
@@ -1866,7 +1891,7 @@
         const winners = byEvent[eventId].sort((a, b) => Number(a.position) - Number(b.position));
         const eventTitle = evt?.title || winners[0]?.events?.title || 'Competition Event';
         const eventCategory = evt?.category || winners[0]?.events?.category || 'General';
-        const eventCode = evt?.event_code || '';
+        const eventCode = evt?.code || evt?.event_code || '';
 
         const w1 = winners.find(w => Number(w.position) === 1);
         const w2 = winners.find(w => Number(w.position) === 2);
@@ -1969,10 +1994,30 @@
       const chipsContainer = document.getElementById('results-category-chips');
 
       try {
-        const [winnersData, eventsData] = await Promise.all([
+        const [winnersData, eventsData, restrictions] = await Promise.all([
           db.getWinners(),
-          db.getEvents()
+          db.getEvents(),
+          db.getRestrictions ? db.getRestrictions() : null
         ]);
+
+        if (restrictions?.score_embargo) {
+          cachedWinnersList = [];
+          if (countBadge) countBadge.textContent = 'Jury Embargo Active';
+          if (container) {
+            container.innerHTML = `
+              <div class="col-span-full py-12 px-6 rounded-3xl bg-amber-50/90 border border-amber-300 shadow-sm flex flex-col items-center justify-center text-center">
+                <div class="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 mb-3 shadow-inner">
+                  <span class="material-symbols-outlined text-[28px]">gavel</span>
+                </div>
+                <h3 class="font-headline text-lg sm:text-xl font-bold text-neutral-900">Results Under Jury Embargo</h3>
+                <p class="font-body text-xs sm:text-sm text-neutral-600 max-w-md mt-1">
+                  Live podium announcements are temporarily withheld during jury moderation. Certified standings will resume once the embargo is lifted.
+                </p>
+              </div>
+            `;
+          }
+          return;
+        }
 
         // Map events by ID
         cachedEventsMap = {};

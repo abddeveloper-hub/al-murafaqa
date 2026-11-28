@@ -300,6 +300,17 @@
             </div>
             <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
           </a>
+
+          <!-- Published Judging Rules: Uniform Styling -->
+          <a href="judgment.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">fact_check</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Judging Rules &amp; Criteria</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
         </div>
 
         <!-- Category: ACCESS & PASSES -->
@@ -308,6 +319,16 @@
             <span class="w-1.5 h-1.5 rounded-full bg-fest-gold/60"></span>
             <span>Portals</span>
           </div>
+
+          <a href="judge.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-fest-gold group-hover:bg-fest-gold/20 group-hover:border-fest-gold/40 transition-all shrink-0">
+                <span class="material-symbols-outlined text-[18px]">gavel</span>
+              </div>
+              <span class="font-medium text-xs sm:text-sm text-white/90 group-hover:text-white transition-colors truncate">Judge Token Portal</span>
+            </div>
+            <span class="material-symbols-outlined text-white/30 text-[18px] group-hover:text-fest-gold group-hover:translate-x-0.5 transition-all">chevron_right</span>
+          </a>
 
           <a href="login.html" class="drawer-link group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-white/90 hover:bg-white/10 border border-transparent hover:border-fest-gold/25 transition-all">
             <div class="flex items-center gap-3 min-w-0">
@@ -610,6 +631,7 @@
 
     // Dynamic Events State & Rendering
     let allEvents = [];
+    let publishedJudgmentFestIds = new Set();
     let currentFilter = 'all';
     let currentDay = 'all';
     let currentFestStatus = evaluateFestLiveStatus([]);
@@ -859,17 +881,25 @@
               </div>
             </div>
 
-            <div class="pl-2 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
+            <div class="pl-2 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2 flex-wrap">
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <div class="w-8 h-8 rounded-full bg-fest-red/10 text-fest-red flex items-center justify-center font-headline text-xs font-bold shrink-0">
                   ${escapeHtml(initial)}
                 </div>
                 <span class="font-body text-[12px] text-neutral-800 font-semibold truncate">${escapeHtml(cat)}</span>
               </div>
-              <button type="button" class="remind-btn bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-fest-red font-body text-[12px] font-semibold px-3 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1 shrink-0 cursor-pointer" onclick="handleRemind(this)">
-                <span class="material-symbols-outlined text-[15px]">notifications_none</span>
-                <span>Remind Me</span>
-              </button>
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${publishedJudgmentFestIds.has(evt.id) ? `
+                  <a href="judgment.html?festId=${encodeURIComponent(evt.id)}" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-body text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">fact_check</span>
+                    <span>Judging Rules</span>
+                  </a>
+                ` : ''}
+                <button type="button" class="remind-btn bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-fest-red font-body text-[12px] font-semibold px-3 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1 shrink-0 cursor-pointer" onclick="handleRemind(this)">
+                  <span class="material-symbols-outlined text-[15px]">notifications_none</span>
+                  <span>Remind Me</span>
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -879,13 +909,19 @@
     async function loadScheduleEvents() {
       let categoriesData = [];
       try {
-        const [eventsData, settingsData, catsData] = await Promise.all([
+        const [eventsData, settingsData, catsData, pubJudgments] = await Promise.all([
           db.getEvents ? db.getEvents() : [],
           db.getSettings ? db.getSettings() : null,
           db.getCategories ? db.getCategories() : [],
+          db.getPublicFestJudgments ? db.getPublicFestJudgments() : [],
         ]);
         allEvents = Array.isArray(eventsData) ? eventsData : [];
         categoriesData = Array.isArray(catsData) ? catsData : [];
+        publishedJudgmentFestIds = new Set(
+          (Array.isArray(pubJudgments) ? pubJudgments : [])
+            .filter((j) => j && j.is_published === true && j.fest_id)
+            .map((j) => j.fest_id)
+        );
         if (settingsData) applyScheduleFestStatus(settingsData);
       } catch (err) {
         console.error('Failed to load events:', err);

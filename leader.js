@@ -354,27 +354,28 @@ function renderStudentsTable() {
         <div class="flex items-center justify-end gap-1.5">
           <button 
             type="button" 
-            class="p-1.5 rounded-lg text-slate-500 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+            class="btn-student-pass p-1.5 rounded-lg text-slate-500 hover:text-brand-700 hover:bg-brand-50 transition-colors"
             title="View Digital Pass & QR Code"
-            onclick="window.openStudentPassModal('${student.id}')"
+            data-id="${escapeHtml(student.id)}"
           >
             <span class="material-symbols-outlined text-[18px]">badge</span>
           </button>
 
           <button 
             type="button" 
-            class="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            class="btn-student-edit p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
             title="Edit Student Information"
-            onclick="window.openEditStudentModal('${student.id}')"
+            data-id="${escapeHtml(student.id)}"
           >
             <span class="material-symbols-outlined text-[18px]">edit</span>
           </button>
 
           <button 
             type="button" 
-            class="p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
+            class="btn-student-delete p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
             title="Remove Student from Delegation"
-            onclick="window.deleteStudentPrompt('${student.id}', '${escapeHtml(student.student_name)}')"
+            data-id="${escapeHtml(student.id)}"
+            data-name="${escapeHtml(student.student_name)}"
           >
             <span class="material-symbols-outlined text-[18px]">delete</span>
           </button>
@@ -382,6 +383,16 @@ function renderStudentsTable() {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.btn-student-pass').forEach((btn) => {
+    btn.addEventListener('click', () => window.openStudentPassModal(btn.getAttribute('data-id')));
+  });
+  tbody.querySelectorAll('.btn-student-edit').forEach((btn) => {
+    btn.addEventListener('click', () => window.openEditStudentModal(btn.getAttribute('data-id')));
+  });
+  tbody.querySelectorAll('.btn-student-delete').forEach((btn) => {
+    btn.addEventListener('click', () => window.deleteStudentPrompt(btn.getAttribute('data-id'), btn.getAttribute('data-name') || 'Student'));
   });
 }
 
@@ -453,7 +464,7 @@ async function handleSaveStudent(e) {
       });
       showToast(`Student "${name}" updated successfully.`, 'success');
     } else {
-      await db.addTeamStudent({
+      const added = await db.addTeamStudent({
         team_leader_id: activeLeader.id,
         student_name: name,
         student_code: code,
@@ -462,7 +473,11 @@ async function handleSaveStudent(e) {
         phone,
         email,
       });
-      showToast(`Student "${name}" enrolled in delegation.`, 'success');
+      if (added?._cloudSyncWarning) {
+        showToast(added._cloudSyncWarning, 'warning');
+      } else {
+        showToast(`Student "${name}" enrolled in delegation.`, 'success');
+      }
     }
 
     closeAllModals();
@@ -537,17 +552,18 @@ function renderTeamsGrid() {
           <div class="flex items-center gap-1 shrink-0">
             <button 
               type="button" 
-              class="p-1.5 text-slate-400 hover:text-brand-700 rounded-lg transition-colors" 
+              class="btn-team-edit p-1.5 text-slate-400 hover:text-brand-700 rounded-lg transition-colors" 
               title="Edit Team" 
-              onclick="window.openEditTeamModal('${team.id}')"
+              data-id="${escapeHtml(team.id)}"
             >
               <span class="material-symbols-outlined text-[18px]">edit</span>
             </button>
             <button 
               type="button" 
-              class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors" 
+              class="btn-team-delete p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors" 
               title="Delete Team" 
-              onclick="window.deleteTeamPrompt('${team.id}', '${escapeHtml(team.team_name)}')"
+              data-id="${escapeHtml(team.id)}"
+              data-name="${escapeHtml(team.team_name)}"
             >
               <span class="material-symbols-outlined text-[18px]">delete</span>
             </button>
@@ -587,8 +603,8 @@ function renderTeamsGrid() {
       <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
         <button 
           type="button" 
-          class="flex-1 py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-          onclick="window.allocateTeamPrompt('${team.id}')"
+          class="btn-team-allocate flex-1 py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+          data-id="${escapeHtml(team.id)}"
         >
           <span class="material-symbols-outlined text-[16px]">how_to_reg</span>
           <span>Allocate to Programme</span>
@@ -596,6 +612,16 @@ function renderTeamsGrid() {
       </div>
     `;
     container.appendChild(card);
+  });
+
+  container.querySelectorAll('.btn-team-edit').forEach((btn) => {
+    btn.addEventListener('click', () => window.openEditTeamModal(btn.getAttribute('data-id')));
+  });
+  container.querySelectorAll('.btn-team-delete').forEach((btn) => {
+    btn.addEventListener('click', () => window.deleteTeamPrompt(btn.getAttribute('data-id'), btn.getAttribute('data-name') || 'Team'));
+  });
+  container.querySelectorAll('.btn-team-allocate').forEach((btn) => {
+    btn.addEventListener('click', () => window.allocateTeamPrompt(btn.getAttribute('data-id')));
   });
 }
 

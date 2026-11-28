@@ -91,6 +91,8 @@ export const STORAGE_KEYS = {
   TEAM_STUDENTS: 'almurafaqa_team_students',
   TEAM_ASSIGNMENTS: 'almurafaqa_team_assignments',
   TEAM_GROUPS: 'almurafaqa_team_groups',
+  JUDGE_TOKENS: 'almurafaqa_judge_tokens',
+  JUDGMENT_ENTRIES: 'almurafaqa_judgment_entries',
 };
 
 // Generate alphanumeric Team Leader access token, e.g. TL-8F2B-91C4
@@ -103,6 +105,74 @@ export function generateLeaderToken() {
     p2 += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return `TL-${p1}-${p2}`;
+}
+
+// Generate cryptographically random Judge access token, e.g. JDG-8F2B-91C4
+export function generateJudgeToken() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const bytes = new Uint8Array(8);
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  let p1 = '';
+  let p2 = '';
+  for (let i = 0; i < 4; i++) {
+    p1 += chars.charAt(bytes[i] % chars.length);
+    p2 += chars.charAt(bytes[i + 4] % chars.length);
+  }
+  return `JDG-${p1}-${p2}`;
+}
+
+export function sanitizePlainText(val, maxLen = 4000) {
+  const clean = String(val ?? '')
+    .replace(/[<>]/g, '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim();
+  return clean.length > maxLen ? clean.slice(0, maxLen) : clean;
+}
+
+function sanitizeJudgmentRules(rules) {
+  if (!Array.isArray(rules)) return [];
+  return rules
+    .map((r, idx) => {
+      const title = sanitizePlainText(r?.title || r?.name || '', 200);
+      const description = sanitizePlainText(r?.description || r?.details || '', 2000);
+      const ptsRaw = r?.max_points !== '' && r?.max_points !== null && r?.max_points !== undefined ? Number(r.max_points) : null;
+      const max_points = Number.isFinite(ptsRaw) && ptsRaw >= 0 ? ptsRaw : null;
+      if (!title && !description) return null;
+      return {
+        id: sanitizePlainText(r?.id || `rule_${idx + 1}`, 80),
+        title: title || `Criterion ${idx + 1}`,
+        description,
+        max_points,
+      };
+    })
+    .filter(Boolean);
+}
+
+function sanitizeJudgmentRemarks(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item, idx) => {
+      const contestant_name = sanitizePlainText(item?.contestant_name || item?.team_name || '', 200);
+      const institution = sanitizePlainText(item?.institution || item?.college_name || '', 200);
+      const remarks = sanitizePlainText(item?.remarks || item?.notes || '', 1500);
+      const scoreRaw = item?.score !== '' && item?.score !== null && item?.score !== undefined ? Number(item.score) : null;
+      const score = Number.isFinite(scoreRaw) && scoreRaw >= 0 ? scoreRaw : null;
+      if (!contestant_name && !remarks && score === null) return null;
+      return {
+        id: sanitizePlainText(item?.id || `eval_${idx + 1}`, 80),
+        contestant_name: contestant_name || 'General Jury Note',
+        institution,
+        score,
+        remarks,
+      };
+    })
+    .filter(Boolean);
 }
 
 // ------------------------------------------------------------------------------
@@ -245,6 +315,42 @@ async function restSelect(table, queryString = '', { single = false, timeoutMs =
   }
 }
 
+async function restRpc(fnName, params = {}, { timeoutMs = 6000 } = {}) {
+  if (!isConfigured) {
+    return { data: null, error: new Error('Supabase credentials are not configured') };
+  }
+  try {
+    const cleanUrl = SUPABASE_CONFIG.url.replace(/\/+$/, '');
+    const url = `${cleanUrl}/rest/v1/rpc/${fnName}`;
+    const res = await timedFetch(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_CONFIG.anonKey,
+          Authorization: `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(params || {}),
+      },
+      timeoutMs
+    );
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      let parsedErr = null;
+      try { parsedErr = text ? JSON.parse(text) : null; } catch (_) {}
+      const err = new Error(parsedErr?.message || text || `RPC HTTP ${res.status}`);
+      if (parsedErr?.code) err.code = parsedErr.code;
+      return { data: null, error: err };
+    }
+    const json = await res.json();
+    return { data: json, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
 // ------------------------------------------------------------------------------
 // 2. DEFAULT SETTINGS & EMPTY DATA COLLECTIONS (Live Supabase Connected)
 // ------------------------------------------------------------------------------
@@ -268,7 +374,7 @@ const DEFAULT_SETTINGS = {
   video_viewer_count: '4.8k live',
   video_duration_note: '42 mins remaining',
   fest_dates: [],
-  updated_at: new Date().toISOString(),
+  updated_at: '1970-01-01T00:00:00.000Z',
 };
 
 // ------------------------------------------------------------------------------
@@ -1152,7 +1258,7 @@ export const db = {
           if (error) throw error;
           if (data) {
             const list = await this.getEvents();
-            list.push(data);
+            if (!list.some((e) => e.id === data.id)) list.push(data);
             localStorage.setItem('almurafaqa_events', JSON.stringify(list));
             return data;
           }
@@ -1183,7 +1289,9 @@ export const db = {
             if (!retry.error && retry.data) {
               const fullData = { ...payload, ...retry.data };
               const list = await this.getEvents();
-              list.push(fullData);
+              const idx = list.findIndex((e) => e.id === fullData.id);
+              if (idx !== -1) list[idx] = fullData;
+              else list.push(fullData);
               localStorage.setItem('almurafaqa_events', JSON.stringify(list));
               return fullData;
             }
@@ -1492,8 +1600,12 @@ export const db = {
       if (records.length > 0) {
         const { data, error } = await client.from('winners').insert(records).select();
         if (error) throw error;
+        const refreshed = await this.getWinners();
+        try { localStorage.setItem('almurafaqa_winners', JSON.stringify(refreshed)); } catch (_) {}
         return data || [];
       }
+      const refreshed = await this.getWinners();
+      try { localStorage.setItem('almurafaqa_winners', JSON.stringify(refreshed)); } catch (_) {}
       return [];
     }
 
@@ -1755,7 +1867,7 @@ export const db = {
         const { data, error } = await client.from('audit_logs').insert([payload]).select().single();
         if (!error && data) {
           const list = await this.getAuditLogs();
-          list.unshift(data);
+          if (!list.some((x) => x.id === data.id)) list.unshift(data);
           if (list.length > 500) list.length = 500;
           localStorage.setItem('almurafaqa_audit_logs', JSON.stringify(list));
           return data;
@@ -1780,7 +1892,7 @@ export const db = {
   // MODULE 7: BACKUP & DATA RESTORE
   // ----------------------------------------------------------------------------
   async getFullBackup() {
-    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs] = await Promise.all([
+    const [settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, judgeTokens, judgmentEntries] = await Promise.all([
       this.getSettings(),
       this.getEvents(),
       this.getRegistrations(),
@@ -1789,10 +1901,12 @@ export const db = {
       this.getScores(),
       this.getStageOps(),
       this.getAuditLogs(),
+      this.getJudgeTokens ? this.getJudgeTokens() : [],
+      this.getJudgmentEntries ? this.getJudgmentEntries() : [],
     ]);
 
     return {
-      version: '5.0',
+      version: '5.1',
       export_date: new Date().toISOString(),
       fest_name: 'Al Murafaqa • QUINTA EDICION',
       collections: {
@@ -1804,6 +1918,8 @@ export const db = {
         scores,
         stageOps,
         auditLogs,
+        judgeTokens,
+        judgmentEntries,
       },
     };
   },
@@ -1812,7 +1928,7 @@ export const db = {
     if (!backupData || !backupData.collections) {
       throw new Error('Invalid backup file format: missing collections payload.');
     }
-    const { settings, events, registrations, announcements, winners, scores, stageOps, auditLogs } = backupData.collections;
+    const { settings, events, registrations, announcements, winners, scores, stageOps, auditLogs, judgeTokens, judgmentEntries } = backupData.collections;
 
     if (settings) localStorage.setItem('almurafaqa_settings', JSON.stringify(settings));
     if (Array.isArray(events)) localStorage.setItem('almurafaqa_events', JSON.stringify(events));
@@ -1822,6 +1938,8 @@ export const db = {
     if (Array.isArray(scores)) localStorage.setItem('almurafaqa_scores', JSON.stringify(scores));
     if (stageOps) localStorage.setItem('almurafaqa_stage_ops', JSON.stringify(stageOps));
     if (Array.isArray(auditLogs)) localStorage.setItem('almurafaqa_audit_logs', JSON.stringify(auditLogs));
+    if (Array.isArray(judgeTokens)) localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(judgeTokens));
+    if (Array.isArray(judgmentEntries)) localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(judgmentEntries));
 
     await this.addAuditLog('DATABASE_RESTORE', 'Full database restored from JSON backup archive', 'Super Admin');
     return true;
@@ -2072,7 +2190,7 @@ export const db = {
         if (!error && inserted) {
           cloudSaved = true;
           const list = await this.getTeamLeaders();
-          list.unshift(inserted);
+          if (!list.some((x) => x.id === inserted.id)) list.unshift(inserted);
           localStorage.setItem(STORAGE_KEYS.TEAM_LEADERS, JSON.stringify(list));
           return inserted;
         }
@@ -2168,7 +2286,9 @@ export const db = {
         return { synced: 0, total: localStudents.length, error: error.message };
       }
       const existingIds = new Set((cloudStudents || []).map((s) => s.id));
-      const existingCodes = new Set((cloudStudents || []).map((s) => (s.student_code || '').trim().toUpperCase()));
+      const existingLeaderCodePairs = new Set(
+        (cloudStudents || []).map((s) => `${s.team_leader_id}::${(s.student_code || '').trim().toUpperCase()}`)
+      );
 
       // Get all cloud leader IDs
       const { data: cloudLeaders } = await client.from('team_leaders').select('id, token');
@@ -2180,28 +2300,32 @@ export const db = {
 
       for (const student of localStudents) {
         const cleanCode = (student.student_code || '').trim().toUpperCase();
-        const alreadyInCloud = (student.id && existingIds.has(student.id)) || (cleanCode && existingCodes.has(cleanCode));
-        if (!alreadyInCloud) {
-          let leaderIdInCloud = cloudLeaderIdMap.get(student.team_leader_id);
-          if (!leaderIdInCloud && cloudLeaders && cloudLeaders.length > 0) {
-            leaderIdInCloud = cloudLeaders[0].id;
-          }
-          if (leaderIdInCloud) {
-            const payload = {
-              id: student.id || generateUuid(),
-              team_leader_id: leaderIdInCloud,
-              student_name: (student.student_name || 'Participant').trim(),
-              student_code: cleanCode || ('STU-' + Math.floor(100 + Math.random() * 900)),
-              category: student.category || 'Senior',
-              gender: student.gender || 'Male',
-              phone: (student.phone || '').trim(),
-              email: (student.email || '').trim(),
-              notes: (student.notes || '').trim(),
-              assigned_events: Array.isArray(student.assigned_events) ? student.assigned_events : [],
-            };
-            const { error: insErr } = await client.from('team_students').insert([payload]);
-            if (!insErr) syncedCount++;
-            else console.warn('[syncLocalTeamStudentsToCloud insert error]', insErr.message);
+        let leaderIdInCloud = cloudLeaderIdMap.get(student.team_leader_id);
+        if (!leaderIdInCloud && cloudLeaders && cloudLeaders.length > 0) {
+          leaderIdInCloud = cloudLeaders[0].id;
+        }
+        const pairKey = `${leaderIdInCloud || ''}::${cleanCode}`;
+        const alreadyInCloud = (student.id && existingIds.has(student.id)) || (leaderIdInCloud && cleanCode && existingLeaderCodePairs.has(pairKey));
+        if (!alreadyInCloud && leaderIdInCloud) {
+          const payload = {
+            id: student.id || generateUuid(),
+            team_leader_id: leaderIdInCloud,
+            student_name: (student.student_name || 'Participant').trim(),
+            student_code: cleanCode || ('STU-' + Math.floor(100 + Math.random() * 900)),
+            category: student.category || 'Senior',
+            gender: student.gender || 'Male',
+            phone: (student.phone || '').trim(),
+            email: (student.email || '').trim(),
+            notes: (student.notes || '').trim(),
+            assigned_events: Array.isArray(student.assigned_events) ? student.assigned_events : [],
+          };
+          const { error: insErr } = await client.from('team_students').insert([payload]);
+          if (!insErr) {
+            syncedCount++;
+            existingIds.add(payload.id);
+            existingLeaderCodePairs.add(`${leaderIdInCloud}::${payload.student_code}`);
+          } else {
+            console.warn('[syncLocalTeamStudentsToCloud insert error]', insErr.message);
           }
         }
       }
@@ -2359,6 +2483,7 @@ export const db = {
       created_at: new Date().toISOString(),
     };
 
+    let cloudError = null;
     const client = this.isLive() ? await getSupabaseClient() : null;
     if (client) {
       try {
@@ -2389,15 +2514,26 @@ export const db = {
           localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(list));
           return inserted;
         }
-        if (error) console.warn('[Supabase addTeamStudent]', error.message);
+        if (error) {
+          if (error.code === '23505') {
+            throw new Error(`Student chest number "${student.student_code}" is already registered for this delegation.`);
+          }
+          cloudError = error;
+          console.warn('[Supabase addTeamStudent]', error.message);
+        }
       } catch (err) {
+        if (err?.message?.includes('already registered')) throw err;
+        cloudError = err;
         console.warn('[Supabase addTeamStudent catch]', err);
       }
     }
 
     const list = await this.getTeamStudents();
-    list.unshift(student);
+    if (!list.some((s) => s.id === student.id)) list.unshift(student);
     localStorage.setItem(STORAGE_KEYS.TEAM_STUDENTS, JSON.stringify(list));
+    if (this.isLive() && cloudError) {
+      student._cloudSyncWarning = `Saved locally only: cloud sync failed (${cloudError.message || 'Database error'}).`;
+    }
     return student;
   },
 
@@ -2482,17 +2618,31 @@ export const db = {
 
   // Assign students to a festival event, and synchronize with registrations desk
   async saveTeamAssignment(teamLeaderId, eventId, studentIds) {
-    const leaders = await this.getTeamLeaders();
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      await this.removeTeamAssignment(teamLeaderId, eventId);
+      return null;
+    }
+
+    const [leaders, events, allStudents, existingAssignments, existingRegs] = await Promise.all([
+      this.getTeamLeaders(),
+      this.getEvents(),
+      this.getTeamStudents(teamLeaderId),
+      this.getTeamAssignments(teamLeaderId),
+      this.getRegistrations(),
+    ]);
     const leader = leaders.find((l) => l.id === teamLeaderId);
-    const events = await this.getEvents();
     const event = events.find((e) => e.id === eventId);
-    const allStudents = await this.getTeamStudents(teamLeaderId);
     const assignedStudents = allStudents.filter((s) => studentIds.includes(s.id));
 
     if (!leader || !event) throw new Error('Invalid leader or event reference.');
 
-    // 1. Sync or generate festival registration record for the assigned students
-    const ticketCode = `ALM-TL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const existingAssignment = existingAssignments.find((a) => a.team_leader_id === teamLeaderId && a.event_id === eventId);
+    const existingReg = existingAssignment?.registration_id
+      ? existingRegs.find((r) => r.id === existingAssignment.registration_id)
+      : null;
+
+    // 1. Sync or reuse festival registration record for the assigned students
+    const ticketCode = existingReg?.ticket_code || `ALM-TL-${Math.floor(1000 + Math.random() * 9000)}`;
     const teamMembersList = assignedStudents.map((s) => ({
       name: s.student_name,
       code: s.student_code,
@@ -2510,24 +2660,40 @@ export const db = {
       team_name: leader.team_name || leader.institution_name,
       team_members: teamMembersList,
       payment_status: 'verified',
-      checked_in: false,
+      checked_in: existingReg ? Boolean(existingReg.checked_in) : false,
     };
 
     let savedReg = null;
     try {
-      savedReg = await this.addRegistration(regPayload);
-    } catch (regErr) {
-      console.warn('[Sync Registration for Team Assignment]', regErr);
+      if (existingReg?.id) {
+        savedReg = await this.updateRegistration(existingReg.id, {
+          leader_name: regPayload.leader_name,
+          leader_email: regPayload.leader_email,
+          leader_phone: regPayload.leader_phone,
+          college_name: regPayload.college_name,
+          team_name: regPayload.team_name,
+          team_members: regPayload.team_members,
+        });
+      }
+    } catch (_) {
+      savedReg = null;
+    }
+    if (!savedReg) {
+      try {
+        savedReg = await this.addRegistration(regPayload);
+      } catch (regErr) {
+        console.warn('[Sync Registration for Team Assignment]', regErr);
+      }
     }
 
     // 2. Save team assignment record
     const assignmentRecord = {
-      id: generateUuid(),
+      id: existingAssignment?.id || generateUuid(),
       team_leader_id: teamLeaderId,
       event_id: eventId,
       student_ids: studentIds,
-      registration_id: savedReg ? savedReg.id : null,
-      created_at: new Date().toISOString(),
+      registration_id: savedReg ? savedReg.id : (existingAssignment?.registration_id || null),
+      created_at: existingAssignment?.created_at || new Date().toISOString(),
     };
 
     const client = this.isLive() ? await getSupabaseClient() : null;
@@ -2583,14 +2749,29 @@ export const db = {
 
   // Remove assignment for a programme
   async removeTeamAssignment(teamLeaderId, eventId) {
+    const existingAssignments = await this.getTeamAssignments(teamLeaderId);
+    const matching = existingAssignments.filter((a) => a.team_leader_id === teamLeaderId && a.event_id === eventId);
+    const linkedRegIds = matching.map((a) => a.registration_id).filter(Boolean);
+
     const client = this.isLive() ? await getSupabaseClient() : null;
     if (client) {
       try {
         await client.from('team_assignments').delete().eq('team_leader_id', teamLeaderId).eq('event_id', eventId);
+        for (const regId of linkedRegIds) {
+          await client.from('registrations').delete().eq('id', regId);
+        }
       } catch (err) {
         console.warn('[Supabase removeTeamAssignment]', err);
       }
     }
+    if (linkedRegIds.length > 0 && typeof localStorage !== 'undefined') {
+      const regs = safeParseJson(localStorage.getItem(STORAGE_KEYS.REGISTRATIONS), []);
+      if (Array.isArray(regs)) {
+        const cleanedRegs = regs.filter((r) => !linkedRegIds.includes(r.id));
+        localStorage.setItem(STORAGE_KEYS.REGISTRATIONS, JSON.stringify(cleanedRegs));
+      }
+    }
+
     const assignments = await this.getTeamAssignments();
     const filtered = assignments.filter((a) => !(a.team_leader_id === teamLeaderId && a.event_id === eventId));
     localStorage.setItem(STORAGE_KEYS.TEAM_ASSIGNMENTS, JSON.stringify(filtered));
@@ -2707,6 +2888,567 @@ export const db = {
   },
 
   // ----------------------------------------------------------------------------
+  // MODULE 10: FEST JUDGMENT SYSTEM & TOKEN-BASED JUDGE PORTAL
+  // ----------------------------------------------------------------------------
+  async syncLocalJudgeTokensToCloud() {
+    if (!this.isLive() || typeof localStorage === 'undefined') return { synced: 0 };
+    const localList = safeParseJson(localStorage.getItem(STORAGE_KEYS.JUDGE_TOKENS), []);
+    const pending = Array.isArray(localList) ? localList.filter((t) => t && t._localOnly) : [];
+    if (pending.length === 0) return { synced: 0 };
+    const client = await getSupabaseClient();
+    if (!client) return { synced: 0 };
+
+    let synced = 0;
+    const remaining = [];
+    for (const tok of localList) {
+      if (!tok || !tok._localOnly) {
+        remaining.push(tok);
+        continue;
+      }
+      const { _localOnly, _cloudSyncWarning, events, fest, ...cleanPayload } = tok;
+      try {
+        const { data, error } = await client.from('judge_tokens').upsert([cleanPayload], { onConflict: 'token' }).select().maybeSingle();
+        if (!error && data) {
+          synced++;
+          remaining.push(data);
+        } else {
+          remaining.push(tok);
+        }
+      } catch (_) {
+        remaining.push(tok);
+      }
+    }
+    try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(remaining)); } catch (_) {}
+    return { synced };
+  },
+
+  async getJudgeTokens() {
+    let cloudRows = null;
+    if (this.isLive()) {
+      try {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          ({ data, error } = await supabase
+            .from('judge_tokens')
+            .select('*, events(*)')
+            .order('created_at', { ascending: false }));
+          if (error) {
+            ({ data, error } = await supabase
+              .from('judge_tokens')
+              .select('*')
+              .order('created_at', { ascending: false }));
+          }
+        } else {
+          ({ data, error } = await restSelect('judge_tokens', 'select=*,events(*)&order=created_at.desc'));
+          if (error) {
+            ({ data, error } = await restSelect('judge_tokens', 'select=*&order=created_at.desc'));
+          }
+        }
+        if (!error && Array.isArray(data)) cloudRows = data;
+      } catch (err) {
+        console.warn('[Supabase getJudgeTokens]', err?.message || err);
+      }
+    }
+
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.JUDGE_TOKENS) : null;
+    const localList = safeParseJson(raw, []);
+    const safeLocal = Array.isArray(localList) ? localList : [];
+
+    if (cloudRows !== null) {
+      const mergedMap = new Map();
+      cloudRows.forEach((row) => mergedMap.set(row.id, row));
+      safeLocal.filter((l) => l && l._localOnly).forEach((l) => {
+        if (!mergedMap.has(l.id)) mergedMap.set(l.id, l);
+      });
+      const result = Array.from(mergedMap.values()).sort(
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+      try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(result)); } catch (_) {}
+      return result;
+    }
+
+    return safeLocal;
+  },
+
+  async createJudgeToken(data) {
+    const cleanName = sanitizePlainText(data?.judge_name || '', 160);
+    const cleanEmail = sanitizePlainText(data?.judge_email || '', 180);
+    const festId = String(data?.fest_id || '').trim();
+    if (!cleanName) throw new Error('Judge name is required.');
+    if (!festId) throw new Error('Please select an assigned Fest / Programme.');
+
+    const cleanToken = sanitizePlainText(data?.token || generateJudgeToken(), 32).toUpperCase().replace(/\s+/g, '-');
+    let expiresIso = null;
+    if (data?.expires_at) {
+      const ts = Date.parse(data.expires_at);
+      if (Number.isNaN(ts)) throw new Error('Invalid expiration date/time.');
+      expiresIso = new Date(ts).toISOString();
+    }
+
+    const now = new Date().toISOString();
+    const record = {
+      id: generateUuid(),
+      token: cleanToken,
+      judge_name: cleanName,
+      judge_email: cleanEmail,
+      fest_id: festId,
+      is_active: data?.is_active !== false,
+      expires_at: expiresIso,
+      last_activity_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    let cloudSaved = false;
+    let cloudError = null;
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
+      try {
+        const { data: inserted, error } = await client
+          .from('judge_tokens')
+          .insert([record])
+          .select('*, events(*)')
+          .maybeSingle();
+        if (!error && inserted) {
+          cloudSaved = true;
+          const list = await this.getJudgeTokens();
+          if (!list.some((t) => t.id === inserted.id)) list.unshift(inserted);
+          try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
+          return inserted;
+        }
+        if (error) cloudError = error;
+      } catch (err) {
+        cloudError = err;
+      }
+    }
+
+    const localRecord = { ...record, _localOnly: true };
+    const list = await this.getJudgeTokens();
+    list.unshift(localRecord);
+    try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
+
+    if (this.isLive() && !cloudSaved && cloudError) {
+      const isMissingTable = cloudError?.code === 'PGRST205' || cloudError?.message?.includes('schema cache') || cloudError?.message?.includes('does not exist');
+      localRecord._cloudSyncWarning = isMissingTable
+        ? 'Cloud table "judge_tokens" is missing in Supabase. Run migrations/20261128_add_judge_judgment_system.sql in Supabase SQL Editor.'
+        : `Cloud sync failed (${cloudError.message}). Saved locally only.`;
+    }
+    return localRecord;
+  },
+
+  async updateJudgeToken(id, updates) {
+    const payload = { ...updates, updated_at: new Date().toISOString() };
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
+      try {
+        const { data, error } = await client
+          .from('judge_tokens')
+          .update(payload)
+          .eq('id', id)
+          .select('*, events(*)')
+          .maybeSingle();
+        if (!error && data) {
+          const list = await this.getJudgeTokens();
+          const idx = list.findIndex((t) => t.id === id);
+          if (idx !== -1) list[idx] = data;
+          try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
+          return data;
+        }
+      } catch (err) {
+        console.warn('[Supabase updateJudgeToken]', err?.message || err);
+      }
+    }
+    const list = await this.getJudgeTokens();
+    const idx = list.findIndex((t) => t.id === id);
+    if (idx === -1) throw new Error('Judge token record not found.');
+    list[idx] = { ...list[idx], ...payload };
+    try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
+    return list[idx];
+  },
+
+  async toggleJudgeTokenStatus(id, isActive) {
+    return await this.updateJudgeToken(id, { is_active: Boolean(isActive) });
+  },
+
+  async regenerateJudgeToken(id) {
+    return await this.updateJudgeToken(id, { token: generateJudgeToken(), is_active: true });
+  },
+
+  async deleteJudgeToken(id) {
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
+      try {
+        await client.from('judge_tokens').delete().eq('id', id);
+      } catch (err) {
+        console.warn('[Supabase deleteJudgeToken]', err?.message || err);
+      }
+    }
+    const tokens = (await this.getJudgeTokens()).filter((t) => t.id !== id);
+    try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(tokens)); } catch (_) {}
+    const entries = safeParseJson(localStorage.getItem(STORAGE_KEYS.JUDGMENT_ENTRIES), []);
+    if (Array.isArray(entries)) {
+      const cleaned = entries.filter((e) => e.judge_token_id !== id);
+      try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(cleaned)); } catch (_) {}
+    }
+    return true;
+  },
+
+  async getJudgmentEntries(festId = null) {
+    let cloudRows = null;
+    if (this.isLive()) {
+      try {
+        let data = null;
+        let error = null;
+        if (supabase) {
+          let query = supabase
+            .from('judgment_entries')
+            .select('*, events(*), judge_tokens(id, judge_name, judge_email, token, is_active, expires_at, last_activity_at)')
+            .order('updated_at', { ascending: false });
+          if (festId) query = query.eq('fest_id', festId);
+          ({ data, error } = await query);
+          if (error) {
+            let fallbackQ = supabase.from('judgment_entries').select('*').order('updated_at', { ascending: false });
+            if (festId) fallbackQ = fallbackQ.eq('fest_id', festId);
+            ({ data, error } = await fallbackQ);
+          }
+        } else {
+          const filter = festId ? `&fest_id=eq.${encodeURIComponent(festId)}` : '';
+          ({ data, error } = await restSelect(
+            'judgment_entries',
+            `select=*,events(*),judge_tokens(id,judge_name,judge_email,token,is_active,expires_at,last_activity_at)&order=updated_at.desc${filter}`
+          ));
+          if (error) {
+            ({ data, error } = await restSelect('judgment_entries', `select=*&order=updated_at.desc${filter}`));
+          }
+        }
+        if (!error && Array.isArray(data)) cloudRows = data;
+      } catch (err) {
+        console.warn('[Supabase getJudgmentEntries]', err?.message || err);
+      }
+    }
+
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.JUDGMENT_ENTRIES) : null;
+    const localList = safeParseJson(raw, []);
+    const safeLocal = Array.isArray(localList) ? localList : [];
+
+    let list;
+    if (cloudRows !== null) {
+      const mergedMap = new Map();
+      cloudRows.forEach((row) => mergedMap.set(row.id, row));
+      safeLocal.filter((l) => l && l._localOnly && (!festId || l.fest_id === festId)).forEach((l) => {
+        if (!mergedMap.has(l.id)) mergedMap.set(l.id, l);
+      });
+      list = Array.from(mergedMap.values());
+      if (!festId) {
+        try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(list)); } catch (_) {}
+      }
+    } else {
+      list = festId ? safeLocal.filter((e) => e.fest_id === festId) : safeLocal;
+    }
+
+    return list.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime());
+  },
+
+  async publishJudgmentEntry(entryId, isPublished) {
+    const publishFlag = Boolean(isPublished);
+    const entries = await this.getJudgmentEntries();
+    const existing = entries.find((e) => e.id === entryId);
+    const hasRules = existing && (
+      (Array.isArray(existing.rules) && existing.rules.length > 0) ||
+      String(existing.rules_summary || '').trim().length > 0
+    );
+    if (publishFlag && existing && !hasRules) {
+      throw new Error('Cannot publish empty judgment rules. Wait for the judge to submit rules first.');
+    }
+
+    const now = new Date().toISOString();
+    const updates = {
+      is_published: publishFlag,
+      status: publishFlag ? 'PUBLISHED' : (hasRules ? 'SUBMITTED' : 'DRAFT'),
+      published_at: publishFlag ? now : null,
+      updated_at: now,
+    };
+
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
+      try {
+        const { data, error } = await client
+          .from('judgment_entries')
+          .update(updates)
+          .eq('id', entryId)
+          .select('*, events(*), judge_tokens(id, judge_name, judge_email, token, is_active, expires_at, last_activity_at)')
+          .maybeSingle();
+        if (!error && data) {
+          const refreshed = entries.map((e) => (e.id === entryId ? data : e));
+          try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(refreshed)); } catch (_) {}
+          return data;
+        }
+        if (error && error.code !== 'PGRST205') throw error;
+      } catch (err) {
+        if (err?.code !== 'PGRST205' && !err?.message?.includes('schema cache')) throw err;
+      }
+    }
+
+    if (!existing) throw new Error('Judgment entry not found.');
+    const updatedLocal = { ...existing, ...updates };
+    const nextList = entries.map((e) => (e.id === entryId ? updatedLocal : e));
+    try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(nextList)); } catch (_) {}
+    return updatedLocal;
+  },
+
+  async verifyJudgeToken(rawToken) {
+    const cleanToken = sanitizePlainText(rawToken || '', 64).toUpperCase().replace(/\s+/g, '-');
+    if (!cleanToken) throw new Error('Please enter a valid judge access token.');
+
+    let rpcMissing = false;
+    if (this.isLive()) {
+      try {
+        const client = await getSupabaseClient();
+        const { data, error } = client
+          ? await client.rpc('verify_judge_token', { p_token: cleanToken })
+          : await restRpc('verify_judge_token', { p_token: cleanToken });
+
+        if (!error && data && data.tokenRecord) {
+          return data;
+        }
+        if (error) {
+          const isMissingFn =
+            error.code === 'PGRST202' ||
+            error.code === '42883' ||
+            error.code === 'PGRST205' ||
+            /could not find the function|does not exist|schema cache/i.test(error.message || '');
+          if (!isMissingFn) {
+            throw new Error(error.message || 'This token is invalid or has been revoked by the admin');
+          }
+          rpcMissing = true;
+        }
+      } catch (err) {
+        const isMissingFn =
+          err?.code === 'PGRST202' ||
+          err?.code === '42883' ||
+          err?.code === 'PGRST205' ||
+          /could not find the function|does not exist|schema cache/i.test(err?.message || '');
+        if (!isMissingFn) throw err;
+        rpcMissing = true;
+      }
+    }
+
+    // Fallback when migration RPC is not installed yet or offline demo mode is active
+    const tokens = await this.getJudgeTokens();
+    const tok = tokens.find((t) => String(t.token || '').trim().toUpperCase() === cleanToken);
+    if (!tok || tok.is_active !== true) {
+      throw new Error('This token is invalid or has been revoked by the admin');
+    }
+    if (tok.expires_at && Date.parse(tok.expires_at) <= Date.now()) {
+      throw new Error('This access token has expired. Please contact the festival administration.');
+    }
+
+    const events = await this.getEvents();
+    const fest = tok.events || events.find((e) => e.id === tok.fest_id) || null;
+    if (!fest) {
+      throw new Error('The fest assigned to this token could not be found.');
+    }
+
+    const now = new Date().toISOString();
+    try { await this.updateJudgeToken(tok.id, { last_activity_at: now }); } catch (_) {}
+
+    const entries = await this.getJudgmentEntries(tok.fest_id);
+    const entry = entries.find((e) => e.fest_id === tok.fest_id && e.judge_token_id === tok.id) || null;
+    return {
+      tokenRecord: { ...tok, last_activity_at: now },
+      fest,
+      entry,
+      _rpcFallback: rpcMissing,
+    };
+  },
+
+  async saveJudgeJudgment(rawToken, festId, { rules = [], rules_summary = '', scores_or_remarks = [] } = {}) {
+    const cleanToken = sanitizePlainText(rawToken || '', 64).toUpperCase().replace(/\s+/g, '-');
+    if (!cleanToken) throw new Error('This token is invalid or has been revoked by the admin');
+
+    const cleanRules = sanitizeJudgmentRules(rules);
+    const cleanSummary = sanitizePlainText(rules_summary, 4000);
+    const cleanRemarks = sanitizeJudgmentRemarks(scores_or_remarks);
+
+    if (cleanRules.length === 0 && !cleanSummary) {
+      throw new Error('Please add at least one judgment rule/criterion or summary before syncing.');
+    }
+
+    if (this.isLive()) {
+      try {
+        const client = await getSupabaseClient();
+        const { data, error } = client
+          ? await client.rpc('upsert_judge_judgment', {
+              p_token: cleanToken,
+              p_fest_id: festId,
+              p_rules: cleanRules,
+              p_rules_summary: cleanSummary,
+              p_scores_or_remarks: cleanRemarks,
+            })
+          : await restRpc('upsert_judge_judgment', {
+              p_token: cleanToken,
+              p_fest_id: festId,
+              p_rules: cleanRules,
+              p_rules_summary: cleanSummary,
+              p_scores_or_remarks: cleanRemarks,
+            });
+
+        if (!error && data) {
+          const all = safeParseJson(localStorage.getItem(STORAGE_KEYS.JUDGMENT_ENTRIES), []);
+          const safeAll = Array.isArray(all) ? all.filter((e) => e.id !== data.id) : [];
+          safeAll.unshift(data);
+          try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(safeAll)); } catch (_) {}
+          return data;
+        }
+        if (error) {
+          const isMissingFn =
+            error.code === 'PGRST202' ||
+            error.code === '42883' ||
+            error.code === 'PGRST205' ||
+            /could not find the function|does not exist|schema cache/i.test(error.message || '');
+          if (!isMissingFn) {
+            throw new Error(error.message || 'Failed to sync judgment entry.');
+          }
+        }
+      } catch (err) {
+        const isMissingFn =
+          err?.code === 'PGRST202' ||
+          err?.code === '42883' ||
+          err?.code === 'PGRST205' ||
+          /could not find the function|does not exist|schema cache/i.test(err?.message || '');
+        if (!isMissingFn) throw err;
+      }
+    }
+
+    // Fallback when RPC/tables are pending migration or offline
+    const verified = await this.verifyJudgeToken(cleanToken);
+    if (!verified?.tokenRecord || verified.tokenRecord.fest_id !== festId) {
+      throw new Error('Unauthorized scope: this token is restricted to its assigned fest.');
+    }
+
+    const tok = verified.tokenRecord;
+    const now = new Date().toISOString();
+    const existingList = await this.getJudgmentEntries();
+    const existing = existingList.find((e) => e.fest_id === festId && e.judge_token_id === tok.id);
+    const entryPayload = {
+      id: existing?.id || generateUuid(),
+      fest_id: festId,
+      judge_token_id: tok.id,
+      rules: cleanRules,
+      rules_summary: cleanSummary,
+      scores_or_remarks: cleanRemarks,
+      status: 'SUBMITTED',
+      is_published: false,
+      published_at: null,
+      created_at: existing?.created_at || now,
+      updated_at: now,
+    };
+
+    const client = this.isLive() ? await getSupabaseClient() : null;
+    if (client) {
+      try {
+        const { data: upserted, error: upErr } = await client
+          .from('judgment_entries')
+          .upsert([entryPayload], { onConflict: 'fest_id,judge_token_id' })
+          .select()
+          .maybeSingle();
+        if (!upErr && upserted) {
+          const nextAll = [upserted, ...existingList.filter((e) => e.id !== upserted.id)];
+          try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(nextAll)); } catch (_) {}
+          return upserted;
+        }
+      } catch (_) {}
+    }
+
+    const localEntry = { ...entryPayload, _localOnly: true };
+    const nextAll = [localEntry, ...existingList.filter((e) => e.id !== localEntry.id)];
+    try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(nextAll)); } catch (_) {}
+    if (this.isLive()) {
+      localEntry._cloudSyncWarning = 'Saved locally only until SQL migration 20261128_add_judge_judgment_system.sql is executed in Supabase.';
+    }
+    return localEntry;
+  },
+
+  async getPublicFestJudgments(festId = null) {
+    if (this.isLive()) {
+      try {
+        const client = await getSupabaseClient();
+        const { data: rpcData, error: rpcErr } = client
+          ? await client.rpc('get_public_fest_judgments', { p_fest_id: festId || null })
+          : await restRpc('get_public_fest_judgments', { p_fest_id: festId || null });
+
+        if (!rpcErr && Array.isArray(rpcData)) {
+          return rpcData.filter((row) => row && row.is_published === true && (!festId || row.fest_id === festId));
+        }
+
+        // Direct strictly filtered fallback if RPC not yet applied
+        let qData = null;
+        let qErr = null;
+        if (client) {
+          let query = client
+            .from('judgment_entries')
+            .select('id, fest_id, rules, rules_summary, scores_or_remarks, status, is_published, published_at, updated_at, events(id, code, title, category, venue, day_number, time_slot, event_date, status, rules), judge_tokens(judge_name)')
+            .eq('is_published', true)
+            .order('published_at', { ascending: false });
+          if (festId) query = query.eq('fest_id', festId);
+          ({ data: qData, error: qErr } = await query);
+        } else {
+          const filter = festId ? `&fest_id=eq.${encodeURIComponent(festId)}` : '';
+          ({ data: qData, error: qErr } = await restSelect(
+            'judgment_entries',
+            `select=id,fest_id,rules,rules_summary,scores_or_remarks,status,is_published,published_at,updated_at,events(id,code,title,category,venue,day_number,time_slot,event_date,status,rules),judge_tokens(judge_name)&is_published=eq.true&order=published_at.desc${filter}`
+          ));
+        }
+        if (!qErr && Array.isArray(qData)) {
+          return qData
+            .filter((r) => r && r.is_published === true)
+            .map((r) => ({
+              id: r.id,
+              fest_id: r.fest_id,
+              rules: r.rules || [],
+              rules_summary: r.rules_summary || '',
+              scores_or_remarks: r.scores_or_remarks || [],
+              status: r.status,
+              is_published: true,
+              published_at: r.published_at,
+              updated_at: r.updated_at,
+              judge_name: r.judge_tokens?.judge_name || 'Official Jury',
+              fest: r.events || null,
+            }));
+        }
+      } catch (err) {
+        console.warn('[Supabase getPublicFestJudgments]', err?.message || err);
+      }
+    }
+
+    // Strictly filtered local cache fallback (only published entries)
+    const rawEntries = safeParseJson(typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.JUDGMENT_ENTRIES) : null, []);
+    const events = await this.getEvents();
+    const tokens = safeParseJson(typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.JUDGE_TOKENS) : null, []);
+    return (Array.isArray(rawEntries) ? rawEntries : [])
+      .filter((e) => e && e.is_published === true && (!festId || e.fest_id === festId))
+      .map((e) => {
+        const tok = (Array.isArray(tokens) ? tokens : []).find((t) => t.id === e.judge_token_id);
+        const evt = events.find((ev) => ev.id === e.fest_id) || null;
+        return {
+          id: e.id,
+          fest_id: e.fest_id,
+          rules: e.rules || [],
+          rules_summary: e.rules_summary || '',
+          scores_or_remarks: e.scores_or_remarks || [],
+          status: e.status,
+          is_published: true,
+          published_at: e.published_at,
+          updated_at: e.updated_at,
+          judge_name: tok?.judge_name || 'Official Jury',
+          fest: evt,
+        };
+      })
+      .sort((a, b) => new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime());
+  },
+
+  // ----------------------------------------------------------------------------
   // LIVE CLOUD DATABASE DIAGNOSTIC & VERIFICATION ENGINE
   // ----------------------------------------------------------------------------
   async verifyCloudSync() {
@@ -2716,7 +3458,8 @@ export const db = {
     const tables = [
       'fest_settings', 'events', 'registrations', 'announcements',
       'winners', 'scores', 'audit_logs', 'team_leaders',
-      'team_students', 'team_assignments', 'team_groups'
+      'team_students', 'team_assignments', 'team_groups',
+      'judge_tokens', 'judgment_entries'
     ];
     const results = {};
     const client = await getSupabaseClient(4500);

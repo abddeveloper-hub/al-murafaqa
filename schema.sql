@@ -478,3 +478,64 @@ CREATE POLICY "Allow all for team_groups"
 
 GRANT ALL ON public.team_groups TO anon, authenticated, service_role;
 
+-- ==============================================================================
+-- MODULE 10: FEST JUDGMENT SYSTEM & TOKEN-BASED JUDGE PORTAL
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.judge_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token TEXT NOT NULL UNIQUE,
+    judge_name TEXT NOT NULL,
+    judge_email TEXT NOT NULL DEFAULT '',
+    fest_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    expires_at TIMESTAMPTZ NULL,
+    last_activity_at TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_judge_tokens_fest_id ON public.judge_tokens(fest_id);
+CREATE INDEX IF NOT EXISTS idx_judge_tokens_active ON public.judge_tokens(is_active);
+
+CREATE TABLE IF NOT EXISTS public.judgment_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fest_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    judge_token_id UUID NOT NULL REFERENCES public.judge_tokens(id) ON DELETE CASCADE,
+    rules JSONB NOT NULL DEFAULT '[]'::jsonb,
+    rules_summary TEXT NOT NULL DEFAULT '',
+    scores_or_remarks JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SUBMITTED', 'PUBLISHED')),
+    is_published BOOLEAN NOT NULL DEFAULT false,
+    published_at TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT unique_fest_judge_token_entry UNIQUE (fest_id, judge_token_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_judgment_entries_fest_id ON public.judgment_entries(fest_id);
+CREATE INDEX IF NOT EXISTS idx_judgment_entries_token_id ON public.judgment_entries(judge_token_id);
+CREATE INDEX IF NOT EXISTS idx_judgment_entries_published_fest
+    ON public.judgment_entries(fest_id, published_at DESC)
+    WHERE is_published = true;
+
+ALTER TABLE public.judge_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.judgment_entries ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all for judge_tokens" ON public.judge_tokens;
+CREATE POLICY "Allow all for judge_tokens"
+    ON public.judge_tokens FOR ALL
+    TO anon, authenticated, service_role
+    USING (true)
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all for judgment_entries" ON public.judgment_entries;
+CREATE POLICY "Allow all for judgment_entries"
+    ON public.judgment_entries FOR ALL
+    TO anon, authenticated, service_role
+    USING (true)
+    WITH CHECK (true);
+
+GRANT ALL ON public.judge_tokens TO anon, authenticated, service_role;
+GRANT ALL ON public.judgment_entries TO anon, authenticated, service_role;
+
+
