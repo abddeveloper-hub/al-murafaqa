@@ -6,6 +6,11 @@ node_modules/
 .env.local
 .env.*.local
 
+# Database Snapshots & Test Artifacts
+backups/
+test-results/
+playwright-report/
+
 # Editor & OS files
 .idea/
 .vscode/
