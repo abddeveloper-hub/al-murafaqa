@@ -371,6 +371,62 @@ async function restRpc(fnName, params = {}, { timeoutMs = 6000 } = {}) {
   }
 }
 
+function isMissingRelationOrFnError(err) {
+  if (!err) return false;
+  const code = String(err.code || '');
+  const msg = String(err.message || '');
+  return (
+    code === 'PGRST205' ||
+    code === 'PGRST202' ||
+    code === '42883' ||
+    code === '42P01' ||
+    /could not find the (table|function)|does not exist|schema cache/i.test(msg)
+  );
+}
+
+async function restMutate(method, table, queryString = '', body = null, { single = false, prefer = 'return=representation', timeoutMs = 6000 } = {}) {
+  if (!isConfigured) {
+    return { data: null, error: new Error('Supabase credentials are not configured') };
+  }
+  try {
+    const cleanUrl = SUPABASE_CONFIG.url.replace(/\/+$/, '');
+    const url = `${cleanUrl}/rest/v1/${table}${queryString ? '?' + queryString : ''}`;
+    const headers = {
+      apikey: SUPABASE_CONFIG.anonKey,
+      Authorization: `Bearer ${SUPABASE_CONFIG.anonKey}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+    if (prefer) headers.Prefer = prefer;
+    const res = await timedFetch(
+      url,
+      {
+        method,
+        headers,
+        body: body !== null && body !== undefined ? JSON.stringify(body) : undefined,
+      },
+      timeoutMs
+    );
+    const text = await res.text().catch(() => '');
+    if (!res.ok) {
+      let parsedErr = null;
+      try { parsedErr = text ? JSON.parse(text) : null; } catch (_) {}
+      const err = new Error(parsedErr?.message || text || `REST HTTP ${res.status}`);
+      if (parsedErr?.code) err.code = parsedErr.code;
+      return { data: null, error: err };
+    }
+    if (!text) return { data: single ? null : [], error: null };
+    const json = JSON.parse(text);
+    if (single) {
+      const row = Array.isArray(json) ? (json[0] ?? null) : json;
+      return { data: row, error: null };
+    }
+    return { data: json, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
 // ------------------------------------------------------------------------------
 // 2. DEFAULT SETTINGS & EMPTY DATA COLLECTIONS (Live Supabase Connected)
 // ------------------------------------------------------------------------------
@@ -2910,13 +2966,14 @@ export const db = {
   // ----------------------------------------------------------------------------
   // MODULE 10: FEST JUDGMENT SYSTEM & TOKEN-BASED JUDGE PORTAL
   // ----------------------------------------------------------------------------
+  _judgeCloudSyncState: 'unknown',
+
   async syncLocalJudgeTokensToCloud() {
     if (!this.isLive() || typeof localStorage === 'undefined') return { synced: 0 };
     const localList = safeParseJson(localStorage.getItem(STORAGE_KEYS.JUDGE_TOKENS), []);
     const pending = Array.isArray(localList) ? localList.filter((t) => t && t._localOnly) : [];
     if (pending.length === 0) return { synced: 0 };
     const client = await getSupabaseClient();
-    if (!client) return { synced: 0 };
 
     let synced = 0;
     const remaining = [];
@@ -2927,11 +2984,18 @@ export const db = {
       }
       const { _localOnly, _cloudSyncWarning, events, fest, ...cleanPayload } = tok;
       try {
-        const { data, error } = await client.from('judge_tokens').upsert([cleanPayload], { onConflict: 'token' }).select().maybeSingle();
+        const { data, error } = client
+          ? await client.from('judge_tokens').upsert([cleanPayload], { onConflict: 'token' }).select().maybeSingle()
+          : await restMutate('POST', 'judge_tokens', 'on_conflict=token&select=*', [cleanPayload], {
+              single: true,
+              prefer: 'resolution=merge-duplicates,return=representation',
+            });
         if (!error && data) {
+          this._judgeCloudSyncState = 'ready';
           synced++;
           remaining.push(data);
         } else {
+          if (isMissingRelationOrFnError(error)) this._judgeCloudSyncState = 'missing_tables';
           remaining.push(tok);
         }
       } catch (_) {
@@ -2942,33 +3006,82 @@ export const db = {
     return { synced };
   },
 
+  async syncLocalJudgmentEntriesToCloud() {
+    if (!this.isLive() || typeof localStorage === 'undefined') return { synced: 0 };
+    const localList = safeParseJson(localStorage.getItem(STORAGE_KEYS.JUDGMENT_ENTRIES), []);
+    const pending = Array.isArray(localList) ? localList.filter((e) => e && e._localOnly) : [];
+    if (pending.length === 0) return { synced: 0 };
+    const client = await getSupabaseClient();
+
+    let synced = 0;
+    const remaining = [];
+    for (const entry of localList) {
+      if (!entry || !entry._localOnly) {
+        remaining.push(entry);
+        continue;
+      }
+      const { _localOnly, _cloudSyncWarning, events, fest, judge_tokens, ...cleanPayload } = entry;
+      try {
+        const { data, error } = client
+          ? await client.from('judgment_entries').upsert([cleanPayload], { onConflict: 'fest_id,judge_token_id' }).select().maybeSingle()
+          : await restMutate('POST', 'judgment_entries', 'on_conflict=fest_id,judge_token_id&select=*', [cleanPayload], {
+              single: true,
+              prefer: 'resolution=merge-duplicates,return=representation',
+            });
+        if (!error && data) {
+          this._judgeCloudSyncState = 'ready';
+          synced++;
+          remaining.push(data);
+        } else {
+          if (isMissingRelationOrFnError(error)) this._judgeCloudSyncState = 'missing_tables';
+          remaining.push(entry);
+        }
+      } catch (_) {
+        remaining.push(entry);
+      }
+    }
+    try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(remaining)); } catch (_) {}
+    return { synced };
+  },
+
   async getJudgeTokens() {
     let cloudRows = null;
     if (this.isLive()) {
       try {
+        const client = await getSupabaseClient(2500);
         let data = null;
         let error = null;
-        if (supabase) {
-          ({ data, error } = await supabase
+        if (client) {
+          ({ data, error } = await client
             .from('judge_tokens')
             .select('*, events(*)')
             .order('created_at', { ascending: false }));
-          if (error) {
-            ({ data, error } = await supabase
+          if (error && !isMissingRelationOrFnError(error)) {
+            ({ data, error } = await client
               .from('judge_tokens')
               .select('*')
               .order('created_at', { ascending: false }));
           }
         } else {
           ({ data, error } = await restSelect('judge_tokens', 'select=*,events(*)&order=created_at.desc'));
-          if (error) {
+          if (error && !isMissingRelationOrFnError(error)) {
             ({ data, error } = await restSelect('judge_tokens', 'select=*&order=created_at.desc'));
           }
         }
-        if (!error && Array.isArray(data)) cloudRows = data;
+        if (!error && Array.isArray(data)) {
+          cloudRows = data;
+          this._judgeCloudSyncState = 'ready';
+        } else if (error) {
+          if (isMissingRelationOrFnError(error)) {
+            this._judgeCloudSyncState = 'missing_tables';
+          }
+          console.warn('[Supabase getJudgeTokens]', error.message || error);
+        }
       } catch (err) {
         console.warn('[Supabase getJudgeTokens]', err?.message || err);
       }
+    } else {
+      this._judgeCloudSyncState = 'offline';
     }
 
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.JUDGE_TOKENS) : null;
@@ -3020,26 +3133,55 @@ export const db = {
       updated_at: now,
     };
 
-    let cloudSaved = false;
     let cloudError = null;
-    const client = this.isLive() ? await getSupabaseClient() : null;
-    if (client) {
+    if (this.isLive()) {
+      const client = await getSupabaseClient(2500);
       try {
-        const { data: inserted, error } = await client
-          .from('judge_tokens')
-          .insert([record])
-          .select('*, events(*)')
-          .maybeSingle();
+        let inserted = null;
+        let error = null;
+        if (client) {
+          ({ data: inserted, error } = await client
+            .from('judge_tokens')
+            .insert([record])
+            .select('*, events(*)')
+            .maybeSingle());
+          if (error && !isMissingRelationOrFnError(error) && String(error.code) === 'PGRST200') {
+            ({ data: inserted, error } = await client
+              .from('judge_tokens')
+              .insert([record])
+              .select('*')
+              .maybeSingle());
+          }
+        } else {
+          ({ data: inserted, error } = await restMutate('POST', 'judge_tokens', 'select=*', [record], { single: true }));
+        }
+
         if (!error && inserted) {
-          cloudSaved = true;
+          this._judgeCloudSyncState = 'ready';
           const list = await this.getJudgeTokens();
           if (!list.some((t) => t.id === inserted.id)) list.unshift(inserted);
           try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
           return inserted;
         }
-        if (error) cloudError = error;
+        if (error) {
+          if (String(error.code) === '23505') {
+            throw new Error(`Judge token "${cleanToken}" already exists. Generate a fresh token.`);
+          }
+          if (String(error.code) === '23503') {
+            throw new Error('Selected Fest does not exist in the cloud database yet. Sync events first.');
+          }
+          if (!isMissingRelationOrFnError(error)) {
+            throw new Error(error.message || 'Failed to save judge token to Supabase.');
+          }
+          cloudError = error;
+          this._judgeCloudSyncState = 'missing_tables';
+        }
       } catch (err) {
+        if (!isMissingRelationOrFnError(err) && !/failed to fetch|networkerror|timed out/i.test(String(err?.message || ''))) {
+          throw err;
+        }
         cloudError = err;
+        if (isMissingRelationOrFnError(err)) this._judgeCloudSyncState = 'missing_tables';
       }
     }
 
@@ -3048,9 +3190,8 @@ export const db = {
     list.unshift(localRecord);
     try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
 
-    if (this.isLive() && !cloudSaved && cloudError) {
-      const isMissingTable = cloudError?.code === 'PGRST205' || cloudError?.message?.includes('schema cache') || cloudError?.message?.includes('does not exist');
-      localRecord._cloudSyncWarning = isMissingTable
+    if (this.isLive() && cloudError) {
+      localRecord._cloudSyncWarning = isMissingRelationOrFnError(cloudError)
         ? 'Cloud table "judge_tokens" is missing in Supabase. Run migrations/20261128_add_judge_judgment_system.sql in Supabase SQL Editor.'
         : `Cloud sync failed (${cloudError.message}). Saved locally only.`;
     }
@@ -3059,26 +3200,55 @@ export const db = {
 
   async updateJudgeToken(id, updates) {
     const payload = { ...updates, updated_at: new Date().toISOString() };
-    const client = this.isLive() ? await getSupabaseClient() : null;
-    if (client) {
+    if (this.isLive()) {
+      const client = await getSupabaseClient(2500);
       try {
-        const { data, error } = await client
-          .from('judge_tokens')
-          .update(payload)
-          .eq('id', id)
-          .select('*, events(*)')
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        if (client) {
+          ({ data, error } = await client
+            .from('judge_tokens')
+            .update(payload)
+            .eq('id', id)
+            .select('*, events(*)')
+            .maybeSingle());
+          if (error && String(error.code) === 'PGRST200') {
+            ({ data, error } = await client
+              .from('judge_tokens')
+              .update(payload)
+              .eq('id', id)
+              .select('*')
+              .maybeSingle());
+          }
+        } else {
+          ({ data, error } = await restMutate('PATCH', 'judge_tokens', `id=eq.${encodeURIComponent(id)}&select=*`, payload, { single: true }));
+        }
+
         if (!error && data) {
+          this._judgeCloudSyncState = 'ready';
           const list = await this.getJudgeTokens();
           const idx = list.findIndex((t) => t.id === id);
           if (idx !== -1) list[idx] = data;
           try { localStorage.setItem(STORAGE_KEYS.JUDGE_TOKENS, JSON.stringify(list)); } catch (_) {}
           return data;
         }
+        if (error) {
+          if (String(error.code) === '23505') {
+            throw new Error('Generated token collided with an existing token. Please try again.');
+          }
+          if (!isMissingRelationOrFnError(error)) {
+            throw new Error(error.message || 'Failed to update judge token in Supabase.');
+          }
+          this._judgeCloudSyncState = 'missing_tables';
+        }
       } catch (err) {
+        if (!isMissingRelationOrFnError(err) && !/failed to fetch|networkerror|timed out/i.test(String(err?.message || ''))) {
+          throw err;
+        }
         console.warn('[Supabase updateJudgeToken]', err?.message || err);
       }
     }
+
     const list = await this.getJudgeTokens();
     const idx = list.findIndex((t) => t.id === id);
     if (idx === -1) throw new Error('Judge token record not found.');
@@ -3096,11 +3266,21 @@ export const db = {
   },
 
   async deleteJudgeToken(id) {
-    const client = this.isLive() ? await getSupabaseClient() : null;
-    if (client) {
+    if (this.isLive()) {
+      const client = await getSupabaseClient(2500);
       try {
-        await client.from('judge_tokens').delete().eq('id', id);
+        const { error } = client
+          ? await client.from('judge_tokens').delete().eq('id', id)
+          : await restMutate('DELETE', 'judge_tokens', `id=eq.${encodeURIComponent(id)}`, null, { prefer: '' });
+        if (error && !isMissingRelationOrFnError(error)) {
+          throw new Error(error.message || 'Failed to delete judge token from Supabase.');
+        }
+        if (!error) this._judgeCloudSyncState = 'ready';
+        if (error && isMissingRelationOrFnError(error)) this._judgeCloudSyncState = 'missing_tables';
       } catch (err) {
+        if (!isMissingRelationOrFnError(err) && !/failed to fetch|networkerror|timed out/i.test(String(err?.message || ''))) {
+          throw err;
+        }
         console.warn('[Supabase deleteJudgeToken]', err?.message || err);
       }
     }
@@ -3118,17 +3298,18 @@ export const db = {
     let cloudRows = null;
     if (this.isLive()) {
       try {
+        const client = await getSupabaseClient(2500);
         let data = null;
         let error = null;
-        if (supabase) {
-          let query = supabase
+        if (client) {
+          let query = client
             .from('judgment_entries')
             .select('*, events(*), judge_tokens(id, judge_name, judge_email, token, is_active, expires_at, last_activity_at)')
             .order('updated_at', { ascending: false });
           if (festId) query = query.eq('fest_id', festId);
           ({ data, error } = await query);
-          if (error) {
-            let fallbackQ = supabase.from('judgment_entries').select('*').order('updated_at', { ascending: false });
+          if (error && !isMissingRelationOrFnError(error)) {
+            let fallbackQ = client.from('judgment_entries').select('*').order('updated_at', { ascending: false });
             if (festId) fallbackQ = fallbackQ.eq('fest_id', festId);
             ({ data, error } = await fallbackQ);
           }
@@ -3138,11 +3319,19 @@ export const db = {
             'judgment_entries',
             `select=*,events(*),judge_tokens(id,judge_name,judge_email,token,is_active,expires_at,last_activity_at)&order=updated_at.desc${filter}`
           ));
-          if (error) {
+          if (error && !isMissingRelationOrFnError(error)) {
             ({ data, error } = await restSelect('judgment_entries', `select=*&order=updated_at.desc${filter}`));
           }
         }
-        if (!error && Array.isArray(data)) cloudRows = data;
+        if (!error && Array.isArray(data)) {
+          cloudRows = data;
+          this._judgeCloudSyncState = 'ready';
+        } else if (error) {
+          if (isMissingRelationOrFnError(error)) {
+            this._judgeCloudSyncState = 'missing_tables';
+          }
+          console.warn('[Supabase getJudgmentEntries]', error.message || error);
+        }
       } catch (err) {
         console.warn('[Supabase getJudgmentEntries]', err?.message || err);
       }
@@ -3190,23 +3379,44 @@ export const db = {
       updated_at: now,
     };
 
-    const client = this.isLive() ? await getSupabaseClient() : null;
-    if (client) {
+    if (this.isLive()) {
+      const client = await getSupabaseClient(2500);
       try {
-        const { data, error } = await client
-          .from('judgment_entries')
-          .update(updates)
-          .eq('id', entryId)
-          .select('*, events(*), judge_tokens(id, judge_name, judge_email, token, is_active, expires_at, last_activity_at)')
-          .maybeSingle();
+        let data = null;
+        let error = null;
+        if (client) {
+          ({ data, error } = await client
+            .from('judgment_entries')
+            .update(updates)
+            .eq('id', entryId)
+            .select('*, events(*), judge_tokens(id, judge_name, judge_email, token, is_active, expires_at, last_activity_at)')
+            .maybeSingle());
+          if (error && String(error.code) === 'PGRST200') {
+            ({ data, error } = await client
+              .from('judgment_entries')
+              .update(updates)
+              .eq('id', entryId)
+              .select('*')
+              .maybeSingle());
+          }
+        } else {
+          ({ data, error } = await restMutate('PATCH', 'judgment_entries', `id=eq.${encodeURIComponent(entryId)}&select=*`, updates, { single: true }));
+        }
+
         if (!error && data) {
+          this._judgeCloudSyncState = 'ready';
           const refreshed = entries.map((e) => (e.id === entryId ? data : e));
           try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(refreshed)); } catch (_) {}
           return data;
         }
-        if (error && error.code !== 'PGRST205') throw error;
+        if (error && !isMissingRelationOrFnError(error)) {
+          throw new Error(error.message || 'Failed to update publication state.');
+        }
+        if (error && isMissingRelationOrFnError(error)) this._judgeCloudSyncState = 'missing_tables';
       } catch (err) {
-        if (err?.code !== 'PGRST205' && !err?.message?.includes('schema cache')) throw err;
+        if (!isMissingRelationOrFnError(err) && !/failed to fetch|networkerror|timed out/i.test(String(err?.message || ''))) {
+          throw err;
+        }
       }
     }
 
@@ -3224,32 +3434,23 @@ export const db = {
     let rpcMissing = false;
     if (this.isLive()) {
       try {
-        const client = await getSupabaseClient();
+        const client = await getSupabaseClient(2500);
         const { data, error } = client
           ? await client.rpc('verify_judge_token', { p_token: cleanToken })
           : await restRpc('verify_judge_token', { p_token: cleanToken });
 
         if (!error && data && data.tokenRecord) {
+          this._judgeCloudSyncState = 'ready';
           return data;
         }
         if (error) {
-          const isMissingFn =
-            error.code === 'PGRST202' ||
-            error.code === '42883' ||
-            error.code === 'PGRST205' ||
-            /could not find the function|does not exist|schema cache/i.test(error.message || '');
-          if (!isMissingFn) {
+          if (!isMissingRelationOrFnError(error)) {
             throw new Error(error.message || 'This token is invalid or has been revoked by the admin');
           }
           rpcMissing = true;
         }
       } catch (err) {
-        const isMissingFn =
-          err?.code === 'PGRST202' ||
-          err?.code === '42883' ||
-          err?.code === 'PGRST205' ||
-          /could not find the function|does not exist|schema cache/i.test(err?.message || '');
-        if (!isMissingFn) throw err;
+        if (!isMissingRelationOrFnError(err)) throw err;
         rpcMissing = true;
       }
     }
@@ -3297,7 +3498,7 @@ export const db = {
 
     if (this.isLive()) {
       try {
-        const client = await getSupabaseClient();
+        const client = await getSupabaseClient(2500);
         const { data, error } = client
           ? await client.rpc('upsert_judge_judgment', {
               p_token: cleanToken,
@@ -3315,33 +3516,22 @@ export const db = {
             });
 
         if (!error && data) {
+          this._judgeCloudSyncState = 'ready';
           const all = safeParseJson(localStorage.getItem(STORAGE_KEYS.JUDGMENT_ENTRIES), []);
           const safeAll = Array.isArray(all) ? all.filter((e) => e.id !== data.id) : [];
           safeAll.unshift(data);
           try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(safeAll)); } catch (_) {}
           return data;
         }
-        if (error) {
-          const isMissingFn =
-            error.code === 'PGRST202' ||
-            error.code === '42883' ||
-            error.code === 'PGRST205' ||
-            /could not find the function|does not exist|schema cache/i.test(error.message || '');
-          if (!isMissingFn) {
-            throw new Error(error.message || 'Failed to sync judgment entry.');
-          }
+        if (error && !isMissingRelationOrFnError(error)) {
+          throw new Error(error.message || 'Failed to sync judgment entry.');
         }
       } catch (err) {
-        const isMissingFn =
-          err?.code === 'PGRST202' ||
-          err?.code === '42883' ||
-          err?.code === 'PGRST205' ||
-          /could not find the function|does not exist|schema cache/i.test(err?.message || '');
-        if (!isMissingFn) throw err;
+        if (!isMissingRelationOrFnError(err)) throw err;
       }
     }
 
-    // Fallback when RPC/tables are pending migration or offline
+    // Fallback when RPC is missing or offline
     const verified = await this.verifyJudgeToken(cleanToken);
     if (!verified?.tokenRecord || verified.tokenRecord.fest_id !== festId) {
       throw new Error('Unauthorized scope: this token is restricted to its assigned fest.');
@@ -3365,20 +3555,35 @@ export const db = {
       updated_at: now,
     };
 
-    const client = this.isLive() ? await getSupabaseClient() : null;
-    if (client) {
+    if (this.isLive()) {
+      const client = await getSupabaseClient(2500);
       try {
-        const { data: upserted, error: upErr } = await client
-          .from('judgment_entries')
-          .upsert([entryPayload], { onConflict: 'fest_id,judge_token_id' })
-          .select()
-          .maybeSingle();
+        const { data: upserted, error: upErr } = client
+          ? await client
+              .from('judgment_entries')
+              .upsert([entryPayload], { onConflict: 'fest_id,judge_token_id' })
+              .select()
+              .maybeSingle()
+          : await restMutate('POST', 'judgment_entries', 'on_conflict=fest_id,judge_token_id&select=*', [entryPayload], {
+              single: true,
+              prefer: 'resolution=merge-duplicates,return=representation',
+            });
+
         if (!upErr && upserted) {
+          this._judgeCloudSyncState = 'ready';
           const nextAll = [upserted, ...existingList.filter((e) => e.id !== upserted.id)];
           try { localStorage.setItem(STORAGE_KEYS.JUDGMENT_ENTRIES, JSON.stringify(nextAll)); } catch (_) {}
           return upserted;
         }
-      } catch (_) {}
+        if (upErr && !isMissingRelationOrFnError(upErr)) {
+          throw new Error(upErr.message || 'Failed to sync judgment entry to Supabase.');
+        }
+        if (upErr && isMissingRelationOrFnError(upErr)) this._judgeCloudSyncState = 'missing_tables';
+      } catch (err) {
+        if (!isMissingRelationOrFnError(err) && !/failed to fetch|networkerror|timed out/i.test(String(err?.message || ''))) {
+          throw err;
+        }
+      }
     }
 
     const localEntry = { ...entryPayload, _localOnly: true };

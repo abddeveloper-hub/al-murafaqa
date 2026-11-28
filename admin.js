@@ -490,8 +490,11 @@ async function loadAllData() {
     updateAdminLiveDateBadges();
 
     if (db.isLive() && typeof db.syncLocalJudgeTokensToCloud === 'function') {
-      db.syncLocalJudgeTokensToCloud().then((res) => {
-        if (res && res.synced > 0) {
+      db.syncLocalJudgeTokensToCloud().then(async (tokRes) => {
+        const entryRes = typeof db.syncLocalJudgmentEntriesToCloud === 'function'
+          ? await db.syncLocalJudgmentEntriesToCloud()
+          : { synced: 0 };
+        if ((tokRes && tokRes.synced > 0) || (entryRes && entryRes.synced > 0)) {
           refreshJudgmentsDataOnly();
         }
       }).catch(() => {});
@@ -6932,6 +6935,25 @@ function initJudgmentsRealtimeSync() {
 function renderJudgmentsTab() {
   populateJudgmentFestDropdowns();
 
+  const cloudState = db._judgeCloudSyncState || 'unknown';
+  const alertBox = document.getElementById('judge-cloud-migration-alert');
+  const syncPill = document.getElementById('judge-live-sync-pill');
+  if (alertBox) {
+    alertBox.classList.toggle('hidden', cloudState !== 'missing_tables');
+  }
+  if (syncPill) {
+    if (cloudState === 'missing_tables') {
+      syncPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold';
+      syncPill.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>Local Fallback (Run SQL Migration)</span>';
+    } else if (db.isLive()) {
+      syncPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold';
+      syncPill.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>Live Supabase Cloud Sync</span>';
+    } else {
+      syncPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-bold';
+      syncPill.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span><span>Offline Local Mode</span>';
+    }
+  }
+
   const tokens = cachedJudgeTokens || [];
   const entries = cachedJudgmentEntries || [];
 
@@ -7213,9 +7235,14 @@ function renderJudgmentsReviewPanel() {
             ${badge}
           </div>
 
-          <div class="flex items-center gap-2 text-xs text-slate-600">
+          <div class="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
             <span class="material-symbols-outlined text-[15px] text-indigo-600">gavel</span>
             <span class="font-semibold">${escapeHtml(tok?.judge_name || 'Assigned Judge')}</span>
+            ${tok && getEffectiveTokenState(tok) !== 'active' ? `
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${getEffectiveTokenState(tok) === 'expired' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700'}">
+                ${getEffectiveTokenState(tok)}
+              </span>
+            ` : ''}
             <span class="text-slate-300">•</span>
             <span class="text-[11px] text-slate-500">${escapeHtml(updatedStr)}</span>
           </div>
@@ -7428,6 +7455,29 @@ function setupJudgmentsControls() {
   fillFreshJudgeToken();
 
   if (btnRegen) btnRegen.addEventListener('click', fillFreshJudgeToken);
+  document.getElementById('btn-verify-judge-cloud')?.addEventListener('click', async () => {
+    const syncBtn = document.getElementById('btn-verify-judge-cloud');
+    if (syncBtn) syncBtn.disabled = true;
+    try {
+      const diag = await db.verifyCloudSync();
+      const jtOk = diag?.tables?.judge_tokens?.ok;
+      const jeOk = diag?.tables?.judgment_entries?.ok;
+      if (jtOk && jeOk) {
+        if (typeof db.syncLocalJudgeTokensToCloud === 'function') await db.syncLocalJudgeTokensToCloud();
+        if (typeof db.syncLocalJudgmentEntriesToCloud === 'function') await db.syncLocalJudgmentEntriesToCloud();
+        await refreshJudgmentsDataOnly();
+        showToast('Supabase Judgment tables verified and local drafts synced to cloud!', 'success');
+      } else {
+        db._judgeCloudSyncState = 'missing_tables';
+        renderJudgmentsTab();
+        showToast('Cloud tables still missing (PGRST205). Run migrations/20261128_add_judge_judgment_system.sql in Supabase SQL Editor.', 'warning');
+      }
+    } catch (err) {
+      showToast('Cloud verification failed: ' + err.message, 'error');
+    } finally {
+      if (syncBtn) syncBtn.disabled = false;
+    }
+  });
   if (btnRefresh) {
     btnRefresh.addEventListener('click', async () => {
       await refreshJudgmentsDataOnly();
