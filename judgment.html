@@ -262,37 +262,51 @@
                 ` : '<p class="text-xs text-neutral-400 italic">See adjudication overview above.</p>'}
               </div>
 
-              ${remarks.length > 0 ? `
-                <div class="space-y-3 pt-2 border-t border-neutral-100">
-                  <h3 class="font-headline text-sm font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[18px] text-emerald-700">grading</span>
-                    <span>Published Jury Evaluations &amp; Remarks</span>
-                  </h3>
-                  <div class="overflow-x-auto border border-neutral-200 rounded-2xl">
-                    <table class="w-full text-left text-xs">
-                      <thead class="bg-neutral-50 text-neutral-500 font-bold uppercase border-b border-neutral-200">
-                        <tr>
-                          <th class="py-3 px-4">Competitor / Scope</th>
-                          <th class="py-3 px-4">Score</th>
-                          <th class="py-3 px-4">Official Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-neutral-100">
-                        ${remarks.map((rm) => `
+              ${remarks.length > 0 ? (() => {
+                const scoredCols = rules.filter((r) => Number(r.max_points) > 0 && remarks.some((m) => m.criteria_scores && r.id in m.criteria_scores));
+                const sortedRemarks = [...remarks].sort((a, b) => (Number(b.score ?? -1)) - (Number(a.score ?? -1)));
+                return `
+                  <div class="space-y-3 pt-2 border-t border-neutral-100">
+                    <h3 class="font-headline text-sm font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-[18px] text-emerald-700">grading</span>
+                      <span>Published Jury Scoring Grid &amp; Remarks</span>
+                    </h3>
+                    <div class="overflow-x-auto border border-neutral-200 rounded-2xl">
+                      <table class="w-full text-left text-xs">
+                        <thead class="bg-neutral-50 text-neutral-500 font-bold uppercase border-b border-neutral-200">
                           <tr>
-                            <td class="py-3 px-4">
-                              <div class="font-bold text-neutral-900">${escapeHtml(rm.contestant_name)}</div>
-                              ${rm.institution ? `<div class="text-[11px] text-neutral-500">${escapeHtml(rm.institution)}</div>` : ''}
-                            </td>
-                            <td class="py-3 px-4 font-mono font-bold text-fest-red">${rm.score !== null && rm.score !== undefined ? escapeHtml(String(rm.score)) : '—'}</td>
-                            <td class="py-3 px-4 text-neutral-700 leading-relaxed">${escapeHtml(rm.remarks || '—')}</td>
+                            <th class="py-3 px-4">Competitor / Scope</th>
+                            ${scoredCols.map((c) => `<th class="py-3 px-3 text-center border-l border-neutral-200">${escapeHtml(c.title)}<span class="block text-[9px] text-neutral-400">/${escapeHtml(String(c.max_points))}</span></th>`).join('')}
+                            <th class="py-3 px-4 text-center border-l border-neutral-200">Score</th>
+                            <th class="py-3 px-4 border-l border-neutral-200">Official Remarks</th>
                           </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-100">
+                          ${sortedRemarks.map((rm) => {
+                            const totalDisp = rm.score !== null && rm.score !== undefined
+                              ? `${escapeHtml(String(rm.score))}${rm.max_total ? ` / ${escapeHtml(String(rm.max_total))}` : ''}`
+                              : '—';
+                            return `
+                              <tr>
+                                <td class="py-3 px-4">
+                                  <div class="font-bold text-neutral-900">${escapeHtml(rm.contestant_name)}</div>
+                                  ${rm.institution ? `<div class="text-[11px] text-neutral-500">${escapeHtml(rm.institution)}</div>` : ''}
+                                </td>
+                                ${scoredCols.map((c) => {
+                                  const cv = rm.criteria_scores?.[c.id];
+                                  return `<td class="py-3 px-3 text-center border-l border-neutral-100 font-mono text-neutral-700">${cv !== undefined && cv !== null ? escapeHtml(String(cv)) : '—'}</td>`;
+                                }).join('')}
+                                <td class="py-3 px-4 text-center border-l border-neutral-200 font-mono font-bold text-fest-red whitespace-nowrap">${totalDisp}</td>
+                                <td class="py-3 px-4 border-l border-neutral-200 text-neutral-700 leading-relaxed">${escapeHtml(rm.remarks || '—')}</td>
+                              </tr>
+                            `;
+                          }).join('')}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              ` : ''}
+                `;
+              })() : ''}
             </div>
           </article>
         `;

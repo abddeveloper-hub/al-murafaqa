@@ -161,14 +161,34 @@ function sanitizeJudgmentRemarks(items) {
       const contestant_name = sanitizePlainText(item?.contestant_name || item?.team_name || '', 200);
       const institution = sanitizePlainText(item?.institution || item?.college_name || '', 200);
       const remarks = sanitizePlainText(item?.remarks || item?.notes || '', 1500);
+      const cleanCriteria = {};
+      let criteriaCount = 0;
+      let criteriaSum = 0;
+      if (item?.criteria_scores && typeof item.criteria_scores === 'object' && !Array.isArray(item.criteria_scores)) {
+        for (const [k, v] of Object.entries(item.criteria_scores)) {
+          const cleanKey = sanitizePlainText(k, 80);
+          const numVal = v !== '' && v !== null && v !== undefined ? Number(v) : null;
+          if (cleanKey && Number.isFinite(numVal) && numVal >= 0) {
+            cleanCriteria[cleanKey] = numVal;
+            criteriaSum += numVal;
+            criteriaCount++;
+          }
+        }
+      }
       const scoreRaw = item?.score !== '' && item?.score !== null && item?.score !== undefined ? Number(item.score) : null;
-      const score = Number.isFinite(scoreRaw) && scoreRaw >= 0 ? scoreRaw : null;
-      if (!contestant_name && !remarks && score === null) return null;
+      const score = Number.isFinite(scoreRaw) && scoreRaw >= 0
+        ? scoreRaw
+        : (criteriaCount > 0 ? Math.round(criteriaSum * 100) / 100 : null);
+      const maxRaw = item?.max_total !== '' && item?.max_total !== null && item?.max_total !== undefined ? Number(item.max_total) : null;
+      const max_total = Number.isFinite(maxRaw) && maxRaw > 0 ? maxRaw : null;
+      if (!contestant_name && !remarks && score === null && criteriaCount === 0) return null;
       return {
         id: sanitizePlainText(item?.id || `eval_${idx + 1}`, 80),
         contestant_name: contestant_name || 'General Jury Note',
         institution,
         score,
+        max_total,
+        criteria_scores: cleanCriteria,
         remarks,
       };
     })

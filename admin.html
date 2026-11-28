@@ -1917,19 +1917,35 @@
                 </div>
               </div>
 
-              <!-- MODE B: BULK SCORE ALL AT ONCE -->
+              <!-- MODE B: BULK SCORE MATRIX GRID -->
               <div id="scoring-bulk-panel" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                   <div>
-                    <h4 class="font-headline-sm text-base font-bold text-slate-900">Quick Bulk Sheet (All Competitors)</h4>
-                    <p class="text-xs text-slate-500">Enter marks (0–100) for all competitors in this programme and save in one click.</p>
+                    <h4 class="font-headline-sm text-base font-bold text-slate-900 flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[18px] text-red-600">grid_on</span>
+                      <span>Fast Scoring Grid (All Competitors)</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">Enter 4 rubric marks OR type a total (0–100) directly — totals and ranks compute live. Use ↑/↓ or Enter to jump rows.</p>
                   </div>
-                  <button type="button" id="btn-save-bulk-scores" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0">
-                    <span class="material-symbols-outlined text-[16px]">done_all</span>
-                    <span>Save All Entered Marks</span>
-                  </button>
+                  <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                    <button type="button" id="btn-add-bulk-row" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-[15px]">person_add</span>
+                      <span>+ Add Row</span>
+                    </button>
+                    <button type="button" id="btn-save-bulk-scores" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer">
+                      <span class="material-symbols-outlined text-[16px]">done_all</span>
+                      <span>Save All Marks</span>
+                    </button>
+                  </div>
                 </div>
-                <div id="scoring-bulk-list" class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div class="relative flex-1 max-w-xs">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">search</span>
+                    <input type="text" id="bulk-grid-search" placeholder="Filter competitors in grid..." class="w-full h-9 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-500">
+                  </div>
+                  <span id="bulk-grid-progress" class="text-[11px] font-semibold text-slate-500">0 competitor(s)</span>
+                </div>
+                <div id="scoring-bulk-list" class="overflow-x-auto border border-slate-200 rounded-2xl max-h-[480px] overflow-y-auto">
                   <!-- Populated dynamically -->
                 </div>
               </div>

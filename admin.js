@@ -3110,6 +3110,7 @@ function setupScoringControls() {
   const evSelect = document.getElementById('scoring-event-select');
   if (evSelect) {
     evSelect.addEventListener('change', () => {
+      bulkExtraRows = [];
       resetScoreEditState();
       populateScoringTeams(evSelect.value);
       renderScoringLeaderboard(evSelect.value);
@@ -3222,10 +3223,31 @@ function setupScoringControls() {
     updateFinalScoreCalculation();
   });
 
-  // Submit / Cancel Edit / Bulk Save / Push to Podium
+  // Submit / Cancel Edit / Bulk Grid Controls / Push to Podium
   document.getElementById('btn-submit-score')?.addEventListener('click', submitScorecard);
   document.getElementById('btn-cancel-edit-score')?.addEventListener('click', resetScoreEditState);
   document.getElementById('btn-save-bulk-scores')?.addEventListener('click', saveBulkScores);
+  document.getElementById('btn-add-bulk-row')?.addEventListener('click', () => {
+    bulkExtraRows.push({
+      key: `extra_${Date.now()}_${bulkExtraRows.length}`,
+      registration_id: null,
+      name: '',
+      college: '',
+      source: 'Manual Grid Entry',
+      isManual: true,
+    });
+    const evId = document.getElementById('scoring-event-select')?.value;
+    renderBulkScoringSheet(evId);
+  });
+  document.getElementById('bulk-grid-search')?.addEventListener('input', () => {
+    const query = (document.getElementById('bulk-grid-search')?.value || '').trim().toLowerCase();
+    document.querySelectorAll('#scoring-bulk-list .bulk-score-row').forEach((row) => {
+      const text = (row.textContent || '').toLowerCase() + ' ' +
+        (row.querySelector('.bulk-manual-name')?.value || '').toLowerCase() + ' ' +
+        (row.querySelector('.bulk-manual-college')?.value || '').toLowerCase();
+      row.classList.toggle('hidden', Boolean(query) && !text.includes(query));
+    });
+  });
   document.getElementById('btn-push-to-podium')?.addEventListener('click', pushLeaderboardToPodium);
 
   // Print Certificate Button in Modal
@@ -3328,48 +3350,213 @@ function populateScoringTeams(eventId) {
   }
 }
 
+let bulkExtraRows = [];
+
+function updateBulkGridRanks() {
+  const rows = Array.from(document.querySelectorAll('#scoring-bulk-list .bulk-score-row'));
+  const scored = rows.map((row, i) => {
+    const raw = row.querySelector('.bulk-score-val')?.value?.trim();
+    const num = raw !== undefined && raw !== '' && Number.isFinite(Number(raw)) ? Number(raw) : null;
+    return { row, i, num };
+  });
+
+  const sorted = scored.filter((x) => x.num !== null).sort((a, b) => b.num - a.num);
+  const rankMap = new Map();
+  let last = null;
+  let curRank = 0;
+  sorted.forEach((item, pos) => {
+    if (last === null || item.num < last) {
+      curRank = pos + 1;
+      last = item.num;
+    }
+    rankMap.set(item.i, curRank);
+  });
+
+  scored.forEach(({ row, i }) => {
+    const badge = row.querySelector('.bulk-rank-badge');
+    if (!badge) return;
+    const r = rankMap.get(i);
+    if (r === 1) {
+      badge.textContent = '1ST';
+      badge.className = 'bulk-rank-badge inline-flex px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-mono font-bold text-[10px]';
+    } else if (r === 2) {
+      badge.textContent = '2ND';
+      badge.className = 'bulk-rank-badge inline-flex px-2 py-0.5 rounded bg-slate-200 text-slate-800 border border-slate-300 font-mono font-bold text-[10px]';
+    } else if (r === 3) {
+      badge.textContent = '3RD';
+      badge.className = 'bulk-rank-badge inline-flex px-2 py-0.5 rounded bg-orange-100 text-orange-900 border border-orange-200 font-mono font-bold text-[10px]';
+    } else if (r) {
+      badge.textContent = `#${r}`;
+      badge.className = 'bulk-rank-badge font-mono font-semibold text-[11px] text-slate-600';
+    } else {
+      badge.textContent = '—';
+      badge.className = 'bulk-rank-badge font-mono text-[11px] text-slate-400';
+    }
+  });
+
+  const progressEl = document.getElementById('bulk-grid-progress');
+  if (progressEl) {
+    progressEl.textContent = `${sorted.length} of ${rows.length} competitor(s) filled`;
+  }
+}
+
 function renderBulkScoringSheet(eventId) {
   const container = document.getElementById('scoring-bulk-list');
   if (!container) return;
 
-  const competitors = getEventCompetitors(eventId);
-  if (competitors.length === 0) {
+  const baseCompetitors = getEventCompetitors(eventId);
+  const combined = [...baseCompetitors, ...bulkExtraRows];
+  if (combined.length === 0) {
     container.innerHTML = `
-      <div class="p-6 text-center rounded-xl border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500">
-        No registered or assigned competitors found for this track yet. Switch to <strong>Quick Score (Easy)</strong> and click <strong>+ Type Name Manually</strong> to grade any participant.
+      <div class="p-8 text-center bg-slate-50 text-xs text-slate-500 space-y-2">
+        <p>No registered or assigned competitors found for this track yet.</p>
+        <p>Click <strong>+ Add Row</strong> above to score participants directly in the grid.</p>
       </div>
     `;
+    const progressEl = document.getElementById('bulk-grid-progress');
+    if (progressEl) progressEl.textContent = '0 competitor(s)';
     return;
   }
 
   const judgeName = (document.getElementById('scoring-judge-name')?.value || 'Judge 1').trim().toLowerCase();
   const existingScores = (cachedScores || []).filter((s) => s.event_id === eventId);
 
-  container.innerHTML = competitors.map((c) => {
-    const matchedScore = existingScores.find((s) =>
+  const rowsHtml = combined.map((c) => {
+    const matchedScore = !c.isManual ? existingScores.find((s) =>
       (s.judge_name || '').trim().toLowerCase() === judgeName &&
       ((c.registration_id && s.registration_id === c.registration_id) ||
        (!c.registration_id && (s.team_name || '').trim().toLowerCase() === c.name.trim().toLowerCase()))
-    );
-    const val = matchedScore ? matchedScore.total_score : '';
+    ) : null;
+
+    const c1 = matchedScore ? (matchedScore.criterion_technical ?? '') : '';
+    const c2 = matchedScore ? (matchedScore.criterion_andalusian ?? '') : '';
+    const c3 = matchedScore ? (matchedScore.criterion_creative ?? '') : '';
+    const c4 = matchedScore ? (matchedScore.criterion_decorum ?? '') : '';
+    const total = matchedScore ? (matchedScore.total_score ?? '') : '';
+
+    const identityCell = c.isManual
+      ? `<div class="space-y-1 min-w-[180px]">
+           <input type="text" data-col="name" value="${escapeHtml(c.name)}" placeholder="Competitor Name *" class="bulk-manual-name w-full h-8 px-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900">
+           <input type="text" data-col="college" value="${escapeHtml(c.college)}" placeholder="Institution / Team" class="bulk-manual-college w-full h-7 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600">
+         </div>`
+      : `<div class="min-w-[170px]">
+           <div class="text-xs font-bold text-slate-900 truncate">${escapeHtml(c.name)}</div>
+           <div class="text-[10px] text-slate-500 truncate">${escapeHtml(c.college || 'Independent')} • ${escapeHtml(c.source)}</div>
+         </div>`;
 
     return `
-      <div class="bulk-score-row flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white transition-colors"
-           data-reg-id="${escapeHtml(c.registration_id || '')}"
-           data-name="${escapeHtml(c.name)}"
-           data-college="${escapeHtml(c.college)}"
-           data-score-id="${escapeHtml(matchedScore?.id || '')}">
-        <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold text-slate-900 truncate">${escapeHtml(c.name)}</div>
-          <div class="text-[11px] text-slate-500 truncate">${escapeHtml(c.college || 'Independent')} • ${escapeHtml(c.source)}</div>
-        </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <input type="number" min="0" max="100" value="${val}" placeholder="0–100" class="bulk-score-val w-20 h-9 px-2.5 bg-white border border-slate-300 focus:border-red-600 rounded-lg font-mono text-sm font-bold text-center text-slate-900 focus:outline-none">
-          <span class="text-[10px] font-bold text-slate-400">/100</span>
-        </div>
-      </div>
+      <tr class="bulk-score-row hover:bg-red-50/20 transition-colors"
+          data-manual="${c.isManual ? 'true' : 'false'}"
+          data-reg-id="${escapeHtml(c.registration_id || '')}"
+          data-name="${escapeHtml(c.name)}"
+          data-college="${escapeHtml(c.college)}"
+          data-score-id="${escapeHtml(matchedScore?.id || '')}">
+        <td class="py-2 px-2.5 text-center whitespace-nowrap">
+          <span class="bulk-rank-badge font-mono text-[11px] text-slate-400">—</span>
+        </td>
+        <td class="py-2 px-3">${identityCell}</td>
+        <td class="py-2 px-1.5 border-l border-slate-200 text-center">
+          <input type="number" min="0" max="30" data-col="c1" data-max="30" value="${escapeHtml(String(c1))}" placeholder="0–30" class="bulk-crit-val w-16 h-8 px-1.5 bg-white border border-slate-300 focus:border-red-600 rounded-lg font-mono text-xs font-bold text-center text-slate-900 focus:outline-none">
+        </td>
+        <td class="py-2 px-1.5 border-l border-slate-200 text-center">
+          <input type="number" min="0" max="30" data-col="c2" data-max="30" value="${escapeHtml(String(c2))}" placeholder="0–30" class="bulk-crit-val w-16 h-8 px-1.5 bg-white border border-slate-300 focus:border-red-600 rounded-lg font-mono text-xs font-bold text-center text-slate-900 focus:outline-none">
+        </td>
+        <td class="py-2 px-1.5 border-l border-slate-200 text-center">
+          <input type="number" min="0" max="20" data-col="c3" data-max="20" value="${escapeHtml(String(c3))}" placeholder="0–20" class="bulk-crit-val w-16 h-8 px-1.5 bg-white border border-slate-300 focus:border-red-600 rounded-lg font-mono text-xs font-bold text-center text-slate-900 focus:outline-none">
+        </td>
+        <td class="py-2 px-1.5 border-l border-slate-200 text-center">
+          <input type="number" min="0" max="20" data-col="c4" data-max="20" value="${escapeHtml(String(c4))}" placeholder="0–20" class="bulk-crit-val w-16 h-8 px-1.5 bg-white border border-slate-300 focus:border-red-600 rounded-lg font-mono text-xs font-bold text-center text-slate-900 focus:outline-none">
+        </td>
+        <td class="py-2 px-2.5 border-l border-slate-200 text-center bg-slate-50/70">
+          <input type="number" min="0" max="100" data-col="total" value="${escapeHtml(String(total))}" placeholder="0–100" class="bulk-score-val w-18 h-9 px-2 bg-white border-2 border-red-200 focus:border-red-600 rounded-lg font-mono text-sm font-extrabold text-center text-red-700 focus:outline-none">
+        </td>
+      </tr>
     `;
   }).join('');
+
+  container.innerHTML = `
+    <table class="w-full text-left border-collapse text-xs">
+      <thead class="bg-slate-100 text-slate-600 font-bold uppercase border-b border-slate-200 sticky top-0 z-10">
+        <tr>
+          <th class="py-2.5 px-2.5 text-center w-14">Rank</th>
+          <th class="py-2.5 px-3">Competitor</th>
+          <th class="py-2.5 px-1.5 text-center border-l border-slate-200">Tech<span class="block text-[9px] text-slate-400 font-mono">/30</span></th>
+          <th class="py-2.5 px-1.5 text-center border-l border-slate-200">Theme<span class="block text-[9px] text-slate-400 font-mono">/30</span></th>
+          <th class="py-2.5 px-1.5 text-center border-l border-slate-200">Creat<span class="block text-[9px] text-slate-400 font-mono">/20</span></th>
+          <th class="py-2.5 px-1.5 text-center border-l border-slate-200">Decor<span class="block text-[9px] text-slate-400 font-mono">/20</span></th>
+          <th class="py-2.5 px-2.5 text-center border-l border-slate-200">Total<span class="block text-[9px] text-red-600 font-mono">/100</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200 bg-white">
+        ${rowsHtml}
+      </tbody>
+    </table>
+  `;
+
+  const navVertical = (e) => {
+    if (e.key !== 'Enter' && e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    const col = e.target.getAttribute('data-col');
+    if (!col) return;
+    const delta = e.key === 'ArrowUp' ? -1 : 1;
+    const cells = Array.from(container.querySelectorAll(`input[data-col="${col}"]`)).filter((el) => !el.closest('tr')?.classList.contains('hidden'));
+    const idx = cells.indexOf(e.target);
+    if (idx !== -1 && cells[idx + delta]) {
+      e.preventDefault();
+      cells[idx + delta].focus();
+      cells[idx + delta].select?.();
+    }
+  };
+
+  container.querySelectorAll('.bulk-crit-val').forEach((el) => {
+    el.addEventListener('input', () => {
+      const max = Number(el.getAttribute('data-max') || 30);
+      if (el.value.trim() !== '') {
+        const clamped = Math.max(0, Math.min(max, parseInt(el.value, 10) || 0));
+        if (String(clamped) !== el.value) el.value = String(clamped);
+      }
+      const row = el.closest('tr');
+      const crits = Array.from(row.querySelectorAll('.bulk-crit-val'));
+      const hasAny = crits.some((c) => c.value.trim() !== '');
+      const totalEl = row.querySelector('.bulk-score-val');
+      if (totalEl) {
+        totalEl.value = hasAny ? String(crits.reduce((s, c) => s + (parseInt(c.value, 10) || 0), 0)) : '';
+      }
+      updateBulkGridRanks();
+    });
+    el.addEventListener('keydown', navVertical);
+  });
+
+  container.querySelectorAll('.bulk-score-val').forEach((el) => {
+    el.addEventListener('input', () => {
+      const row = el.closest('tr');
+      const valStr = el.value.trim();
+      const cEls = {
+        c1: row.querySelector('input[data-col="c1"]'),
+        c2: row.querySelector('input[data-col="c2"]'),
+        c3: row.querySelector('input[data-col="c3"]'),
+        c4: row.querySelector('input[data-col="c4"]'),
+      };
+      if (valStr === '') {
+        Object.values(cEls).forEach((inp) => { if (inp) inp.value = ''; });
+      } else {
+        const clamped = Math.max(0, Math.min(100, parseInt(valStr, 10) || 0));
+        if (String(clamped) !== el.value) el.value = String(clamped);
+        const split = splitTotalToRubricCriteria(clamped);
+        if (cEls.c1) cEls.c1.value = String(split.c1);
+        if (cEls.c2) cEls.c2.value = String(split.c2);
+        if (cEls.c3) cEls.c3.value = String(split.c3);
+        if (cEls.c4) cEls.c4.value = String(split.c4);
+      }
+      updateBulkGridRanks();
+    });
+    el.addEventListener('keydown', navVertical);
+  });
+
+  container.querySelectorAll('.bulk-manual-name, .bulk-manual-college').forEach((el) => {
+    el.addEventListener('keydown', navVertical);
+  });
+
+  updateBulkGridRanks();
 }
 
 async function saveBulkScores() {
@@ -3385,16 +3572,28 @@ async function saveBulkScores() {
   for (const row of rows) {
     const rawStr = row.querySelector('.bulk-score-val')?.value?.trim();
     if (!rawStr) continue;
-    const rawNum = Math.max(0, Math.min(100, parseInt(rawStr, 10) || 0));
-    const { c1, c2, c3, c4 } = splitTotalToRubricCriteria(rawNum);
+    const isManual = row.getAttribute('data-manual') === 'true';
+    const teamName = isManual
+      ? (row.querySelector('.bulk-manual-name')?.value || '').trim()
+      : (row.getAttribute('data-name') || 'Competitor');
+    const collegeName = isManual
+      ? (row.querySelector('.bulk-manual-college')?.value || '').trim()
+      : (row.getAttribute('data-college') || '');
+    if (!teamName) continue;
+
+    const c1 = Math.max(0, Math.min(30, parseInt(row.querySelector('input[data-col="c1"]')?.value || '0', 10) || 0));
+    const c2 = Math.max(0, Math.min(30, parseInt(row.querySelector('input[data-col="c2"]')?.value || '0', 10) || 0));
+    const c3 = Math.max(0, Math.min(20, parseInt(row.querySelector('input[data-col="c3"]')?.value || '0', 10) || 0));
+    const c4 = Math.max(0, Math.min(20, parseInt(row.querySelector('input[data-col="c4"]')?.value || '0', 10) || 0));
+    const rawNum = Math.max(0, Math.min(100, parseInt(rawStr, 10) || (c1 + c2 + c3 + c4)));
     const regId = row.getAttribute('data-reg-id') || null;
     const existingId = row.getAttribute('data-score-id') || undefined;
     toSave.push({
       id: existingId || undefined,
       event_id: eventId,
       registration_id: regId || null,
-      team_name: row.getAttribute('data-name') || 'Competitor',
-      college_name: row.getAttribute('data-college') || '',
+      team_name: teamName,
+      college_name: collegeName,
       judge_name: judgeName,
       criterion_technical: c1,
       criterion_andalusian: c2,
@@ -3407,7 +3606,7 @@ async function saveBulkScores() {
   }
 
   if (toSave.length === 0) {
-    showToast('Enter at least one mark (0–100) before saving', 'warning');
+    showToast('Enter at least one mark (0–100) with a competitor name before saving', 'warning');
     return;
   }
 
@@ -3418,8 +3617,9 @@ async function saveBulkScores() {
     for (const scoreObj of toSave) {
       await db.saveScore(scoreObj);
     }
+    bulkExtraRows = [];
     cachedScores = await db.getScores();
-    logAudit('BULK_SCORES_SAVED', `${judgeName} saved ${toSave.length} competitor marks`);
+    logAudit('BULK_SCORES_SAVED', `${judgeName} saved ${toSave.length} competitor marks via scoring grid`);
     showToast(`Saved ${toSave.length} competitor score(s)!`, 'success');
     renderBulkScoringSheet(eventId);
     renderScoringLeaderboard(eventId);
@@ -7139,32 +7339,47 @@ function renderJudgmentPreviewContent(entry) {
       </div>
 
       <div class="space-y-2.5">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-600">Evaluations, Results &amp; Jury Remarks (${remarks.length})</div>
-        ${remarks.length > 0 ? `
-          <div class="border border-slate-200 rounded-xl overflow-hidden">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
-                <tr>
-                  <th class="py-2.5 px-3">Competitor / Scope</th>
-                  <th class="py-2.5 px-3">Score</th>
-                  <th class="py-2.5 px-3">Remarks</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                ${remarks.map((rm) => `
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-600">Scoring Grid, Results &amp; Jury Remarks (${remarks.length})</div>
+        ${(() => {
+          if (remarks.length === 0) return '<div class="text-xs text-slate-400 italic">No evaluation remarks recorded.</div>';
+          const scoredCols = rules.filter((r) => Number(r.max_points) > 0 && remarks.some((m) => m.criteria_scores && r.id in m.criteria_scores));
+          const sortedRemarks = [...remarks].sort((a, b) => (Number(b.score ?? -1)) - (Number(a.score ?? -1)));
+          return `
+            <div class="border border-slate-200 rounded-xl overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
                   <tr>
-                    <td class="py-2.5 px-3">
-                      <div class="font-bold text-slate-900">${escapeHtml(rm.contestant_name)}</div>
-                      ${rm.institution ? `<div class="text-[10px] text-slate-500">${escapeHtml(rm.institution)}</div>` : ''}
-                    </td>
-                    <td class="py-2.5 px-3 font-mono font-bold text-indigo-800">${rm.score !== null && rm.score !== undefined ? escapeHtml(String(rm.score)) : '—'}</td>
-                    <td class="py-2.5 px-3 text-slate-700">${escapeHtml(rm.remarks || '—')}</td>
+                    <th class="py-2.5 px-3">Competitor / Scope</th>
+                    ${scoredCols.map((c) => `<th class="py-2.5 px-2.5 text-center border-l border-slate-200">${escapeHtml(c.title)}<span class="block text-[9px] text-slate-400">/${escapeHtml(String(c.max_points))}</span></th>`).join('')}
+                    <th class="py-2.5 px-3 text-center border-l border-slate-200">Total</th>
+                    <th class="py-2.5 px-3 border-l border-slate-200">Remarks</th>
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : '<div class="text-xs text-slate-400 italic">No evaluation remarks recorded.</div>'}
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${sortedRemarks.map((rm) => {
+                    const totalDisp = rm.score !== null && rm.score !== undefined
+                      ? `${escapeHtml(String(rm.score))}${rm.max_total ? ` / ${escapeHtml(String(rm.max_total))}` : ''}`
+                      : '—';
+                    return `
+                      <tr>
+                        <td class="py-2.5 px-3">
+                          <div class="font-bold text-slate-900">${escapeHtml(rm.contestant_name)}</div>
+                          ${rm.institution ? `<div class="text-[10px] text-slate-500">${escapeHtml(rm.institution)}</div>` : ''}
+                        </td>
+                        ${scoredCols.map((c) => {
+                          const cv = rm.criteria_scores?.[c.id];
+                          return `<td class="py-2.5 px-2.5 text-center border-l border-slate-100 font-mono text-slate-700">${cv !== undefined && cv !== null ? escapeHtml(String(cv)) : '—'}</td>`;
+                        }).join('')}
+                        <td class="py-2.5 px-3 text-center border-l border-slate-200 font-mono font-bold text-indigo-800 whitespace-nowrap">${totalDisp}</td>
+                        <td class="py-2.5 px-3 border-l border-slate-200 text-slate-700">${escapeHtml(rm.remarks || '—')}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        })()}
       </div>
     `;
   }
